@@ -17,18 +17,27 @@ const mimeTypes: Record<string, string | undefined> = {
 	"image/webp": "webp",
 };
 
-export const download = async ({
-	id,
-	data,
-}: DownloadRequest): Promise<DownloadResponse> => {
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+	new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result as string);
+		reader.onerror = reject;
+		reader.readAsDataURL(blob);
+	});
+
+export const download = async (
+	{ id, data }: DownloadRequest,
+	tabId: number,
+): Promise<DownloadResponse> => {
+	const hasDownloadsApi = typeof browser.downloads?.download === "function";
+
 	for (const { url, filename } of data) {
 		try {
 			const blob = await fetch(url).then((response) => {
 				if (response.ok) {
 					return response.blob();
-				} else {
-					throw new Error(`Status code: ${response.status}`);
 				}
+				throw new Error(`Status code: ${response.status}`);
 			});
 			const mimeTypeExtension = mimeTypes[blob.type];
 			const urlExtension = url.split(".").pop();
@@ -44,11 +53,31 @@ export const download = async ({
 				`${formattedFilename}${extension}`,
 			);
 
-			const downloadId = await browser.downloads.download({
-				url,
-				filename: filenameWithExtension,
+			if (hasDownloadsApi) {
+				const downloadId = await browser.downloads.download({
+					url,
+					filename: filenameWithExtension,
+				});
+				return { id, type: "download", data: { id: downloadId } };
+			}
+
+			// Safari fallback: fetch happens in background (using host permissions),
+			// then a data URL is injected into the page to trigger the browser's
+			// native save dialog via an anchor click.
+			const dataUrl = await blobToDataUrl(blob);
+			await browser.scripting.executeScript({
+				target: { tabId },
+				func: (href: string, dlFilename: string) => {
+					const a = document.createElement("a");
+					a.href = href;
+					a.download = dlFilename;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+				},
+				args: [dataUrl, filenameWithExtension],
 			});
-			return { id, type: "download", data: { id: downloadId } };
+			return { id, type: "download", data: { id: 0 } };
 		} catch {
 			// try next URL in the list
 		}
