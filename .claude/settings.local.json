@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm install *)",
       "Bash(MANIFEST_VERSION=3 npm run build)",
-      "Bash(xcrun safari-web-extension-converter *)"
+      "Bash(xcrun safari-web-extension-converter *)",
+      "Bash(npx tsc *)"
     ]
   }
 }
