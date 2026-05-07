@@ -7,3 +7,9 @@ brym.zip
 .eslintcache
 scripts/output/
 scripts/*.htm
+
+# Xcode
+EvenBetterRYM/build/
+EvenBetterRYM/*.xcodeproj/xcuserdata/
+EvenBetterRYM/*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/

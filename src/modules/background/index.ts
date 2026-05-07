@@ -16,7 +16,7 @@ const getResponse = (
 ): Promise<BackgroundResponse> => {
 	if (isBackgroundRequest(message)) {
 		if (message.type === "fetch") return backgroundFetch(message);
-		if (message.type === "download") return download(message);
+		if (message.type === "download") return download(message, tabId);
 		if (message.type === "script") return script(message, tabId);
 	}
 	throw new Error(`Invalid message: ${JSON.stringify(message)}`);
