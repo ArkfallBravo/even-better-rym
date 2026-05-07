@@ -190,7 +190,7 @@ function getFullLink(service: string, linkData: LinkData) {
 
 		case "applemusic": {
 			const data = linkData as AppleMusicLinkData;
-			return `https://geo.music.apple.com/${data.loc}/${
+			return `https://music.apple.com/${data.loc}/${
 				data.album ? "album" : "video"
 			}/${data.album ?? data.video}/${data.media_id}`;
 		}
