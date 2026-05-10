@@ -22,12 +22,16 @@ const getResponse = (
 	throw new Error(`Invalid message: ${JSON.stringify(message)}`);
 };
 
-browser.runtime.onMessage.addListener((message, sender) => {
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	const tabId = sender.tab?.id;
-	if (tabId === undefined) return undefined;
+	if (tabId === undefined) return;
 
 	if (isBackgroundRequest(message)) {
-		return getResponse(message, tabId);
+		const respond = sendResponse as (response: BackgroundResponse) => void;
+		getResponse(message, tabId)
+			.then(respond)
+			.catch((err: unknown) => respond({ id: "", type: "fetch", data: { body: String(err) } }));
+		return true; // keep channel open until sendResponse is called
 	}
 });
 
