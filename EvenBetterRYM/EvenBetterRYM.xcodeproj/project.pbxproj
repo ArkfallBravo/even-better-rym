@@ -19,7 +19,7 @@
 		B1EE16F92FAD0FCE001B284F /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EE16F82FAD0FCE001B284F /* SafariWebExtensionHandler.swift */; };
 		B1EE170A2FAD0FCF001B284F /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17052FAD0FCF001B284F /* icons */; };
 		B1EE170B2FAD0FCF001B284F /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17062FAD0FCF001B284F /* manifest.json */; };
-		B1EE170C2FAD0FCF001B284F /* serviceWorker.js in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17072FAD0FCF001B284F /* serviceWorker.js */; };
+		B1EE170C2FAD0FCF001B284F /* background.html in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17072FAD0FCF001B284F /* background.html */; };
 		B1EE170D2FAD0FCF001B284F /* assets in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17082FAD0FCF001B284F /* assets */; };
 		B1EE170E2FAD0FCF001B284F /* src in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17092FAD0FCF001B284F /* src */; };
 /* End PBXBuildFile section */
@@ -64,7 +64,7 @@
 		B1EE16FA2FAD0FCE001B284F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B1EE17052FAD0FCF001B284F /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = ../../dist/icons; sourceTree = "<group>"; };
 		B1EE17062FAD0FCF001B284F /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../dist/manifest.json; sourceTree = "<group>"; };
-		B1EE17072FAD0FCF001B284F /* serviceWorker.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = serviceWorker.js; path = ../../dist/serviceWorker.js; sourceTree = "<group>"; };
+		B1EE17072FAD0FCF001B284F /* background.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = background.html; path = ../../dist/background.html; sourceTree = "<group>"; };
 		B1EE17082FAD0FCF001B284F /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../dist/assets; sourceTree = "<group>"; };
 		B1EE17092FAD0FCF001B284F /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../dist/src; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -144,7 +144,7 @@
 			children = (
 				B1EE17052FAD0FCF001B284F /* icons */,
 				B1EE17062FAD0FCF001B284F /* manifest.json */,
-				B1EE17072FAD0FCF001B284F /* serviceWorker.js */,
+				B1EE17072FAD0FCF001B284F /* background.html */,
 				B1EE17082FAD0FCF001B284F /* assets */,
 				B1EE17092FAD0FCF001B284F /* src */,
 			);
@@ -253,7 +253,7 @@
 			files = (
 				B1EE170B2FAD0FCF001B284F /* manifest.json in Resources */,
 				B1EE170D2FAD0FCF001B284F /* assets in Resources */,
-				B1EE170C2FAD0FCF001B284F /* serviceWorker.js in Resources */,
+				B1EE170C2FAD0FCF001B284F /* background.html in Resources */,
 				B1EE170A2FAD0FCF001B284F /* icons in Resources */,
 				B1EE170E2FAD0FCF001B284F /* src in Resources */,
 			);
