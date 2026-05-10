@@ -26,9 +26,9 @@ browser.runtime.onMessage.addListener((message, sender) => {
 	const tabId = sender.tab?.id;
 	if (tabId === undefined) return undefined;
 
-	void getResponse(message, tabId).then((response) =>
-		browser.tabs.sendMessage(tabId, response),
-	);
+	if (isBackgroundRequest(message)) {
+		return getResponse(message, tabId);
+	}
 });
 
 const setTabIcon = (tabId: number, enabled: boolean) => {

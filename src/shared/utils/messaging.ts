@@ -59,25 +59,16 @@ export type BackgroundResponse =
 
 export const isBackgroundRequest = (o: unknown): o is BackgroundRequest =>
 	typeof o === "object" && o !== null && "id" in o && "type" in o;
-export const isBackgroundResponse = (o: unknown): o is BackgroundResponse =>
-	typeof o === "object" && o !== null && "id" in o && "type" in o;
 
 export const sendBackgroundMessage = <
 	Request extends BackgroundRequest,
 	Response extends BackgroundResponse,
 >(
 	request: Omit<Request, "id">,
-): Promise<Response> =>
-	new Promise((resolve) => {
-		const requestId = nanoid();
-
-		const onResponse = (response: unknown): undefined => {
-			if (isBackgroundResponse(response) && response.id === requestId) {
-				resolve(response as Response);
-				browser.runtime.onMessage.removeListener(onResponse);
-			}
-		};
-
-		browser.runtime.onMessage.addListener(onResponse);
-		void browser.runtime.sendMessage({ id: requestId, ...request });
-	});
+): Promise<Response> => {
+	const requestId = nanoid();
+	return browser.runtime.sendMessage({
+		id: requestId,
+		...request,
+	}) as Promise<Response>;
+};
