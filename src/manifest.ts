@@ -18,6 +18,7 @@ const hostsArray = [
 	"https://qobuz.com/*",
 	"https://*.qobuz.com/*",
 	"https://soundcloud.com/*",
+	"https://a-v2.sndcdn.com/*",
 	"https://api-v2.soundcloud.com/*",
 	"https://tidal.com/*",
 	"https://*.tidal.com/*",
