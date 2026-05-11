@@ -13,5 +13,9 @@ export const runPage = async (key: PageKey, callback: () => unknown) => {
 	const enabled = await getPageEnabled(key);
 	if (!enabled) return;
 
-	callback();
+	try {
+		await (callback() as Promise<unknown>);
+	} catch {
+		// Module failed to initialize (e.g. element not found on this layout)
+	}
 };

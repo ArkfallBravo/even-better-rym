@@ -120,7 +120,7 @@ const getStreamingPreferences = async (): Promise<
 		document.addEventListener("StreamingPreferencesEvent", listener);
 	});
 
-	await runScript(`
+	runScript(`
     const streamingPreferences = window.streamingPreferences;
     const __event = new CustomEvent('StreamingPreferencesEvent', { detail: { streamingPreferences } });
     document.dispatchEvent(__event);

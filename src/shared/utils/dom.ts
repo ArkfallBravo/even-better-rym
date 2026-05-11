@@ -1,5 +1,3 @@
-import type { ScriptRequest, ScriptResponse } from "./messaging";
-import { sendBackgroundMessage } from "./messaging";
 
 export const isDocumentReady = (): boolean =>
 	document.readyState === "complete" || document.readyState === "interactive";
@@ -70,11 +68,11 @@ export const forceQuerySelector =
 		return element;
 	};
 
-export const runScript = async (script: string) => {
-	await sendBackgroundMessage<ScriptRequest, ScriptResponse>({
-		type: "script",
-		data: { script },
-	});
+export const runScript = (script: string): void => {
+	const element = document.createElement("script");
+	element.textContent = script;
+	(document.head ?? document.documentElement).append(element);
+	element.remove();
 };
 
 export const waitForResult = (
