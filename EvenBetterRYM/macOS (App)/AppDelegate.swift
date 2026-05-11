@@ -1,8 +1,8 @@
 //
 //  AppDelegate.swift
-//  EvenBetterRYM
+//  macOS (App)
 //
-//  Created by Helena Simson on 5/7/26.
+//  Created by Helena Simson on 5/11/26.
 //
 
 import Cocoa

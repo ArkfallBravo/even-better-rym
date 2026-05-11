@@ -7,41 +7,76 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B1EE16DC2FAD0FCD001B284F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EE16DB2FAD0FCD001B284F /* AppDelegate.swift */; };
-		B1EE16E02FAD0FCD001B284F /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = B1EE16DE2FAD0FCD001B284F /* Main.html */; };
-		B1EE16E22FAD0FCD001B284F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = B1EE16E12FAD0FCD001B284F /* Icon.png */; };
-		B1EE16E42FAD0FCD001B284F /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = B1EE16E32FAD0FCD001B284F /* Style.css */; };
-		B1EE16E62FAD0FCD001B284F /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = B1EE16E52FAD0FCD001B284F /* Script.js */; };
-		B1EE16E82FAD0FCD001B284F /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EE16E72FAD0FCD001B284F /* ViewController.swift */; };
-		B1EE16EB2FAD0FCD001B284F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B1EE16E92FAD0FCD001B284F /* Main.storyboard */; };
-		B1EE16ED2FAD0FCE001B284F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1EE16EC2FAD0FCE001B284F /* Assets.xcassets */; };
-		B1EE16F42FAD0FCE001B284F /* EvenBetterRYM Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B1EE16F32FAD0FCE001B284F /* EvenBetterRYM Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		B1EE16F92FAD0FCE001B284F /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EE16F82FAD0FCE001B284F /* SafariWebExtensionHandler.swift */; };
-		B1EE170A2FAD0FCF001B284F /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17052FAD0FCF001B284F /* icons */; };
-		B1EE170B2FAD0FCF001B284F /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17062FAD0FCF001B284F /* manifest.json */; };
-		B1EE170C2FAD0FCF001B284F /* background.html in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17072FAD0FCF001B284F /* background.html */; };
-		B1EE170D2FAD0FCF001B284F /* assets in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17082FAD0FCF001B284F /* assets */; };
-		B1EE170E2FAD0FCF001B284F /* src in Resources */ = {isa = PBXBuildFile; fileRef = B1EE17092FAD0FCF001B284F /* src */; };
+		B125976E2FB21F0E0088BDC2 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B125976D2FB21F0E0088BDC2 /* AppDelegate.swift */; };
+		B12597702FB21F0E0088BDC2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B125976F2FB21F0E0088BDC2 /* SceneDelegate.swift */; };
+		B12597732FB21F0E0088BDC2 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B12597712FB21F0E0088BDC2 /* LaunchScreen.storyboard */; };
+		B12597762FB21F0E0088BDC2 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B12597742FB21F0E0088BDC2 /* Main.storyboard */; };
+		B125977F2FB21F0E0088BDC2 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B125977E2FB21F0E0088BDC2 /* AppDelegate.swift */; };
+		B12597822FB21F0E0088BDC2 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B12597802FB21F0E0088BDC2 /* Main.storyboard */; };
+		B12597892FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B12597882FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B12597932FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B12597922FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B12597982FB21F0E0088BDC2 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = B125975D2FB21F0D0088BDC2 /* Main.html */; };
+		B12597992FB21F0E0088BDC2 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = B125975D2FB21F0D0088BDC2 /* Main.html */; };
+		B125979A2FB21F0E0088BDC2 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = B125975F2FB21F0D0088BDC2 /* Icon.png */; };
+		B125979B2FB21F0E0088BDC2 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = B125975F2FB21F0D0088BDC2 /* Icon.png */; };
+		B125979C2FB21F0E0088BDC2 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = B12597602FB21F0D0088BDC2 /* Style.css */; };
+		B125979D2FB21F0E0088BDC2 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = B12597602FB21F0D0088BDC2 /* Style.css */; };
+		B125979E2FB21F0E0088BDC2 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = B12597612FB21F0D0088BDC2 /* Script.js */; };
+		B125979F2FB21F0E0088BDC2 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = B12597612FB21F0D0088BDC2 /* Script.js */; };
+		B12597A02FB21F0E0088BDC2 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12597622FB21F0D0088BDC2 /* ViewController.swift */; };
+		B12597A12FB21F0E0088BDC2 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12597622FB21F0D0088BDC2 /* ViewController.swift */; };
+		B12597A22FB21F0E0088BDC2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B12597632FB21F0E0088BDC2 /* Assets.xcassets */; };
+		B12597A32FB21F0E0088BDC2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B12597632FB21F0E0088BDC2 /* Assets.xcassets */; };
+		B12597A42FB21F0E0088BDC2 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12597652FB21F0E0088BDC2 /* SafariWebExtensionHandler.swift */; };
+		B12597A52FB21F0E0088BDC2 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12597652FB21F0E0088BDC2 /* SafariWebExtensionHandler.swift */; };
+		B12597BC2FB21F0E0088BDC2 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B12597B72FB21F0E0088BDC2 /* icons */; };
+		B12597BD2FB21F0E0088BDC2 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B12597B82FB21F0E0088BDC2 /* manifest.json */; };
+		B12597BE2FB21F0E0088BDC2 /* background.html in Resources */ = {isa = PBXBuildFile; fileRef = B12597B92FB21F0E0088BDC2 /* background.html */; };
+		B12597BF2FB21F0E0088BDC2 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = B12597BA2FB21F0E0088BDC2 /* assets */; };
+		B12597C02FB21F0E0088BDC2 /* src in Resources */ = {isa = PBXBuildFile; fileRef = B12597BB2FB21F0E0088BDC2 /* src */; };
+		B12597C12FB21F0E0088BDC2 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B12597B72FB21F0E0088BDC2 /* icons */; };
+		B12597C22FB21F0E0088BDC2 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = B12597B82FB21F0E0088BDC2 /* manifest.json */; };
+		B12597C32FB21F0E0088BDC2 /* background.html in Resources */ = {isa = PBXBuildFile; fileRef = B12597B92FB21F0E0088BDC2 /* background.html */; };
+		B12597C42FB21F0E0088BDC2 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = B12597BA2FB21F0E0088BDC2 /* assets */; };
+		B12597C52FB21F0E0088BDC2 /* src in Resources */ = {isa = PBXBuildFile; fileRef = B12597BB2FB21F0E0088BDC2 /* src */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		B1EE16F52FAD0FCE001B284F /* PBXContainerItemProxy */ = {
+		B125978A2FB21F0E0088BDC2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = B1EE16D02FAD0FCD001B284F /* Project object */;
+			containerPortal = B12597572FB21F0C0088BDC2 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = B1EE16F22FAD0FCE001B284F;
-			remoteInfo = "EvenBetterRYM Extension";
+			remoteGlobalIDString = B12597872FB21F0E0088BDC2;
+			remoteInfo = "EvenBetterRYM Extension (iOS)";
+		};
+		B12597942FB21F0E0088BDC2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B12597572FB21F0C0088BDC2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B12597912FB21F0E0088BDC2;
+			remoteInfo = "EvenBetterRYM Extension (macOS)";
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		B1EE17002FAD0FCE001B284F /* Embed Foundation Extensions */ = {
+		B12597AB2FB21F0E0088BDC2 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B1EE16F42FAD0FCE001B284F /* EvenBetterRYM Extension.appex in Embed Foundation Extensions */,
+				B12597892FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B12597B22FB21F0E0088BDC2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B12597932FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -49,35 +84,57 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		B1EE16D82FAD0FCD001B284F /* EvenBetterRYM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EvenBetterRYM.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B1EE16DB2FAD0FCD001B284F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		B1EE16DF2FAD0FCD001B284F /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
-		B1EE16E12FAD0FCD001B284F /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
-		B1EE16E32FAD0FCD001B284F /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
-		B1EE16E52FAD0FCD001B284F /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
-		B1EE16E72FAD0FCD001B284F /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		B1EE16EA2FAD0FCD001B284F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		B1EE16EC2FAD0FCE001B284F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		B1EE16EE2FAD0FCE001B284F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B1EE16F32FAD0FCE001B284F /* EvenBetterRYM Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "EvenBetterRYM Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-		B1EE16F82FAD0FCE001B284F /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
-		B1EE16FA2FAD0FCE001B284F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B1EE17052FAD0FCF001B284F /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = ../../dist/icons; sourceTree = "<group>"; };
-		B1EE17062FAD0FCF001B284F /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../dist/manifest.json; sourceTree = "<group>"; };
-		B1EE17072FAD0FCF001B284F /* background.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = background.html; path = ../../dist/background.html; sourceTree = "<group>"; };
-		B1EE17082FAD0FCF001B284F /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../dist/assets; sourceTree = "<group>"; };
-		B1EE17092FAD0FCF001B284F /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../dist/src; sourceTree = "<group>"; };
+		B125975E2FB21F0D0088BDC2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		B125975F2FB21F0D0088BDC2 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		B12597602FB21F0D0088BDC2 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		B12597612FB21F0D0088BDC2 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		B12597622FB21F0D0088BDC2 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		B12597632FB21F0E0088BDC2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B12597652FB21F0E0088BDC2 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		B125976A2FB21F0E0088BDC2 /* EvenBetterRYM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EvenBetterRYM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B125976D2FB21F0E0088BDC2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B125976F2FB21F0E0088BDC2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		B12597722FB21F0E0088BDC2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		B12597752FB21F0E0088BDC2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		B12597772FB21F0E0088BDC2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B125977C2FB21F0E0088BDC2 /* EvenBetterRYM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EvenBetterRYM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B125977E2FB21F0E0088BDC2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B12597812FB21F0E0088BDC2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		B12597832FB21F0E0088BDC2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B12597882FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "EvenBetterRYM Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B125978D2FB21F0E0088BDC2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B12597922FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "EvenBetterRYM Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B12597972FB21F0E0088BDC2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B12597B72FB21F0E0088BDC2 /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = ../../dist/icons; sourceTree = "<group>"; };
+		B12597B82FB21F0E0088BDC2 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../dist/manifest.json; sourceTree = "<group>"; };
+		B12597B92FB21F0E0088BDC2 /* background.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = background.html; path = ../../dist/background.html; sourceTree = "<group>"; };
+		B12597BA2FB21F0E0088BDC2 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../dist/assets; sourceTree = "<group>"; };
+		B12597BB2FB21F0E0088BDC2 /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../dist/src; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		B1EE16D52FAD0FCD001B284F /* Frameworks */ = {
+		B12597672FB21F0E0088BDC2 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B1EE16F02FAD0FCE001B284F /* Frameworks */ = {
+		B12597792FB21F0E0088BDC2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B12597852FB21F0E0088BDC2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B125978F2FB21F0E0088BDC2 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -87,221 +144,374 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		B1EE16CF2FAD0FCD001B284F = {
+		B12597562FB21F0C0088BDC2 = {
 			isa = PBXGroup;
 			children = (
-				B1EE16DA2FAD0FCD001B284F /* EvenBetterRYM */,
-				B1EE16F72FAD0FCE001B284F /* EvenBetterRYM Extension */,
-				B1EE16D92FAD0FCD001B284F /* Products */,
+				B125975B2FB21F0D0088BDC2 /* Shared (App) */,
+				B12597642FB21F0E0088BDC2 /* Shared (Extension) */,
+				B125976C2FB21F0E0088BDC2 /* iOS (App) */,
+				B125977D2FB21F0E0088BDC2 /* macOS (App) */,
+				B125978C2FB21F0E0088BDC2 /* iOS (Extension) */,
+				B12597962FB21F0E0088BDC2 /* macOS (Extension) */,
+				B125976B2FB21F0E0088BDC2 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		B1EE16D92FAD0FCD001B284F /* Products */ = {
+		B125975B2FB21F0D0088BDC2 /* Shared (App) */ = {
 			isa = PBXGroup;
 			children = (
-				B1EE16D82FAD0FCD001B284F /* EvenBetterRYM.app */,
-				B1EE16F32FAD0FCE001B284F /* EvenBetterRYM Extension.appex */,
+				B12597622FB21F0D0088BDC2 /* ViewController.swift */,
+				B12597632FB21F0E0088BDC2 /* Assets.xcassets */,
+				B125975C2FB21F0D0088BDC2 /* Resources */,
 			);
-			name = Products;
+			path = "Shared (App)";
 			sourceTree = "<group>";
 		};
-		B1EE16DA2FAD0FCD001B284F /* EvenBetterRYM */ = {
+		B125975C2FB21F0D0088BDC2 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B1EE16DB2FAD0FCD001B284F /* AppDelegate.swift */,
-				B1EE16E72FAD0FCD001B284F /* ViewController.swift */,
-				B1EE16E92FAD0FCD001B284F /* Main.storyboard */,
-				B1EE16EC2FAD0FCE001B284F /* Assets.xcassets */,
-				B1EE16EE2FAD0FCE001B284F /* Info.plist */,
-				B1EE16DD2FAD0FCD001B284F /* Resources */,
-			);
-			path = EvenBetterRYM;
-			sourceTree = "<group>";
-		};
-		B1EE16DD2FAD0FCD001B284F /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				B1EE16DE2FAD0FCD001B284F /* Main.html */,
-				B1EE16E12FAD0FCD001B284F /* Icon.png */,
-				B1EE16E32FAD0FCD001B284F /* Style.css */,
-				B1EE16E52FAD0FCD001B284F /* Script.js */,
+				B125975D2FB21F0D0088BDC2 /* Main.html */,
+				B125975F2FB21F0D0088BDC2 /* Icon.png */,
+				B12597602FB21F0D0088BDC2 /* Style.css */,
+				B12597612FB21F0D0088BDC2 /* Script.js */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		B1EE16F72FAD0FCE001B284F /* EvenBetterRYM Extension */ = {
+		B12597642FB21F0E0088BDC2 /* Shared (Extension) */ = {
 			isa = PBXGroup;
 			children = (
-				B1EE17042FAD0FCF001B284F /* Resources */,
-				B1EE16F82FAD0FCE001B284F /* SafariWebExtensionHandler.swift */,
-				B1EE16FA2FAD0FCE001B284F /* Info.plist */,
+				B12597B62FB21F0E0088BDC2 /* Resources */,
+				B12597652FB21F0E0088BDC2 /* SafariWebExtensionHandler.swift */,
 			);
-			path = "EvenBetterRYM Extension";
+			path = "Shared (Extension)";
 			sourceTree = "<group>";
 		};
-		B1EE17042FAD0FCF001B284F /* Resources */ = {
+		B125976B2FB21F0E0088BDC2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B1EE17052FAD0FCF001B284F /* icons */,
-				B1EE17062FAD0FCF001B284F /* manifest.json */,
-				B1EE17072FAD0FCF001B284F /* background.html */,
-				B1EE17082FAD0FCF001B284F /* assets */,
-				B1EE17092FAD0FCF001B284F /* src */,
+				B125976A2FB21F0E0088BDC2 /* EvenBetterRYM.app */,
+				B125977C2FB21F0E0088BDC2 /* EvenBetterRYM.app */,
+				B12597882FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex */,
+				B12597922FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B125976C2FB21F0E0088BDC2 /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				B125976D2FB21F0E0088BDC2 /* AppDelegate.swift */,
+				B125976F2FB21F0E0088BDC2 /* SceneDelegate.swift */,
+				B12597712FB21F0E0088BDC2 /* LaunchScreen.storyboard */,
+				B12597742FB21F0E0088BDC2 /* Main.storyboard */,
+				B12597772FB21F0E0088BDC2 /* Info.plist */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		B125977D2FB21F0E0088BDC2 /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				B125977E2FB21F0E0088BDC2 /* AppDelegate.swift */,
+				B12597802FB21F0E0088BDC2 /* Main.storyboard */,
+				B12597832FB21F0E0088BDC2 /* Info.plist */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		B125978C2FB21F0E0088BDC2 /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				B125978D2FB21F0E0088BDC2 /* Info.plist */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		B12597962FB21F0E0088BDC2 /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				B12597972FB21F0E0088BDC2 /* Info.plist */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		B12597B62FB21F0E0088BDC2 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B12597B72FB21F0E0088BDC2 /* icons */,
+				B12597B82FB21F0E0088BDC2 /* manifest.json */,
+				B12597B92FB21F0E0088BDC2 /* background.html */,
+				B12597BA2FB21F0E0088BDC2 /* assets */,
+				B12597BB2FB21F0E0088BDC2 /* src */,
 			);
 			name = Resources;
-			path = "EvenBetterRYM Extension";
+			path = "Shared (Extension)";
 			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B1EE16D72FAD0FCD001B284F /* EvenBetterRYM */ = {
+		B12597692FB21F0E0088BDC2 /* EvenBetterRYM (iOS) */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B1EE17012FAD0FCE001B284F /* Build configuration list for PBXNativeTarget "EvenBetterRYM" */;
+			buildConfigurationList = B12597AC2FB21F0E0088BDC2 /* Build configuration list for PBXNativeTarget "EvenBetterRYM (iOS)" */;
 			buildPhases = (
-				B1EE16D42FAD0FCD001B284F /* Sources */,
-				B1EE16D52FAD0FCD001B284F /* Frameworks */,
-				B1EE16D62FAD0FCD001B284F /* Resources */,
-				B1EE17002FAD0FCE001B284F /* Embed Foundation Extensions */,
+				B12597662FB21F0E0088BDC2 /* Sources */,
+				B12597672FB21F0E0088BDC2 /* Frameworks */,
+				B12597682FB21F0E0088BDC2 /* Resources */,
+				B12597AB2FB21F0E0088BDC2 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				B1EE16F62FAD0FCE001B284F /* PBXTargetDependency */,
+				B125978B2FB21F0E0088BDC2 /* PBXTargetDependency */,
 			);
-			name = EvenBetterRYM;
+			name = "EvenBetterRYM (iOS)";
 			packageProductDependencies = (
 			);
-			productName = EvenBetterRYM;
-			productReference = B1EE16D82FAD0FCD001B284F /* EvenBetterRYM.app */;
+			productName = "EvenBetterRYM (iOS)";
+			productReference = B125976A2FB21F0E0088BDC2 /* EvenBetterRYM.app */;
 			productType = "com.apple.product-type.application";
 		};
-		B1EE16F22FAD0FCE001B284F /* EvenBetterRYM Extension */ = {
+		B125977B2FB21F0E0088BDC2 /* EvenBetterRYM (macOS) */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B1EE16FD2FAD0FCE001B284F /* Build configuration list for PBXNativeTarget "EvenBetterRYM Extension" */;
+			buildConfigurationList = B12597B32FB21F0E0088BDC2 /* Build configuration list for PBXNativeTarget "EvenBetterRYM (macOS)" */;
 			buildPhases = (
-				B1EE16EF2FAD0FCE001B284F /* Sources */,
-				B1EE16F02FAD0FCE001B284F /* Frameworks */,
-				B1EE16F12FAD0FCE001B284F /* Resources */,
+				B12597782FB21F0E0088BDC2 /* Sources */,
+				B12597792FB21F0E0088BDC2 /* Frameworks */,
+				B125977A2FB21F0E0088BDC2 /* Resources */,
+				B12597B22FB21F0E0088BDC2 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B12597952FB21F0E0088BDC2 /* PBXTargetDependency */,
+			);
+			name = "EvenBetterRYM (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "EvenBetterRYM (macOS)";
+			productReference = B125977C2FB21F0E0088BDC2 /* EvenBetterRYM.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B12597872FB21F0E0088BDC2 /* EvenBetterRYM Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B12597A82FB21F0E0088BDC2 /* Build configuration list for PBXNativeTarget "EvenBetterRYM Extension (iOS)" */;
+			buildPhases = (
+				B12597842FB21F0E0088BDC2 /* Sources */,
+				B12597852FB21F0E0088BDC2 /* Frameworks */,
+				B12597862FB21F0E0088BDC2 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = "EvenBetterRYM Extension";
+			name = "EvenBetterRYM Extension (iOS)";
 			packageProductDependencies = (
 			);
-			productName = "EvenBetterRYM Extension";
-			productReference = B1EE16F32FAD0FCE001B284F /* EvenBetterRYM Extension.appex */;
+			productName = "EvenBetterRYM Extension (iOS)";
+			productReference = B12597882FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B12597912FB21F0E0088BDC2 /* EvenBetterRYM Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B12597AF2FB21F0E0088BDC2 /* Build configuration list for PBXNativeTarget "EvenBetterRYM Extension (macOS)" */;
+			buildPhases = (
+				B125978E2FB21F0E0088BDC2 /* Sources */,
+				B125978F2FB21F0E0088BDC2 /* Frameworks */,
+				B12597902FB21F0E0088BDC2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "EvenBetterRYM Extension (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "EvenBetterRYM Extension (macOS)";
+			productReference = B12597922FB21F0E0088BDC2 /* EvenBetterRYM Extension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		B1EE16D02FAD0FCD001B284F /* Project object */ = {
+		B12597572FB21F0C0088BDC2 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
-					B1EE16D72FAD0FCD001B284F = {
+					B12597692FB21F0E0088BDC2 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
-					B1EE16F22FAD0FCE001B284F = {
+					B125977B2FB21F0E0088BDC2 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
+					B12597872FB21F0E0088BDC2 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
+					B12597912FB21F0E0088BDC2 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
 				};
 			};
-			buildConfigurationList = B1EE16D32FAD0FCD001B284F /* Build configuration list for PBXProject "EvenBetterRYM" */;
+			buildConfigurationList = B125975A2FB21F0C0088BDC2 /* Build configuration list for PBXProject "EvenBetterRYM" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = B1EE16CF2FAD0FCD001B284F;
+			mainGroup = B12597562FB21F0C0088BDC2;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = B1EE16D92FAD0FCD001B284F /* Products */;
+			productRefGroup = B125976B2FB21F0E0088BDC2 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B1EE16D72FAD0FCD001B284F /* EvenBetterRYM */,
-				B1EE16F22FAD0FCE001B284F /* EvenBetterRYM Extension */,
+				B12597692FB21F0E0088BDC2 /* EvenBetterRYM (iOS) */,
+				B125977B2FB21F0E0088BDC2 /* EvenBetterRYM (macOS) */,
+				B12597872FB21F0E0088BDC2 /* EvenBetterRYM Extension (iOS) */,
+				B12597912FB21F0E0088BDC2 /* EvenBetterRYM Extension (macOS) */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		B1EE16D62FAD0FCD001B284F /* Resources */ = {
+		B12597682FB21F0E0088BDC2 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1EE16E22FAD0FCD001B284F /* Icon.png in Resources */,
-				B1EE16EB2FAD0FCD001B284F /* Main.storyboard in Resources */,
-				B1EE16E62FAD0FCD001B284F /* Script.js in Resources */,
-				B1EE16E02FAD0FCD001B284F /* Main.html in Resources */,
-				B1EE16ED2FAD0FCE001B284F /* Assets.xcassets in Resources */,
-				B1EE16E42FAD0FCD001B284F /* Style.css in Resources */,
+				B125979A2FB21F0E0088BDC2 /* Icon.png in Resources */,
+				B12597732FB21F0E0088BDC2 /* LaunchScreen.storyboard in Resources */,
+				B12597982FB21F0E0088BDC2 /* Main.html in Resources */,
+				B125979E2FB21F0E0088BDC2 /* Script.js in Resources */,
+				B12597A22FB21F0E0088BDC2 /* Assets.xcassets in Resources */,
+				B12597762FB21F0E0088BDC2 /* Main.storyboard in Resources */,
+				B125979C2FB21F0E0088BDC2 /* Style.css in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B1EE16F12FAD0FCE001B284F /* Resources */ = {
+		B125977A2FB21F0E0088BDC2 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1EE170B2FAD0FCF001B284F /* manifest.json in Resources */,
-				B1EE170D2FAD0FCF001B284F /* assets in Resources */,
-				B1EE170C2FAD0FCF001B284F /* background.html in Resources */,
-				B1EE170A2FAD0FCF001B284F /* icons in Resources */,
-				B1EE170E2FAD0FCF001B284F /* src in Resources */,
+				B125979B2FB21F0E0088BDC2 /* Icon.png in Resources */,
+				B125979D2FB21F0E0088BDC2 /* Style.css in Resources */,
+				B12597822FB21F0E0088BDC2 /* Main.storyboard in Resources */,
+				B125979F2FB21F0E0088BDC2 /* Script.js in Resources */,
+				B12597A32FB21F0E0088BDC2 /* Assets.xcassets in Resources */,
+				B12597992FB21F0E0088BDC2 /* Main.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B12597862FB21F0E0088BDC2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B12597C22FB21F0E0088BDC2 /* manifest.json in Resources */,
+				B12597C42FB21F0E0088BDC2 /* assets in Resources */,
+				B12597C32FB21F0E0088BDC2 /* background.html in Resources */,
+				B12597C12FB21F0E0088BDC2 /* icons in Resources */,
+				B12597C52FB21F0E0088BDC2 /* src in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B12597902FB21F0E0088BDC2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B12597BD2FB21F0E0088BDC2 /* manifest.json in Resources */,
+				B12597BF2FB21F0E0088BDC2 /* assets in Resources */,
+				B12597BE2FB21F0E0088BDC2 /* background.html in Resources */,
+				B12597BC2FB21F0E0088BDC2 /* icons in Resources */,
+				B12597C02FB21F0E0088BDC2 /* src in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		B1EE16D42FAD0FCD001B284F /* Sources */ = {
+		B12597662FB21F0E0088BDC2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1EE16E82FAD0FCD001B284F /* ViewController.swift in Sources */,
-				B1EE16DC2FAD0FCD001B284F /* AppDelegate.swift in Sources */,
+				B12597A02FB21F0E0088BDC2 /* ViewController.swift in Sources */,
+				B125976E2FB21F0E0088BDC2 /* AppDelegate.swift in Sources */,
+				B12597702FB21F0E0088BDC2 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B1EE16EF2FAD0FCE001B284F /* Sources */ = {
+		B12597782FB21F0E0088BDC2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1EE16F92FAD0FCE001B284F /* SafariWebExtensionHandler.swift in Sources */,
+				B12597A12FB21F0E0088BDC2 /* ViewController.swift in Sources */,
+				B125977F2FB21F0E0088BDC2 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B12597842FB21F0E0088BDC2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B12597A42FB21F0E0088BDC2 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B125978E2FB21F0E0088BDC2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B12597A52FB21F0E0088BDC2 /* SafariWebExtensionHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		B1EE16F62FAD0FCE001B284F /* PBXTargetDependency */ = {
+		B125978B2FB21F0E0088BDC2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B1EE16F22FAD0FCE001B284F /* EvenBetterRYM Extension */;
-			targetProxy = B1EE16F52FAD0FCE001B284F /* PBXContainerItemProxy */;
+			target = B12597872FB21F0E0088BDC2 /* EvenBetterRYM Extension (iOS) */;
+			targetProxy = B125978A2FB21F0E0088BDC2 /* PBXContainerItemProxy */;
+		};
+		B12597952FB21F0E0088BDC2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B12597912FB21F0E0088BDC2 /* EvenBetterRYM Extension (macOS) */;
+			targetProxy = B12597942FB21F0E0088BDC2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		B1EE16DE2FAD0FCD001B284F /* Main.html */ = {
+		B125975D2FB21F0D0088BDC2 /* Main.html */ = {
 			isa = PBXVariantGroup;
 			children = (
-				B1EE16DF2FAD0FCD001B284F /* Base */,
+				B125975E2FB21F0D0088BDC2 /* Base */,
 			);
 			name = Main.html;
 			sourceTree = "<group>";
 		};
-		B1EE16E92FAD0FCD001B284F /* Main.storyboard */ = {
+		B12597712FB21F0E0088BDC2 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
-				B1EE16EA2FAD0FCD001B284F /* Base */,
+				B12597722FB21F0E0088BDC2 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		B12597742FB21F0E0088BDC2 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B12597752FB21F0E0088BDC2 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		B12597802FB21F0E0088BDC2 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B12597812FB21F0E0088BDC2 /* Base */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -309,7 +519,7 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		B1EE16FB2FAD0FCE001B284F /* Debug */ = {
+		B12597A62FB21F0E0088BDC2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -362,17 +572,15 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
-		B1EE16FC2FAD0FCE001B284F /* Release */ = {
+		B12597A72FB21F0E0088BDC2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -419,106 +627,101 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
 		};
-		B1EE16FE2FAD0FCE001B284F /* Debug */ = {
+		B12597A92FB21F0E0088BDC2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7C45KQPPCV;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "EvenBetterRYM Extension/Info.plist";
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "EvenBetterRYM Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.EvenBetterRYM.Extension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "EvenBetterRYM Extension";
+				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
-		B1EE16FF2FAD0FCE001B284F /* Release */ = {
+		B12597AA2FB21F0E0088BDC2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7C45KQPPCV;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "EvenBetterRYM Extension/Info.plist";
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "EvenBetterRYM Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.EvenBetterRYM.Extension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "EvenBetterRYM Extension";
+				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		B1EE17022FAD0FCE001B284F /* Debug */ = {
+		B12597AD2FB21F0E0088BDC2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7C45KQPPCV;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = EvenBetterRYM/Info.plist;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = EvenBetterRYM;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainStoryboardFile = Main;
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/../Frameworks",
+					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
@@ -528,8 +731,162 @@
 					WebKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.EvenBetterRYM;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = EvenBetterRYM;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B12597AE2FB21F0E0088BDC2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7C45KQPPCV;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = EvenBetterRYM;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.EvenBetterRYM;
+				PRODUCT_NAME = EvenBetterRYM;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B12597B02FB21F0E0088BDC2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "EvenBetterRYM Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.EvenBetterRYM.Extension;
+				PRODUCT_NAME = "EvenBetterRYM Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B12597B12FB21F0E0088BDC2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "EvenBetterRYM Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.EvenBetterRYM.Extension;
+				PRODUCT_NAME = "EvenBetterRYM Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B12597B42FB21F0E0088BDC2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = EvenBetterRYM;
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.EvenBetterRYM;
+				PRODUCT_NAME = EvenBetterRYM;
 				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -539,29 +896,27 @@
 			};
 			name = Debug;
 		};
-		B1EE17032FAD0FCE001B284F /* Release */ = {
+		B12597B52FB21F0E0088BDC2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7C45KQPPCV;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = EvenBetterRYM/Info.plist;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = EvenBetterRYM;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -570,8 +925,9 @@
 					WebKit,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.EvenBetterRYM;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = EvenBetterRYM;
 				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -584,34 +940,52 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B1EE16D32FAD0FCD001B284F /* Build configuration list for PBXProject "EvenBetterRYM" */ = {
+		B125975A2FB21F0C0088BDC2 /* Build configuration list for PBXProject "EvenBetterRYM" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B1EE16FB2FAD0FCE001B284F /* Debug */,
-				B1EE16FC2FAD0FCE001B284F /* Release */,
+				B12597A62FB21F0E0088BDC2 /* Debug */,
+				B12597A72FB21F0E0088BDC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B1EE16FD2FAD0FCE001B284F /* Build configuration list for PBXNativeTarget "EvenBetterRYM Extension" */ = {
+		B12597A82FB21F0E0088BDC2 /* Build configuration list for PBXNativeTarget "EvenBetterRYM Extension (iOS)" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B1EE16FE2FAD0FCE001B284F /* Debug */,
-				B1EE16FF2FAD0FCE001B284F /* Release */,
+				B12597A92FB21F0E0088BDC2 /* Debug */,
+				B12597AA2FB21F0E0088BDC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B1EE17012FAD0FCE001B284F /* Build configuration list for PBXNativeTarget "EvenBetterRYM" */ = {
+		B12597AC2FB21F0E0088BDC2 /* Build configuration list for PBXNativeTarget "EvenBetterRYM (iOS)" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B1EE17022FAD0FCE001B284F /* Debug */,
-				B1EE17032FAD0FCE001B284F /* Release */,
+				B12597AD2FB21F0E0088BDC2 /* Debug */,
+				B12597AE2FB21F0E0088BDC2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B12597AF2FB21F0E0088BDC2 /* Build configuration list for PBXNativeTarget "EvenBetterRYM Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B12597B02FB21F0E0088BDC2 /* Debug */,
+				B12597B12FB21F0E0088BDC2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B12597B32FB21F0E0088BDC2 /* Build configuration list for PBXNativeTarget "EvenBetterRYM (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B12597B42FB21F0E0088BDC2 /* Debug */,
+				B12597B52FB21F0E0088BDC2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = B1EE16D02FAD0FCD001B284F /* Project object */;
+	rootObject = B12597572FB21F0C0088BDC2 /* Project object */;
 }

@@ -1,8 +1,8 @@
 //
 //  SafariWebExtensionHandler.swift
-//  EvenBetterRYM Extension
+//  Shared (Extension)
 //
-//  Created by Helena Simson on 5/7/26.
+//  Created by Helena Simson on 5/11/26.
 //
 
 import SafariServices
