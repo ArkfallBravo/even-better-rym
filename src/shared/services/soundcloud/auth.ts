@@ -37,9 +37,16 @@ const scrapeToken = async (): Promise<string | undefined> => {
 	return scrapeClientId(scriptUrls);
 };
 
+const FALLBACK_CLIENT_ID = import.meta.env.VITE_SOUNDCLOUD_CLIENT_ID as
+	| string
+	| undefined;
+
+const scrapeTokenWithFallback = async (): Promise<string | undefined> =>
+	(await scrapeToken()) ?? FALLBACK_CLIENT_ID;
+
 // Cache for 24 hours — the client ID rarely changes.
 export const requestToken = withCache(
 	"soundcloud-client-id",
-	scrapeToken,
+	scrapeTokenWithFallback,
 	86_400_000,
 );
