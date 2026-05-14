@@ -2,10 +2,31 @@ import type { FetchRequest, FetchResponse } from "./messaging";
 import { sendBackgroundMessage } from "./messaging";
 
 export const fetch = async (data: FetchRequest["data"]): Promise<string> => {
+	// Try a direct fetch from the content script first. On iOS Safari, the
+	// background page can't reach external APIs even with host permissions, so
+	// we use direct CORS fetches when the API supports it (most do). Fall back
+	// to the background path for APIs that don't allow cross-origin access.
+	try {
+		const url = new URL(data.url);
+		if (data.urlParameters) {
+			for (const [key, value] of Object.entries(data.urlParameters))
+				url.searchParams.append(key, value);
+		}
+		const response = await globalThis.fetch(url.toString(), {
+			method: data.method,
+			headers: data.headers,
+			credentials: data.credentials,
+		});
+		if (response.ok) return await response.text();
+	} catch {
+		// fall through to background fetch
+	}
+
 	const response = await sendBackgroundMessage<FetchRequest, FetchResponse>({
 		type: "fetch",
 		data,
 	});
+	if (response.data.error) throw new Error(response.data.error);
 	return response.data.body;
 };
 

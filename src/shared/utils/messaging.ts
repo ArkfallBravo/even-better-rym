@@ -18,6 +18,7 @@ export type FetchResponse = {
 	type: "fetch";
 	data: {
 		body: string;
+		error?: string;
 	};
 };
 

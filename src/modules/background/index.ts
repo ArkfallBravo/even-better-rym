@@ -30,7 +30,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		const respond = sendResponse as (response: BackgroundResponse) => void;
 		getResponse(message, tabId)
 			.then(respond)
-			.catch((err: unknown) => respond({ id: "", type: "fetch", data: { body: String(err) } }));
+			.catch((err: unknown) => respond({ id: "", type: "fetch", data: { body: "", error: String(err) } }));
 		return true; // keep channel open until sendResponse is called
 	}
 });
