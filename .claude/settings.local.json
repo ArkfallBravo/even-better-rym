@@ -5,7 +5,10 @@
       "Bash(MANIFEST_VERSION=3 npm run build)",
       "Bash(xcrun safari-web-extension-converter *)",
       "Bash(npx tsc *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(find \"/Users/lillyanasimson\" -name \"Custom chart*Rate Your Music.html\" 2>/dev/null | head -5)",
+      "Bash(cat /tmp/rym-browser.js | fold -s -w 200 | head -120)",
+      "Bash(npx vite *)"
     ]
   }
 }

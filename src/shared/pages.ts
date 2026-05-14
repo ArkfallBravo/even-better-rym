@@ -14,6 +14,7 @@ export const pages = {
 	searchBar: "/",
 	filmChartGenreLinks: "/charts/",
 	filmGenreChartButton: "/film_genre/",
+	chartFilterTextfields: "/charts/",
 } as const;
 
 export type PageKey = keyof typeof pages;
@@ -34,6 +35,7 @@ export const pageLabels: Record<PageKey, string> = {
 	searchBar: "Search Bar Shortcuts",
 	filmChartGenreLinks: "Film Chart Genre Links",
 	filmGenreChartButton: "Film Genre Chart Button",
+	chartFilterTextfields: "Chart Filter Text Fields",
 };
 
 export const pageGroupLabels: Partial<Record<string, string>> = {
@@ -78,6 +80,8 @@ export const pageHints: Record<PageKey, string> = {
 		"On film chart pages, redirects genre links to their corresponding film genre pages.",
 	filmGenreChartButton:
 		"On film genre pages, adds a button to open the top chart filtered by that genre.",
+	chartFilterTextfields:
+		"Replaces the chart sidebar's single search bar with one text field per filter category (genres, influences, descriptors, etc.) — autocomplete and tokenized commit on Update Chart.",
 };
 
 // Page keys whose features are global and should not affect the toolbar icon
