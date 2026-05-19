@@ -350,6 +350,10 @@
 
 /* ===== Make timeline behave like normal page content (no internal scrolling) ===== */
 
+#rymmt-panel.rymmt-hidden {
+  display: none !important;
+}
+
 /* Panel should NOT be its own scrolling viewport */
 #rymmt-panel,
 .rymmt-panel {

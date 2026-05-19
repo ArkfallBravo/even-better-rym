@@ -907,7 +907,7 @@ function injectLinkIfNeeded(): void {
 
   const link = document.createElement('span')
   link.className = LINK_CLASS
-  link.textContent = '[timeline]'
+  link.textContent = '[Timeline]'
   link.addEventListener('click', () => {
     togglePanel(membersHeaderEl)
   })
