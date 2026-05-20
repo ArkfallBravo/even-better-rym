@@ -16,6 +16,7 @@ export const fetch = async (data: FetchRequest["data"]): Promise<string> => {
 			method: data.method,
 			headers: data.headers,
 			credentials: data.credentials,
+			body: data.body,
 		});
 		if (response.ok) return await response.text();
 	} catch {
