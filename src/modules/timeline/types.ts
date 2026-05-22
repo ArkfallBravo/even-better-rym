@@ -21,6 +21,7 @@ export type Member = {
 	roles: string[];
 	stints: Stint[];
 	raw: string;
+	url?: string;
 	startYear?: number | null;
 	endYear?: number | null;
 };

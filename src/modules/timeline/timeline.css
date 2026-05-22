@@ -20,6 +20,7 @@
 	--rymmt-track-border: currentColor;
 
 	--rymmt-muted-text: inherit;
+	--rymmt-link-color: #0645ad;
 
 	--rymmt-album-color: transparent;
 	--rymmt-live-color: transparent;
@@ -77,7 +78,6 @@
 	border: 1px solid var(--rymmt-panel-border);
 	border-radius: 12px;
 	z-index: 2147483647;
-	box-shadow: 0 14px 42px rgba(0, 0, 0, 0.55);
 	max-height: none !important;
 }
 
@@ -178,7 +178,6 @@
 	background: var(--rymmt-panel-bg);
 	color: var(--rymmt-panel-text);
 	padding: 10px;
-	border-radius: 6px;
 
 	width: 100%; /* NEW: make it respect container width */
 	max-width: 100%; /* NEW */
@@ -288,10 +287,17 @@ body.rymmt-fs-open {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+#rymmt-panel .rymmt-name a {
+	color: var(--rymmt-link-color);
+	text-decoration: none;
+}
+#rymmt-panel .rymmt-name a:hover {
+	text-decoration: underline;
+}
 
 #rymmt-panel .rymmt-track {
 	position: relative;
-	height: 16px;
+	height: 20px;
 	border: 0;
 	background: transparent;
 	overflow: visible;
@@ -302,7 +308,10 @@ body.rymmt-fs-open {
 /* Ticks behind everything */
 #rymmt-panel .rymmt-ticks {
 	position: absolute;
-	inset: 0;
+	top: 0;
+	bottom: 0;
+	left: calc(160px + 12px);
+	right: 0;
 	pointer-events: none;
 	z-index: 1;
 }
@@ -320,8 +329,7 @@ body.rymmt-fs-open {
 /* Member role bar */
 #rymmt-panel .rymmt-bar {
 	position: absolute;
-	top: 2px;
-	height: 14px;
+	height: 100%;
 	border-radius: 2px;
 	z-index: 2;
 
@@ -550,6 +558,9 @@ body.rymmt-fs-open {
 		grid-template-columns: 120px minmax(0, 1fr);
 	}
 	#rymmt-panel .rymmt-markers-global {
+		left: calc(120px + 12px);
+	}
+	#rymmt-panel .rymmt-ticks {
 		left: calc(120px + 12px);
 	}
 }

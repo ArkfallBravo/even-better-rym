@@ -80,6 +80,7 @@ export function applyRymThemeVars(
 		panelEl.style.setProperty("--rymmt-ep-color", "#2dd4bf"); // teal-400
 		panelEl.style.setProperty("--rymmt-single-color", "#fb923c"); // orange-400
 		panelEl.style.setProperty("--rymmt-additional-color", "#c4b5fd"); // violet-300
+		panelEl.style.setProperty("--rymmt-link-color", "#60a5fa"); // blue-400 for dark mode
 	} else {
 		panelEl.style.setProperty("--rymmt-track-border", "rgba(0,0,0,0.35)");
 		panelEl.style.setProperty("--rymmt-panel-border", "rgba(0,0,0,0.35)");
@@ -94,6 +95,7 @@ export function applyRymThemeVars(
 		panelEl.style.setProperty("--rymmt-ep-color", "#0f766e"); // teal-700
 		panelEl.style.setProperty("--rymmt-single-color", "#c2410c"); // orange-700
 		panelEl.style.setProperty("--rymmt-additional-color", "#6d28d9"); // violet-700
+		panelEl.style.setProperty("--rymmt-link-color", "#0645ad"); // blue-700 for light mode
 	}
 
 	panelEl.dataset.rymmtIsDark = isDark ? "1" : "0";

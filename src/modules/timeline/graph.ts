@@ -180,7 +180,6 @@ function buildMemberRowHtml(
 	axisMin: number,
 	axisMax: number,
 	total: number,
-	ticksHtml: string,
 	colorMap: Map<string, string>,
 ): string {
 	const stripes = buildMemberStripes(member.roles ?? [], colorMap);
@@ -197,10 +196,10 @@ function buildMemberRowHtml(
 	const stints: Stint[] =
 		Array.isArray(member.stints) && member.stints.length
 			? member.stints.filter(
-					(stint): stint is Stint =>
-						!!stint &&
-						Number.isFinite(stint.start) &&
-						Number.isFinite(stint.end),
+				(stint): stint is Stint =>
+					!!stint &&
+					Number.isFinite(stint.start) &&
+					Number.isFinite(stint.end),
 				)
 			: [{ start: fallbackStart, end: fallbackEnd }];
 
@@ -210,9 +209,13 @@ function buildMemberRowHtml(
 		)
 		.join("");
 
+		const nameContent = member.url
+		? `<a href="${escapeHtml(member.url)}" class="rymmt-name-link">${escapeHtml(member.name)}</a>`
+		: escapeHtml(member.name);
+
 	return `<div class="rymmt-row">
-        <div class="rymmt-name" title="${escapeHtml(member.name)}">${escapeHtml(member.name)}</div>
-        <div class="rymmt-track">${ticksHtml}${bars}</div>
+        <div class="rymmt-name" title="${escapeHtml(member.name)}">${nameContent}</div>
+        <div class="rymmt-track">${bars}</div>
       </div>`;
 }
 
@@ -372,7 +375,6 @@ export function buildGraph(
 				axisMin,
 				axisMax,
 				total,
-				ticksHtml,
 				chartColorMap,
 			),
 		)
@@ -387,6 +389,7 @@ export function buildGraph(
       </div>
       <div class="rymmt-grid rymmt-grid-has-overlay">
         ${markersOverlayHtml}
+        <div class="rymmt-ticks">${ticksHtml}</div>
         ${rowsHtml}
       </div>
       <div class="rymmt-axis">

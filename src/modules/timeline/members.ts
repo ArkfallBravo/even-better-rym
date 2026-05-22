@@ -58,13 +58,19 @@ function mergeIntoMemberMap(
 	inside: string,
 	stints: Stint[],
 	cleanRoles: string[],
+	urlsByName?: Map<string, string>,
 ): void {
 	const member = memberMap.get(name) ?? {
 		name,
 		roles: [],
 		stints: [],
 		raw: `${name} (${inside})`,
+		url: urlsByName?.get(name),
 	};
+	if (!member.url && urlsByName?.has(name)) {
+		member.url = urlsByName.get(name);
+	}
+
 
 	for (const role of cleanRoles) {
 		if (!member.roles.includes(role)) member.roles.push(role);
@@ -123,9 +129,21 @@ function resolveUnknownEnds(members: Member[]): void {
 	}
 }
 
-export function parseMembersFromText(text: string): ParsedMembers {
+export function parseMembersFromText(
+	text: string,
+	domElement?: HTMLElement | null,
+): ParsedMembers {
 	const sourceString = (text || "").replaceAll(/\s+/g, " ").trim();
 	const regExp = /([^()]+?)\s*\(([^)]*)\)\s*(?:,|$)/g;
+
+	const urlsByName = new Map<string, string>();
+	if (domElement) {
+		for (const link of domElement.querySelectorAll<HTMLAnchorElement>("a.artist")) {
+			const name = (link.textContent ?? "").trim();
+			const href = link.getAttribute("href");
+			if (name && href) urlsByName.set(name, href);
+		}
+	}
 
 	const memberMap = new Map<string, Member>();
 	let maxYearMentioned: number | null = null;
@@ -151,6 +169,7 @@ export function parseMembersFromText(text: string): ParsedMembers {
 			memberData,
 			stints,
 			sanitizeRoles(roles),
+			urlsByName,
 		);
 	}
 

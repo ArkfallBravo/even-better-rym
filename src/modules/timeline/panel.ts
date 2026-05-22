@@ -20,7 +20,7 @@ function renderIntoPanel(
 	const membersContent = headerEl ? findAdjacentInfoContent(headerEl) : null;
 	const renderedSpan = membersContent?.querySelector("span.rendered_text");
 	const membersText = (renderedSpan ?? membersContent)?.textContent ?? "";
-	const parsed = parseMembersFromText(membersText ?? "");
+	const parsed = parseMembersFromText(membersText ?? "", renderedSpan ?? membersContent);
 
 	const bounds = readFormedAndDisbanded(document);
 	const formedYear = decimalYearOf(bounds.formedDate);
