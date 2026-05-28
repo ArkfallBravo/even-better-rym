@@ -21,6 +21,7 @@
 
 	--rymmt-muted-text: inherit;
 	--rymmt-link-color: #0645ad;
+	--rymmt-row-alt-bg: transparent;
 
 	--rymmt-album-color: transparent;
 	--rymmt-live-color: transparent;
@@ -269,6 +270,16 @@ body.rymmt-fs-open {
 	position: relative;
 	z-index: 2;
 	/* Pass pointer events through the row gaps so marker tooltips remain hoverable */
+	pointer-events: none;
+}
+
+/* Alternating row background for readability - use pseudo-element with z-index: 0 to sit behind ticks and markers */
+#rymmt-panel .rymmt-row:nth-child(even)::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-color: var(--rymmt-row-alt-bg);
+	z-index: 0;
 	pointer-events: none;
 }
 
