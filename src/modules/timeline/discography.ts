@@ -1,4 +1,4 @@
-import { getDayOfYear, isLeapYear, MONTH_NAMES, parseDateFromText } from "./date-utils";
+import { getDayOfYear, isLeapYear, MONTH_NAMES, parseDateFromText, currentDecimalYear } from "./date-utils";
 import { findAdjacentInfoContent } from "./dom-helpers";
 import type { Bounds, DiscoMarker, DiscoType, MarkersByType } from "./types";
 
@@ -80,6 +80,7 @@ export function extractDiscographyMarkersFromDOM(
 		single: [],
 		ep: [],
 		additional: [],
+		show: [],
 	};
 
 	const discographyRoot = document.getElementById("discography");
@@ -114,6 +115,185 @@ export function extractDiscographyMarkersFromDOM(
 			seen.add(identifier);
 			return true;
 		});
+	}
+
+	return markers;
+}
+
+function normalizeShowTitle(text: string): string {
+	return text
+		.replace(/[\u2013\u2014–—]+/g, " - ")
+		.replace(/^[\s:\-–—]+/, "")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
+function parseDecimalYearFromDateString(text: string): number | null {
+	const date = parseDateFromText(text);
+	if (!date) return null;
+	const year = date.getFullYear();
+	const day = date.getDate();
+	const month = date.getMonth() + 1;
+	const doy = getDayOfYear(year, month, day);
+	const daysInYear = isLeapYear(year) ? 366 : 365;
+	return year + (doy - 1) / daysInYear;
+}
+
+function stripShowDateFromText(item: HTMLElement): string {
+	const dateSpan = getShowDateSpan(item);
+	const dateText = dateSpan?.textContent?.trim() ?? "";
+	const rawText = item.textContent?.replace(/\s+/g, " ").trim() ?? "";
+	if (!rawText) return "";
+	if (!dateText) return rawText;
+	return rawText.replace(dateText, "").replace(/^[\s:\-–—]+/, "").trim();
+}
+
+// Extract the date span from a show list item; prefers exact width match
+function getShowDateSpan(item: HTMLElement): HTMLElement | null {
+	// First try: look for the date span with width:10em (exact show date)
+	const spans = Array.from(item.querySelectorAll<HTMLElement>("span"));
+	for (const span of spans) {
+		const style = span.getAttribute("style") || "";
+		if (style.includes("width") && style.includes("10em")) {
+			return span;
+		}
+	}
+	// Fallback: first span that has a date-like text
+	for (const span of spans) {
+		const text = span.textContent?.trim() || "";
+		// Check if it looks like a date (has a 4-digit year)
+		if (/\b(19|20)\d{2}\b/.test(text)) {
+			return span;
+		}
+	}
+	return spans[0] ?? null;
+}
+
+function extractShowTitleFromListItem(item: HTMLElement): string | null {
+	const rawText = stripShowDateFromText(item);
+	if (!rawText) return null;
+
+	const normalized = normalizeShowTitle(rawText);
+
+	// Prefer explicit separators for show name and venue/city when available.
+	const atMatch = normalized.match(/^(.*?)(?:\s+@\s+|\s+at\s+)(.*)$/i);
+	if (atMatch) {
+		return `${normalizeShowTitle(atMatch[1])} @ ${normalizeShowTitle(atMatch[2])}`;
+	}
+
+	return normalized;
+}
+
+function extractShowDateFromListItem(item: HTMLElement): number | null {
+	const dateSpan = getShowDateSpan(item);
+	const dateText = dateSpan?.textContent?.trim();
+	if (!dateText) return null;
+	return parseDecimalYearFromDateString(dateText);
+}
+
+function clickPastShowsButton(): void {
+	const expandButton = document.getElementById("disco_expand_prev");
+	if (!expandButton) return;
+
+	// Only click if the button is still visible (past shows not yet loaded)
+	if (expandButton.offsetParent === null) return;
+
+	// Trigger the click via multiple methods to ensure it fires
+	expandButton.click();
+	expandButton.dispatchEvent(
+		new MouseEvent("click", {
+			bubbles: true,
+			cancelable: true,
+			view: window,
+		}),
+	);
+}
+
+async function waitForPastShowsLoaded(timeoutMs = 3000): Promise<void> {
+	return new Promise((resolve) => {
+		const start = performance.now();
+		const showsContainer = document.querySelector<HTMLElement>(
+			".section_artist_shows ul.shows",
+		);
+		const initialItemCount = showsContainer
+			? showsContainer.querySelectorAll("li").length
+			: 0;
+
+		// If no shows container, just wait and return
+		if (!showsContainer) {
+			setTimeout(resolve, timeoutMs);
+			return;
+		}
+
+		const observer = new MutationObserver(() => {
+			const expandButton = document.getElementById("disco_expand_prev");
+			const currentItemCount = showsContainer.querySelectorAll("li").length;
+
+			// If the expand button disappeared, content likely loaded
+			if (!expandButton) {
+				observer.disconnect();
+				resolve();
+				return;
+			}
+
+			// If number of items increased, check whether any newly added item
+			// represents a past show (date <= now). If so, we're done.
+			if (currentItemCount > initialItemCount) {
+				const now = currentDecimalYear();
+				const items = Array.from(showsContainer.querySelectorAll<HTMLElement>("li"));
+				for (const it of items) {
+					const d = extractShowDateFromListItem(it);
+					if (d !== null && d <= now) {
+						observer.disconnect();
+						resolve();
+						return;
+					}
+				}
+			}
+
+			if (performance.now() - start > timeoutMs) {
+				observer.disconnect();
+				resolve();
+			}
+		});
+		observer.observe(document.body, {
+			childList: true,
+			subtree: true,
+		});
+	});
+}
+
+export async function openPastShows(timeoutMs = 3000): Promise<void> {
+	clickPastShowsButton();
+	await waitForPastShowsLoaded(timeoutMs);
+}
+
+export async function extractShowMarkersFromDOM(
+	disbandedYear: number | null,
+): Promise<DiscoMarker[]> {
+	clickPastShowsButton();
+	await waitForPastShowsLoaded();
+	const showsSection = document.querySelector<HTMLElement>(
+		".section_artist_shows ul.shows",
+	);
+	if (!showsSection) return [];
+
+	const markers: DiscoMarker[] = [];
+	const seen = new Set<string>();
+
+	for (const item of Array.from(showsSection.querySelectorAll<HTMLElement>("li"))) {
+		const decimalYear = extractShowDateFromListItem(item);
+		if (decimalYear === null) continue;
+		if (disbandedYear !== null && Math.floor(decimalYear) > disbandedYear)
+			continue;
+
+		const title = extractShowTitleFromListItem(item);
+		if (!title) continue;
+
+		const identifier = `${decimalYear.toFixed(5)}|${title}`;
+		if (seen.has(identifier)) continue;
+		seen.add(identifier);
+		markers.push({ year: decimalYear, title, type: "show" });
 	}
 
 	return markers;

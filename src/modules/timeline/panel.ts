@@ -1,7 +1,9 @@
 import { currentDecimalYear, decimalYearOf } from "./date-utils";
 import {
 	extractDiscographyMarkersFromDOM,
+	extractShowMarkersFromDOM,
 	readFormedAndDisbanded,
+	openPastShows,
 } from "./discography";
 import {
 	findAdjacentInfoContent,
@@ -13,20 +15,25 @@ import { applyRymThemeVars } from "./theme";
 
 const PANEL_ID = "rymmt-panel";
 
-function renderIntoPanel(
+async function renderIntoPanel(
 	panelEl: HTMLElement,
 	headerEl: HTMLElement | null,
-): void {
+): Promise<void> {
 	const membersContent = headerEl ? findAdjacentInfoContent(headerEl) : null;
 	const renderedSpan = membersContent?.querySelector("span.rendered_text");
 	const membersText = (renderedSpan ?? membersContent)?.textContent ?? "";
-	const parsed = parseMembersFromText(membersText ?? "", renderedSpan ?? membersContent);
+	const parsed = parseMembersFromText(
+		membersText ?? "",
+		(renderedSpan ?? membersContent) as HTMLElement | null,
+	);
 
 	const bounds = readFormedAndDisbanded(document);
 	const formedYear = decimalYearOf(bounds.formedDate);
 	const disbandedYear = decimalYearOf(bounds.disbandedDate);
 
 	const disco = extractDiscographyMarkersFromDOM(disbandedYear);
+	const showMarkers = await extractShowMarkersFromDOM(disbandedYear);
+	const markers = { ...disco, show: showMarkers };
 
 	const allReleaseYears = [
 		...disco.album,
@@ -34,6 +41,7 @@ function renderIntoPanel(
 		...disco.single,
 		...disco.ep,
 		...disco.additional,
+		...showMarkers,
 	].map((m) => m.year);
 
 	const latestAnyRelease = allReleaseYears.length
@@ -60,7 +68,7 @@ function renderIntoPanel(
 		formedYear,
 		endYear,
 		disbandedYear,
-		markers: disco,
+		markers,
 	});
 	attachGraphInteractivity(panelEl);
 }
@@ -88,7 +96,11 @@ export function togglePanel(headerEl: HTMLElement | null): void {
 		if (isHidden) {
 			panel.classList.remove("rymmt-hidden");
 			applyRymThemeVars(panel, headerEl);
-			renderIntoPanel(panel, headerEl);
+			// Ensure past shows are opened and loaded before extracting
+			void (async () => {
+				await openPastShows(3000);
+				void renderIntoPanel(panel, headerEl);
+			})();
 		} else {
 			panel.classList.add("rymmt-hidden");
 		}

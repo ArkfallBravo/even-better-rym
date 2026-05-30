@@ -32,9 +32,12 @@ const HTML_ESCAPE_MAP: Record<string, string> = {
 	">": "&gt;",
 	'"': "&quot;",
 	"'": "&#39;",
+	"\n": "&#10;",
+	"\r": "&#13;",
+	"\t": "&#9;",
 };
 
 export function escapeHtml(s: string): string {
 	if (s == null) return "";
-	return String(s).replaceAll(/[&<>"']/g, (c) => HTML_ESCAPE_MAP[c] ?? c);
+	return String(s).replaceAll(/[&<>"'\n\r\t]/g, (c) => HTML_ESCAPE_MAP[c] ?? c);
 }

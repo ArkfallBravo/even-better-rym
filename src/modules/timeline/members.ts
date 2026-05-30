@@ -59,6 +59,7 @@ function mergeIntoMemberMap(
 	stints: Stint[],
 	cleanRoles: string[],
 	urlsByName?: Map<string, string>,
+	titlesByName?: Map<string, string>,
 ): void {
 	const member = memberMap.get(name) ?? {
 		name,
@@ -66,6 +67,7 @@ function mergeIntoMemberMap(
 		stints: [],
 		raw: `${name} (${inside})`,
 		url: urlsByName?.get(name),
+		title: titlesByName?.get(name),
 	};
 	if (!member.url && urlsByName?.has(name)) {
 		member.url = urlsByName.get(name);
@@ -137,11 +139,14 @@ export function parseMembersFromText(
 	const regExp = /([^()]+?)\s*\(([^)]*)\)\s*(?:,|$)/g;
 
 	const urlsByName = new Map<string, string>();
+	const titlesByName = new Map<string, string>();
 	if (domElement) {
 		for (const link of domElement.querySelectorAll<HTMLAnchorElement>("a.artist")) {
 			const name = (link.textContent ?? "").trim();
 			const href = link.getAttribute("href");
+			const title = link.getAttribute("title")?.trim();
 			if (name && href) urlsByName.set(name, href);
+			if (name && title) titlesByName.set(name, title);
 		}
 	}
 
@@ -170,6 +175,7 @@ export function parseMembersFromText(
 			stints,
 			sanitizeRoles(roles),
 			urlsByName,
+			titlesByName,
 		);
 	}
 

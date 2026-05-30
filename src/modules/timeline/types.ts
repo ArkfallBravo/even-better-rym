@@ -2,7 +2,13 @@ export type RGB = { r: number; g: number; b: number };
 
 export type RoleCanonEntry = { key: string; match: RegExp[] };
 
-export type DiscoType = "album" | "live" | "single" | "ep" | "additional";
+export type DiscoType =
+	| "album"
+	| "live"
+	| "single"
+	| "ep"
+	| "additional"
+	| "show";
 
 export type DiscoMarker = { year: number; title: string; type: DiscoType };
 
@@ -12,6 +18,7 @@ export type MarkersByType = {
 	single: DiscoMarker[];
 	ep: DiscoMarker[];
 	additional: DiscoMarker[];
+	show: DiscoMarker[];
 };
 
 export type Stint = { start: number; end: number };
@@ -22,6 +29,7 @@ export type Member = {
 	stints: Stint[];
 	raw: string;
 	url?: string;
+	title?: string;
 	startYear?: number | null;
 	endYear?: number | null;
 };

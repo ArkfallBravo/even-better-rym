@@ -26,6 +26,7 @@ const DISCO_TYPE_LABELS: Record<string, string> = {
 	ep: "EP",
 	single: "Single",
 	additional: "Add.",
+	show: "Show",
 };
 
 export function buildMarkersOverlayHtml(
@@ -57,9 +58,12 @@ export function buildMarkersOverlayHtml(
 			const entries = yearMap.get(year)!;
 
 			const tooltipText = entries
-				.map((e) => `${e.title} (${DISCO_TYPE_LABELS[e.type] ?? e.type})`)
-				.join("\n");
-
+			.map((e) =>
+				e.type === "show"
+					? e.title
+					: `${e.title} (${DISCO_TYPE_LABELS[e.type] ?? e.type})`,
+			)
+			.join("\n");
 			// One color segment per unique type at this year
 			const seenTypes = new Set<string>();
 			const segments = entries
@@ -209,8 +213,11 @@ function buildMemberRowHtml(
 		)
 		.join("");
 
-		const nameContent = member.url
-		? `<a href="${escapeHtml(member.url)}" class="rymmt-name-link">${escapeHtml(member.name)}</a>`
+	const linkTitle = member.title ?? member.name;
+	const nameContent = member.url
+		? `<a href="${escapeHtml(member.url)}" class="rymmt-name-link" title="${escapeHtml(
+			linkTitle,
+		)}">${escapeHtml(member.name)}</a>`
 		: escapeHtml(member.name);
 
 	return `<div class="rymmt-row">
@@ -253,9 +260,8 @@ function computeAxisBounds(
 		...(opts.markers?.live ?? []).map((marker) => Math.floor(marker.year)),
 		...(opts.markers?.single ?? []).map((marker) => Math.floor(marker.year)),
 		...(opts.markers?.ep ?? []).map((marker) => Math.floor(marker.year)),
-		...(opts.markers?.additional ?? []).map((marker) =>
-			Math.floor(marker.year),
-		),
+		...(opts.markers?.additional ?? []).map((marker) => Math.floor(marker.year)),
+		...(opts.markers?.show ?? []).map((marker) => Math.floor(marker.year)),
 	];
 
 	const allYears = collectMemberStintYears(members, markerYears);
@@ -304,6 +310,11 @@ function buildReleasesLegendHtml(markers?: MarkersByType): string {
 	if (markers.additional.length) {
 		chips.push(
 			`<button class="rymmt-role-chip rymmt-release-chip" data-rymmt-type="additional" title="Click to hide/show Additional"><span class="rymmt-role-swatch" style="background:var(--rymmt-additional-color)"></span>Additional</button>`,
+		);
+	}
+	if (markers.show.length) {
+		chips.push(
+			`<button class="rymmt-role-chip rymmt-release-chip" data-rymmt-type="show" title="Click to hide/show Shows"><span class="rymmt-role-swatch" style="background:var(--rymmt-show-color)"></span>Shows</button>`,
 		);
 	}
 	return chips.join("");
@@ -388,9 +399,9 @@ export function buildGraph(
         <button class="rymmt-btn rymmt-fs-close-btn" title="Exit fullscreen" aria-label="Exit fullscreen">&#x2715; Exit fullscreen</button>
       </div>
       <div class="rymmt-grid rymmt-grid-has-overlay">
+        ${rowsHtml}
         ${markersOverlayHtml}
         <div class="rymmt-ticks">${ticksHtml}</div>
-        ${rowsHtml}
       </div>
       <div class="rymmt-axis">
         <div></div>
@@ -410,7 +421,7 @@ export function buildGraph(
 
 export function attachGraphInteractivity(panel: HTMLElement): void {
 	// Types hidden on initial open (only Albums shown by default)
-	const INITIALLY_HIDDEN = new Set(["live", "ep", "single", "additional"]);
+	const INITIALLY_HIDDEN = new Set(["live", "ep", "single", "additional", "show"]);
 	const hiddenTypes = new Set<string>(INITIALLY_HIDDEN);
 
 	// Re-evaluate each mgroup: hide it entirely when every one of its segments

@@ -20,14 +20,16 @@
 	--rymmt-track-border: currentColor;
 
 	--rymmt-muted-text: inherit;
-	--rymmt-link-color: #0645ad;
 	--rymmt-row-alt-bg: transparent;
+	--rymmt-link-color: #0645ad;
+	--rymmt-link-hover-color: #0b539c;
 
 	--rymmt-album-color: transparent;
 	--rymmt-live-color: transparent;
 	--rymmt-ep-color: transparent;
 	--rymmt-single-color: transparent;
 	--rymmt-additional-color: transparent;
+	--rymmt-show-color: transparent;
 	--rymmt-tick-color: rgba(255, 255, 255, 0.25);
 	--rymmt-tick-major-color: rgba(255, 255, 255, 0.45);
 	--rymmt-marker-border: rgba(0, 0, 0, 0.6);
@@ -76,8 +78,6 @@
 	overflow: visible;
 	background: var(--rymmt-panel-bg);
 	color: var(--rymmt-panel-text);
-	border: 1px solid var(--rymmt-panel-border);
-	border-radius: 12px;
 	z-index: 2147483647;
 	max-height: none !important;
 }
@@ -99,7 +99,7 @@
 	padding: 10px 12px;
 	gap: 10px;
 	top: 0;
-	background: rgba(0, 0, 0, 0.92);
+	background: var(--mono-f8, rgba(255,255,255,0.08));
 	border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 	backdrop-filter: blur(8px);
 }
@@ -176,7 +176,6 @@
 	overflow: visible !important;
 	position: static !important; /* prevents sticky/fixed hacks from taking effect */
 	border: 1px solid var(--rymmt-panel-border);
-	background: var(--rymmt-panel-bg);
 	color: var(--rymmt-panel-text);
 	padding: 10px;
 
@@ -265,22 +264,16 @@ body.rymmt-fs-open {
 	grid-template-columns: 160px minmax(0, 1fr);
 	column-gap: 12px;
 	align-items: center;
+	min-height: 1.5em;
 
-	/* Lift rows above the markers-global overlay (z-index 1) */
 	position: relative;
-	z-index: 2;
+	z-index: 0;
 	/* Pass pointer events through the row gaps so marker tooltips remain hoverable */
 	pointer-events: none;
 }
 
-/* Alternating row background for readability - use pseudo-element with z-index: 0 to sit behind ticks and markers */
-#rymmt-panel .rymmt-row:nth-child(even)::before {
-	content: '';
-	position: absolute;
-	inset: 0;
+#rymmt-panel .rymmt-row:nth-child(even) {
 	background-color: var(--rymmt-row-alt-bg);
-	z-index: 0;
-	pointer-events: none;
 }
 
 /* Restore interactivity on the interactive parts of each row */
@@ -291,18 +284,21 @@ body.rymmt-fs-open {
 
 #rymmt-panel .rymmt-name {
 	font-size: 13px;
-	color: var(--rymmt-panel-text);
 	opacity: 0.9;
 	line-height: 1.2;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-#rymmt-panel .rymmt-name a {
+#rymmt-panel .rymmt-name a,
+#rymmt-panel .rymmt-name-link {
 	color: var(--rymmt-link-color);
 	text-decoration: none;
+	font-weight: 700;
 }
-#rymmt-panel .rymmt-name a:hover {
+#rymmt-panel .rymmt-name a:hover,
+#rymmt-panel .rymmt-name-link:hover {
+	color: var(--rymmt-link-hover-color);
 	text-decoration: underline;
 }
 
@@ -341,7 +337,7 @@ body.rymmt-fs-open {
 #rymmt-panel .rymmt-bar {
 	position: absolute;
 	height: 100%;
-	border-radius: 2px;
+	border-radius: 1px;
 	z-index: 2;
 
 	/* Stripes fill the bar proportionally - no gap/padding to avoid whitespace */
@@ -415,6 +411,9 @@ body.rymmt-fs-open {
 #rymmt-panel .rymmt-mseg-additional {
 	background: var(--rymmt-additional-color);
 }
+#rymmt-panel .rymmt-mseg-show {
+	background: var(--rymmt-show-color);
+}
 
 /* Hide marker segments when their type is toggled off */
 #rymmt-panel[data-hide-album] .rymmt-mseg-album {
@@ -430,6 +429,9 @@ body.rymmt-fs-open {
 	display: none;
 }
 #rymmt-panel[data-hide-additional] .rymmt-mseg-additional {
+	display: none;
+}
+#rymmt-panel[data-hide-show] .rymmt-mseg-show {
 	display: none;
 }
 
