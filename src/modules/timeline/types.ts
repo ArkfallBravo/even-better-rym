@@ -47,5 +47,7 @@ export type GraphOpts = {
 	formedYear?: number | null;
 	endYear?: number | null;
 	disbandedYear?: number | null;
+	axisStartLabel?: string;
+	axisEndLabel?: string;
 	markers?: MarkersByType;
 };

@@ -15,6 +15,14 @@ import { applyRymThemeVars } from "./theme";
 
 const PANEL_ID = "rymmt-panel";
 
+function formatFullDate(date: Date): string {
+	return date.toLocaleDateString("en-GB", {
+		day: "2-digit",
+		month: "short",
+		year: "numeric",
+	});
+}
+
 async function renderIntoPanel(
 	panelEl: HTMLElement,
 	headerEl: HTMLElement | null,
@@ -30,6 +38,13 @@ async function renderIntoPanel(
 	const bounds = readFormedAndDisbanded(document);
 	const formedYear = decimalYearOf(bounds.formedDate);
 	const disbandedYear = decimalYearOf(bounds.disbandedDate);
+
+	const axisStartLabel = bounds.formedDate
+		? formatFullDate(bounds.formedDate)
+		: "First Release";
+	const axisEndLabel = bounds.disbandedDate
+		? formatFullDate(bounds.disbandedDate)
+		: "Now";
 
 	const disco = extractDiscographyMarkersFromDOM(disbandedYear);
 	const showMarkers = await extractShowMarkersFromDOM(disbandedYear);
@@ -68,6 +83,8 @@ async function renderIntoPanel(
 		formedYear,
 		endYear,
 		disbandedYear,
+		axisStartLabel,
+		axisEndLabel,
 		markers,
 	});
 	attachGraphInteractivity(panelEl);

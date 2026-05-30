@@ -372,12 +372,10 @@ export function buildGraph(
 		opts.markers,
 	);
 	const total = axisMax - axisMin || 1;
-	const axisStartLabel = axisMinKnown
-		? String(Math.floor(axisMin))
-		: "First Release";
-	const axisEndLabel = Number.isFinite(opts.disbandedYear)
-		? String(Math.floor(axisMax))
-		: "Now";
+	const axisStartLabel = opts.axisStartLabel ??
+		(axisMinKnown ? String(Math.floor(axisMin)) : "First Release");
+	const axisEndLabel = opts.axisEndLabel ??
+		(Number.isFinite(opts.disbandedYear) ? String(Math.floor(axisMax)) : "Now");
 
 	const rowsHtml = normalizedMembers
 		.map((member) =>
