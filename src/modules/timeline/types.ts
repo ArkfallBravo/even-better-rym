@@ -41,7 +41,12 @@ export type ParsedMembers = {
 	maxYearMentioned: number | null;
 };
 
-export type Bounds = { formedDate: Date | null; disbandedDate: Date | null };
+export type Bounds = {
+	formedDate: Date | null;
+	disbandedDate: Date | null;
+	formedLabel?: string;
+	disbandedLabel?: string;
+};
 
 export type GraphOpts = {
 	formedYear?: number | null;

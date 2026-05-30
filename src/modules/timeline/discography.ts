@@ -1,4 +1,12 @@
-import { getDayOfYear, isLeapYear, MONTH_NAMES, parseDateFromText, currentDecimalYear } from "./date-utils";
+import {
+	getDayOfYear,
+	isLeapYear,
+	MONTH_NAMES,
+	parseDateFromText,
+	parseFullDateFromText,
+	parseDateLabelFromText,
+	currentDecimalYear,
+} from "./date-utils";
 import { findAdjacentInfoContent } from "./dom-helpers";
 import type { Bounds, DiscoMarker, DiscoType, MarkersByType } from "./types";
 
@@ -333,7 +341,12 @@ export function readFormedAndDisbanded(
 		const contentEl = findAdjacentInfoContent(header);
 		if (!contentEl) continue;
 
-		const date = parseDateFromText(contentEl.textContent || "");
+		const labelText = parseDateLabelFromText(contentEl.textContent || "");
+		const date = parseFullDateFromText(contentEl.textContent || "");
+		if (labelText) {
+			if (label === "formed") result.formedLabel = labelText;
+			if (label === "disbanded") result.disbandedLabel = labelText;
+		}
 		if (date) updateBoundsFromLabel(result, label, date);
 	}
 

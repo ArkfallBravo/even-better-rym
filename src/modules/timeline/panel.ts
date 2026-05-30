@@ -41,10 +41,10 @@ async function renderIntoPanel(
 
 	const axisStartLabel = bounds.formedDate
 		? formatFullDate(bounds.formedDate)
-		: "First Release";
+		: bounds.formedLabel ?? "First Release";
 	const axisEndLabel = bounds.disbandedDate
 		? formatFullDate(bounds.disbandedDate)
-		: "Now";
+		: bounds.disbandedLabel ?? "Now";
 
 	const disco = extractDiscographyMarkersFromDOM(disbandedYear);
 	const showMarkers = await extractShowMarkersFromDOM(disbandedYear);
