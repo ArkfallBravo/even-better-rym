@@ -1,0 +1,43 @@
+.rymmt-small-map-root,
+#rymmt-map {
+	width: 100%;
+	border: 1px solid var(--rymmt-panel-border);
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.rymmt-small-map-root svg,
+#rymmt-map svg {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.land {
+	fill: #e0e0e0 !important;
+}
+
+.boundary {
+	stroke: #666 !important;
+	stroke-width: 0.5px !important;
+	fill: none !important;
+}
+
+.rymmt-small-map-marker {
+	fill: rgb(200, 0, 0);
+	stroke: #fff;
+	stroke-width: 1.5;
+	opacity: 0.45;
+}
+
+.rymmt-map-marker-count {
+	background: rgba(0,0,0,0.6);
+	color: white;
+	padding: 2px 6px;
+	border-radius: 999px;
+	font-size: 12px;
+}
+
+#precontent {
+	background-image: url('map.svg') !important;
+}

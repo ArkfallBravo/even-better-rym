@@ -41,32 +41,52 @@
 
 	--rymmt-role-guitar: #22c55e;
 	--rymmt-role-rhythm-guitar: #84cc16;
-
+	--rymmt-role-lap-steel: #7ed321;
+	--rymmt-role-lap-steel-guitar: #65d33f;
+	--rymmt-role-double-bass: #2e6dff;
 	--rymmt-role-bass: #3b82f6;
 	--rymmt-role-piccolo-bass: #2563eb;
+	--rymmt-role-dulcimer: #50b962;
+	--rymmt-role-hammered-dulcimer: #4aa352;
+	--rymmt-role-viola: #3d8a42;
+	--rymmt-role-cello: #35a052;
+	--rymmt-role-violin: #2e9642;
 
 	--rymmt-role-timbales: #dc2626;
 	--rymmt-role-bongos: #ea580c;
 	--rymmt-role-congas: #f97316;
 	--rymmt-role-drums: #f59e0b;
 	--rymmt-role-percussion: #facc15;
+	--rymmt-role-vibraphone: #fcd34d;
+	--rymmt-role-bells: #fef3c7;
 	--rymmt-role-glockenspiel: #d4bf18;
 
 	--rymmt-role-laptop: #5b6de8;
+	--rymmt-role-electronics: #6475f0;
 	--rymmt-role-synthesizer: #7060ef;
 	--rymmt-role-analogue-synthesizer: #8248ec;
 	--rymmt-role-sampler: #9638d4;
 	--rymmt-role-ondes-martenot: #9d3de8;
 	--rymmt-role-keyboards: #a855f7;
+	--rymmt-role-electronic-organ: #b565f2;
+	--rymmt-role-organ: #9d4de8;
+	--rymmt-role-mellotron: #a84bed;
 	--rymmt-role-piano: #b540ee;
 	--rymmt-role-toy-piano: #d946ef;
 
+	--rymmt-role-winds: #0ea5b8;
 	--rymmt-role-flute: #1dbf98;
+	--rymmt-role-jews-harp: #16b5a9;
+	--rymmt-role-melodica: #1fa99f;
+	--rymmt-role-harmonica: #1b9d95;
 	--rymmt-role-saxophone: #0db8c8;
 	--rymmt-role-trumpet: #0ca4d8;
 	--rymmt-role-trombone: #0a82be;
+	--rymmt-role-french-horn: #0b93cc;
 
+	--rymmt-role-tapes: #5aa4bc;
 	--rymmt-role-producer: #5a8ab8;
+	--rymmt-role-programming: #6595c5;
 	--rymmt-role-orchestration: #5070a8;
 	--rymmt-role-effects: #6070b8;
 
@@ -272,7 +292,7 @@ body.rymmt-fs-open {
 	pointer-events: none;
 }
 
-#rymmt-panel .rymmt-row:nth-child(even) {
+#rymmt-panel .rymmt-row:nth-child(odd) {
 	background-color: var(--rymmt-row-alt-bg);
 }
 

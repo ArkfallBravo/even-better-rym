@@ -92,10 +92,11 @@ function buildMemberStripes(
 	if (!roles.length) {
 		return `<div class="rymmt-stripe rymmt-stripe-neutral"></div>`;
 	}
+	const allRolesTitle = escapeHtml(roles.join(", "));
 	return roles
 		.map(
 			(role) =>
-				`<div class="rymmt-stripe" title="${escapeHtml(role)}" style="background:${colorMap.get(role) ?? "transparent"}"></div>`,
+				`<div class="rymmt-stripe" title="${allRolesTitle}" style="background:${colorMap.get(role) ?? "transparent"}"></div>`,
 		)
 		.join("");
 }
