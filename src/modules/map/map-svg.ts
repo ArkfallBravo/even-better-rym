@@ -1,5 +1,11 @@
 export const SMALL_MAP_SVG = `
 <svg preserveAspectRatio="xMinYMin meet" viewBox="0 0 500 333" class="svg-content-responsive">
+  <style>
+    /* Inline SVG defaults to ensure correct colors even when external CSS isn't applied */
+    .land { fill: #555; }
+    .boundary { stroke: #888; stroke-width: 0.5px; fill: none; }
+  </style>
+  <rect x="0" y="0" width="500" height="333" fill="#222"></rect>
   <g transform="translate(250,166.5)">
     <g>
       <path class="land"

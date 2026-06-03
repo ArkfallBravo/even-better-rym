@@ -29,18 +29,38 @@ function getMarkerGroup(svg: SVGSVGElement) {
 
 function createMarker(point: CityPoint, index: number) {
 	const { cx, cy } = latLonToSmallMapCoords(point.lat, point.lon);
-	const circle = document.createElementNS(SVG_NS, 'circle');
+	const circle = document.createElementNS(SVG_NS, 'circle') as SVGCircleElement;
 	circle.setAttribute('class', 'rymmt-small-map-marker');
-	circle.setAttribute('r', '3');
+
+	// Explicit numeric values for radius and stroke to ensure TS controls sizing
+	const r = 3;
+	const strokeW = 1.5;
+
+	// Set attributes (works in all browsers)
+	circle.setAttribute('r', String(r));
 	circle.setAttribute('cx', String(cx));
 	circle.setAttribute('cy', String(cy));
 	circle.setAttribute('fill', 'rgb(255, 255, 255)');
 	circle.setAttribute('stroke', '#fff');
-	circle.setAttribute('stroke-width', '1.5');
+	circle.setAttribute('stroke-width', String(strokeW));
 	circle.setAttribute('opacity', '0.45');
 	circle.setAttribute('data-city', point.name);
 	circle.setAttribute('data-index', String(index));
 	circle.setAttribute('title', point.name);
+
+	// Also set SVG DOM properties where available to avoid CSS or server-side markup
+	// from overriding the numeric radius/position values.
+	try {
+		circle.r.baseVal.value = r;
+		circle.cx.baseVal.value = cx;
+		circle.cy.baseVal.value = cy;
+		// Ensure stroke width is applied as a presentation attribute too
+		// (some environments prefer attribute over style)
+		circle.setAttribute('stroke-width', String(strokeW));
+	} catch (e) {
+		// ignore if DOM property access fails in peculiar environments
+	}
+
 	return circle;
 }
 
@@ -52,6 +72,17 @@ export default function MapApp({ cities = [] }: Props) {
 		let active = true;
 		const root = containerRef.current;
 		if (!root) return;
+
+		// Remove any pre-rendered marker groups or individual marker elements
+		// so the TypeScript runtime fully controls marker rendering.
+		const preGroups = root.querySelectorAll<SVGGElement>(`.${MARKER_GROUP_CLASS}`);
+		for (const g of Array.from(preGroups)) {
+			try { g.innerHTML = ''; } catch (e) { g.remove(); }
+		}
+		const preMarkers = root.querySelectorAll<SVGElement>('.rymmt-small-map-marker');
+		for (const m of Array.from(preMarkers)) {
+			m.remove();
+		}
 
 		const svg = root.querySelector('svg');
 		if (!svg || !(svg instanceof SVGSVGElement)) return;
