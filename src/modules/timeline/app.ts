@@ -7,6 +7,7 @@ import { applySmallMapCoords, clearSmallMapOverlay } from "../map/overlay";
 import { insertPanelAfterLastRenderedTextArtist } from "./dom-helpers";
 
 const LINK_CLASS = "rymmt-link";
+const MAP_PANEL_ID = "rymmt-map-panel";
 
 export const main = async (): Promise<void> => {
 	const membersHeaderEl = await waitForCallback<HTMLElement>(() => {
@@ -45,34 +46,45 @@ export const main = async (): Promise<void> => {
 		mapLink.className = `${LINK_CLASS} rymmt-map-link`;
 		mapLink.textContent = "[Map]";
 		if (isDarkPage(showsHeaderEl)) mapLink.style.color = "#7eb8f7";
-		mapLink.addEventListener("click", async () => {
-			try {
-				const existing = document.getElementById("rymmt-map-root");
-				if (existing) {
-					// toggle hide
-					existing.remove();
-	                    // also clear any applied small-map overlay
-	                    try { clearSmallMapOverlay(); } catch (e) { /* ignore */ }
-					return;
-				}
-
-				const root = document.createElement("div");
-				root.id = "rymmt-map-root";
-				root.style.marginTop = "10px";
-				// Try to insert in the same shared area the timeline panel uses
-				const inserted = insertPanelAfterLastRenderedTextArtist(root, showsHeaderEl);
-				if (!inserted) {
-					(showsHeaderEl.parentElement ?? document.body).appendChild(root);
-				}
-				// Mount the map (map module handles extracting cities)
-				mountMap(root);
-				// Also attempt to apply coordinates to any small built-in SVG map on the page
-				try { applySmallMapCoords(); } catch (e) { /* best-effort */ }
-			} catch (e) {
-				console.error("[map] mount error", e);
-			}
+		mapLink.addEventListener("click", () => {
+			toggleMapPanel(showsHeaderEl);
 		});
 
-		showsHeaderEl.parentElement?.appendChild(mapLink);
+		showsHeaderEl.appendChild(mapLink);
 	}
 };
+
+function toggleMapPanel(headerEl: HTMLElement): void {
+	try {
+		let panel = document.getElementById(MAP_PANEL_ID);
+
+		if (!panel) {
+			panel = document.createElement("div");
+			panel.id = MAP_PANEL_ID;
+			panel.className = "rymmt-panel rymmt-hidden";
+		}
+
+		if (!document.body.contains(panel)) {
+			const inserted = insertPanelAfterLastRenderedTextArtist(panel, headerEl);
+			if (!inserted) {
+				(document.querySelector("#content") ?? document.body).appendChild(panel);
+			}
+		}
+
+		const isHidden = panel.classList.contains("rymmt-hidden");
+		if (isHidden) {
+			panel.classList.remove("rymmt-hidden");
+			// Mount the map (map module handles extracting cities)
+			mountMap(panel);
+			// Also attempt to apply coordinates to any small built-in SVG map on the page
+			try { applySmallMapCoords(); } catch (e) { /* best-effort */ }
+		} else {
+			panel.classList.add("rymmt-hidden");
+			panel.innerHTML = "";
+			// also clear any applied small-map overlay
+			try { clearSmallMapOverlay(); } catch (e) { /* ignore */ }
+		}
+	} catch (e) {
+		console.error("[map] togglePanel error", e);
+	}
+}

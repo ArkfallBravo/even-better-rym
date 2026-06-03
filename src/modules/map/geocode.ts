@@ -1,5 +1,5 @@
 import type { CityPoint } from "./types";
-import offlineGeoCsv from "./geo.merged.sorted.csv?raw";
+import offlineGeoCsv from "./cities.csv?raw";
 
 // Simple Nominatim geocode helper with localStorage caching and basic rate-limiting.
 // Notes: Nominatim is free and reliable for light use but rate-limited for heavy traffic.
@@ -74,7 +74,7 @@ export function findOfflineLocation(query: string): CityPoint | null {
 export function latLonToSmallMapCoords(lat: number, lon: number) {
 	return {
 		cx: lon * SMALL_MAP_LON_SCALE,
-		cy: -lat * SMALL_MAP_LAT_SCALE,
+		cy: -lat * SMALL_MAP_LAT_SCALE - 5,
 	};
 }
 
