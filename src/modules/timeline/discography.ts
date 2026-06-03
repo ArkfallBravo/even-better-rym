@@ -233,12 +233,19 @@ async function waitForPastShowsLoaded(timeoutMs = 3000): Promise<void> {
 			return;
 		}
 
+		const expandButton = document.getElementById("disco_expand_prev");
+		if (expandButton && expandButton.offsetParent === null) {
+			// Past shows are already loaded or the button is hidden, so no need to wait.
+			resolve();
+			return;
+		}
+
 		const observer = new MutationObserver(() => {
-			const expandButton = document.getElementById("disco_expand_prev");
+			const expandButtonInner = document.getElementById("disco_expand_prev");
 			const currentItemCount = showsContainer.querySelectorAll("li").length;
 
 			// If the expand button disappeared, content likely loaded
-			if (!expandButton) {
+			if (!expandButtonInner) {
 				observer.disconnect();
 				resolve();
 				return;
