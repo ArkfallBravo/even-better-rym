@@ -69,6 +69,12 @@ const sharedManifest = {
 			run_at: "document_start",
 		},
 		{
+			js: ["src/modules/timeline/main.ts"],
+			css: ["src/modules/timeline/timeline.css"],
+			matches: ["*://*.rateyourmusic.com/artist/*"],
+			run_at: "document_start",
+		},
+		{
 			js: ["src/modules/stream-links/main.ts"],
 			matches: ["*://*.rateyourmusic.com/release/*"],
 			run_at: "document_start",
