@@ -1,8 +1,10 @@
 import type { PageKey } from "./pages";
 import * as storage from "./utils/storage";
 
+const defaultDisabled = new Set<PageKey>(["descriptorLinks"]);
+
 export const getPageEnabled = async (key: PageKey): Promise<boolean> =>
-	(await storage.get<boolean>(`pages.${key}`)) ?? true;
+	(await storage.get<boolean>(`pages.${key}`)) ?? !defaultDisabled.has(key);
 
 export const setPageEnabled = async (
 	key: PageKey,
