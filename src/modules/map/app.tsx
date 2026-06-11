@@ -22,6 +22,7 @@ function getMarkerGroup(svg: SVGSVGElement) {
 	if (!group) {
 		group = document.createElementNS(SVG_NS, 'g');
 		group.setAttribute('class', MARKER_GROUP_CLASS);
+		group.setAttribute('transform', 'translate(0,-5)');
 		parent.appendChild(group);
 	}
 	return group;

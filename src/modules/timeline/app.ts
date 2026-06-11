@@ -5,6 +5,7 @@ import { isDarkPage } from "./theme";
 import mountMap from "../map/main";
 import { applySmallMapCoords, clearSmallMapOverlay } from "../map/overlay";
 import { insertPanelAfterLastRenderedTextArtist } from "./dom-helpers";
+import { openPastShows } from "./discography";
 
 const LINK_CLASS = "rymmt-link";
 
@@ -57,6 +58,9 @@ export const main = async (): Promise<void> => {
 	                    try { clearSmallMapOverlay(); } catch (e) { /* ignore */ }
 					return;
 				}
+
+				// Open past shows and wait up to 3 seconds for them to load
+				await openPastShows(3000);
 
 				const root = document.createElement("div");
 				root.id = "rymmt-map-root";

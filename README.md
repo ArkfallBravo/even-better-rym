@@ -116,6 +116,16 @@ On every artist page that has a "Members" section, injects a `[Timeline]` link n
 
 ---
 
+### Artist Page Map and Location Markers
+
+Injects an inline small world map onto artist pages and plots gig locations from the artist's show list. The map is rendered using inline SVG so it matches the `musicmap` look and avoids external black-background issues.
+
+- Automatically detects cities from show entries, including styled markup like `span style="font-size:0.9em"`.
+- Clears any pre-rendered marker HTML and renders markers programmatically from TypeScript so radius, stroke, and positioning are controlled by the extension.
+- Supports both cached and live geocoding of city names.
+
+---
+
 ### Search Bar Shortcuts
 
 Intercepts the main RYM search bar. If your search query matches the RYM markup shortcut format `[Type123]` - e.g. `[Artist67]`, `[Album42]`, `[Genre]` - pressing Enter or clicking the Search button will parse the markup and redirect you **directly to that entity's page** instead of showing search results. Supported types: `Artist`, `Album`, `Genre`, `Label`, `List`, `Rating`, `Venue`, `Concert`, `Bug`. If the query does not match the pattern, the default search behavior is used unchanged.

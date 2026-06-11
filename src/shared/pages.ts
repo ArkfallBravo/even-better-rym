@@ -15,6 +15,7 @@ export const pages = {
 	filmChartGenreLinks: "/charts/",
 	filmGenreChartButton: "/film_genre/",
 	timeline: "/artist/",
+	hideVotes: "/r",
 } as const;
 
 export type PageKey = keyof typeof pages;
@@ -36,6 +37,7 @@ export const pageLabels: Record<PageKey, string> = {
 	filmChartGenreLinks: "Film Chart Genre Links",
 	filmGenreChartButton: "Film Genre Chart Button",
 	timeline: "Artist Timeline",
+	hideVotes: "Hide Votes on Genre/Descriptor Pages",
 };
 
 export const pageGroupLabels: Partial<Record<string, string>> = {
@@ -83,6 +85,8 @@ export const pageHints: Record<PageKey, string> = {
 		"On film genre pages, adds a button to open the top chart filtered by that genre.",
 	timeline:
 		"On artist pages, adds an inline timeline visualizing member activity and discography.",
+	hideVotes:
+		"On genre and descriptor pages, adds toggle buttons to hide user votes.",
 };
 
 // Page keys whose features are global and should not affect the toolbar icon

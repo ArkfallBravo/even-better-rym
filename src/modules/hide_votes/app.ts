@@ -166,28 +166,31 @@ function addSwitchLink(): void {
 
 	if (isGenrePage) {
 		// Find "Primary Genres" h3 and add "Switch to Descriptor" link
-		const h3 = document.querySelector("h3");
-		if (h3 && h3.textContent?.includes("Primary Genres")) {
-			const link = document.createElement("a");
-			link.textContent = "Switch to Descriptor";
-			link.href = url.replace("/rgenre/", "/rdescriptor/");
-			link.style.marginLeft = "10px";
-			link.style.fontSize = "0.8em";
-			link.style.color = "#666";
-			link.style.cursor = "pointer";
-			h3.appendChild(link);
+		const h3s = document.querySelectorAll("h3");
+		for (const h3 of h3s) {
+			if (h3.textContent?.includes("Primary Genres") && !h3.querySelector("a")) {
+				const link = document.createElement("a");
+				link.textContent = "Switch to Descriptors";
+				link.href = url.replace("/rgenre/", "/rdescriptor/");
+				link.style.marginLeft = "10px";
+				link.style.fontSize = "0.8em";
+				link.style.color = "rgb(102, 102, 102)";
+				link.style.cursor = "pointer";
+				h3.appendChild(link);
+				break;
+			}
 		}
 	} else if (isDescriptorPage) {
 		// Find "Descriptors" h3 and add "Switch to Genres" link
 		const h3s = document.querySelectorAll("h3");
 		for (const h3 of h3s) {
-			if (h3.textContent?.includes("Descriptors")) {
+			if (h3.textContent?.includes("Descriptors") && !h3.querySelector("a")) {
 				const link = document.createElement("a");
 				link.textContent = "Switch to Genres";
 				link.href = url.replace("/rdescriptor/", "/rgenre/");
 				link.style.marginLeft = "10px";
 				link.style.fontSize = "0.8em";
-				link.style.color = "#666";
+				link.style.color = "rgb(102, 102, 102)";
 				link.style.cursor = "pointer";
 				h3.appendChild(link);
 				break;
@@ -203,8 +206,15 @@ function addCollapseAllButton(): void {
 
 	if (!isGenrePage && !isDescriptorPage) return;
 
-	// Find the form element in the votingbox table
-	const form = document.querySelector(".votingbox form");
+	// Find the form element - different selectors for genre and descriptor pages
+	let form: HTMLElement | null;
+	if (isGenrePage) {
+		form = document.querySelector(".votingbox form");
+	} else {
+		// Descriptor page: find form with prigen input
+		form = document.querySelector("form input#prigen")?.closest("form") as HTMLElement | null;
+	}
+
 	if (!form) return;
 
 	const collapseButton = document.createElement("input");
@@ -247,12 +257,70 @@ export async function main(): Promise<void> {
 	const isGenrePage = url.includes("/rgenre/");
 	const isDescriptorPage = url.includes("/rdescriptor/");
 
-	// Wait different amounts for dynamic content to load based on page type
-	const delay = isDescriptorPage ? 2500 : 3500;
+	if (!isGenrePage && !isDescriptorPage) return;
 
-	setTimeout(() => {
-		processVoteSpans();
-		addSwitchLink();
-		addCollapseAllButton();
-	}, delay);
+	// Add switch link and collapse button immediately (don't depend on content loading)
+	addSwitchLink();
+	addCollapseAllButton();
+
+	// Wait for loading image to have "blank" in src before processing vote spans
+	const waitForLoadingComplete = (): Promise<void> => {
+		return new Promise((resolve) => {
+			const loadingImg = document.getElementById("loading");
+			if (!loadingImg) {
+				// No loading image found, proceed immediately
+				resolve();
+				return;
+			}
+
+			const checkLoading = () => {
+				const src = (loadingImg as HTMLImageElement).src;
+				if (src.includes("blank")) {
+					resolve();
+				} else {
+					// Check again in 100ms
+					setTimeout(checkLoading, 100);
+				}
+			};
+
+			checkLoading();
+		});
+	};
+
+	// Wait for loading to complete, then process vote spans
+	await waitForLoadingComplete();
+	processVoteSpans();
+
+	// Set up MutationObserver to handle dynamic content changes
+	const observer = new MutationObserver((mutations) => {
+		for (const mutation of mutations) {
+			if (mutation.type === "childList") {
+				// Check if new genrea, genred, descriptora, or descriptord elements were added
+				for (const node of mutation.addedNodes) {
+					if (node.nodeType === Node.ELEMENT_NODE) {
+						const element = node as Element;
+						if (
+							element.classList?.contains("genrea") ||
+							element.classList?.contains("genred") ||
+							element.classList?.contains("descriptora") ||
+							element.classList?.contains("descriptord") ||
+							element.querySelector?.(".genrea, .genred, .descriptora, .descriptord")
+						) {
+							// Re-process vote spans when new content is added
+							setTimeout(() => {
+								processVoteSpans();
+							}, 500);
+							break;
+						}
+					}
+				}
+			}
+		}
+	});
+
+	// Start observing the document body for changes
+	observer.observe(document.body, {
+		childList: true,
+		subtree: true,
+	});
 }

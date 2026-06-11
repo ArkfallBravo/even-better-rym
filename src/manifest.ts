@@ -111,6 +111,11 @@ const sharedManifest = {
 			matches: ["*://*.rateyourmusic.com/film_genre/*"],
 			run_at: "document_start",
 		},
+		{
+			js: ["src/modules/hide_votes/main.ts"],
+			matches: ["*://*.rateyourmusic.com/rgenre/*", "*://*.rateyourmusic.com/rdescriptor/*"],
+			run_at: "document_idle",
+		},
 	],
 	icons: {
 		"16": "icons/sonemic-16.png",
