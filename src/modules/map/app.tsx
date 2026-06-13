@@ -30,7 +30,7 @@ function getMarkerGroup(svg: SVGSVGElement) {
 
 function createMarker(point: CityPoint, index: number) {
 	const { cx, cy } = latLonToSmallMapCoords(point.lat, point.lon);
-	const circle = document.createElementNS(SVG_NS, 'circle') as SVGCircleElement;
+	const circle = document.createElementNS(SVG_NS, 'circle');
 	circle.setAttribute('class', 'rymmt-small-map-marker');
 
 	// Explicit numeric values for radius and stroke to ensure TS controls sizing
@@ -45,8 +45,8 @@ function createMarker(point: CityPoint, index: number) {
 	circle.setAttribute('stroke', '#fff');
 	circle.setAttribute('stroke-width', String(strokeW));
 	circle.setAttribute('opacity', '0.45');
-	circle.setAttribute('data-city', point.name);
-	circle.setAttribute('data-index', String(index));
+	circle.dataset.city = point.name;
+	circle.dataset.index = String(index);
 	circle.setAttribute('title', point.name);
 
 	// Also set SVG DOM properties where available to avoid CSS or server-side markup
@@ -65,7 +65,7 @@ function createMarker(point: CityPoint, index: number) {
 	return circle;
 }
 
-export default function MapApp({ cities = [] }: Props) {
+export default function MapApp({ cities = [] }: Readonly<Props>) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const mapHtml = useMemo(() => sanitizeHtml(SMALL_MAP_SVG), []);
 

@@ -4,7 +4,7 @@ import type { CityPoint } from './types';
 import { findOfflineLocation } from './geocode';
 
 function resolveLocationId(item: HTMLElement, results: (string | CityPoint)[]): boolean {
-	const id = item.getAttribute('data-loc-id') || item.id?.match(/loc_\d+/i)?.[0];
+	const id = item.dataset.locId ?? (/loc_\d+/i.exec(item.id))?.[0];
 	if (!id) return false;
 	const offline = findOfflineLocation(id);
 	if (!offline) return false;
@@ -13,7 +13,7 @@ function resolveLocationId(item: HTMLElement, results: (string | CityPoint)[]): 
 }
 
 function extractCityFromShowListItem(item: HTMLElement): string {
-	const dataCity = item.getAttribute('data-city') || item.getAttribute('data-location');
+	const dataCity = item.dataset.city ?? item.dataset.location;
 	if (dataCity?.trim()) return dataCity.trim();
 
 	const styledCity = item.querySelector<HTMLElement>('span[style*="font-size"]');
@@ -42,7 +42,7 @@ function extractCityFromShowListItem(item: HTMLElement): string {
 	const txt = (item.textContent || '').replace(/\s+/g, ' ').trim();
 	const parts = txt.split(',');
 	if (parts.length >= 2) return parts.slice(-2).join(',').trim();
-	return parts.slice(-1)[0]?.trim() ?? '';
+	return parts.at(-1)?.trim() ?? '';
 }
 
 // Try to auto-detect city list from page: look for .rymmt-show elements with data-city
@@ -66,7 +66,7 @@ function extractCitiesFromDocument(): (string | CityPoint)[] {
 	const els = document.querySelectorAll<HTMLElement>('.rymmt-show, [data-city], [data-location], [id^="loc_"]');
 	for (const el of Array.from(els)) {
 		if (resolveLocationId(el, results)) continue;
-		const city = el.getAttribute('data-city') || el.getAttribute('data-location') || el.textContent || '';
+		const city = (el.dataset.city ?? el.dataset.location ?? el.textContent) || '';
 		if (city) results.push(city.trim());
 	}
 	return Array.from(new Set(results));
@@ -77,7 +77,7 @@ export function mountMap(container: HTMLElement, cities?: (string | CityPoint)[]
 }
 
 // If script is included directly on a page, auto-mount into #rymmt-map-root
-if (typeof window !== 'undefined') {
+if (typeof globalThis !== 'undefined') {
 	const root = document.getElementById('rymmt-map-root');
 	if (root) mountMap(root);
 }

@@ -184,7 +184,7 @@ function extractShowTitleFromListItem(item: HTMLElement): string | null {
 	const normalized = normalizeShowTitle(rawText);
 
 	// Prefer explicit separators for show name and venue/city when available.
-	const atMatch = normalized.match(/^(.*?)(?:\s+@\s+|\s+at\s+)(.*)$/i);
+	const atMatch =/^(.*?)(?:\s+@\s+|\s+at\s+)(.*)$/i.exec(normalized);
 	if (atMatch) {
 		return `${normalizeShowTitle(atMatch[1])} @ ${normalizeShowTitle(atMatch[2])}`;
 	}
@@ -234,7 +234,7 @@ async function waitForPastShowsLoaded(timeoutMs = 3000): Promise<void> {
 		}
 
 		const expandButton = document.getElementById("disco_expand_prev");
-		if (expandButton && expandButton.offsetParent === null) {
+		if (expandButton?.offsetParent === null) {
 			// Past shows are already loaded or the button is hidden, so no need to wait.
 			resolve();
 			return;

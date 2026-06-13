@@ -64,7 +64,7 @@ export const ROLE_CANON: RoleCanonEntry[] = [
 	{ key: "flute", match: [/^flute$/i] },
 	{ key: "harmonica", match: [/^harmonica$/i] },
 	{ key: "melodica", match: [/^melodica$/i] },
-	{ key: "jew's harp", match: [/^jew[''']?s harp$/i, /^jews harp$/i] },
+	{ key: "jew's harp", match: [/^jew(')?s harp$/i] },
 	{ key: "winds", match: [/^winds?$/i] },
 
 	// --- Production ---

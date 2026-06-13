@@ -1,7 +1,7 @@
 import { getOfflineLocationById, getOfflineLocationByName, latLonToSmallMapCoords } from './geocode';
 
 function findSvgWithLocs(): SVGSVGElement | null {
-    const svgs = Array.from(document.querySelectorAll('svg')) as SVGSVGElement[];
+    const svgs = Array.from(document.querySelectorAll('svg'));
     for (const svg of svgs) {
         // If the svg already contains loc_* elements, choose it
         if (svg.querySelector('[id^="loc_"]')) return svg;
@@ -12,7 +12,7 @@ function findSvgWithLocs(): SVGSVGElement | null {
 }
 
 function parseId(el: Element) {
-    const m = (el.id || '').match(/loc_\d+/i);
+    const m = /loc_\d+/i.exec(el.id || '');
     return m ? m[0].toLowerCase() : null;
 }
 
@@ -20,7 +20,7 @@ export function applySmallMapCoords(): void {
     try {
         const svg = findSvgWithLocs();
         // We'll target any element with id starting with loc_ anywhere
-        const locEls = Array.from(document.querySelectorAll('[id^="loc_"]')) as Element[];
+        const locEls = Array.from(document.querySelectorAll('[id^="loc_"]'));
 
         for (const el of locEls) {
             const id = parseId(el);
@@ -37,7 +37,7 @@ export function applySmallMapCoords(): void {
             } else {
                 // If not SVG, attempt to find a corresponding SVG child by id inside the discovered svg
                 if (svg) {
-                    const target = svg.querySelector(`#${CSS.escape(el.id)}`) as SVGElement | null;
+                    const target = svg.querySelector(`#${CSS.escape(el.id)}`);
                     if (target) {
                         target.setAttribute('cx', String(cx));
                         target.setAttribute('cy', String(cy));
@@ -59,8 +59,8 @@ export function applySmallMapCoords(): void {
             if (!svg2) continue;
             // naive search for a child with text matching the city name
             const child = Array.from(svg2.querySelectorAll('[id], [data-name]')).find((c) => {
-                const id = (c as Element).getAttribute('id') || '';
-                const dn = (c as Element).getAttribute('data-name') || '';
+                const id = c.getAttribute('id') ?? '';
+                const dn = c.getAttribute('data-name') ?? '';
                 return id.toLowerCase().includes(txt.toLowerCase()) || dn.toLowerCase().includes(txt.toLowerCase());
             }) as SVGElement | undefined;
             if (!child) continue;
@@ -78,7 +78,7 @@ export function applySmallMapCoords(): void {
 
 export function clearSmallMapOverlay(): void {
     try {
-        const applied = Array.from(document.querySelectorAll('.rymmt-small-map-applied')) as Element[];
+        const applied = Array.from(document.querySelectorAll('.rymmt-small-map-applied'));
         for (const el of applied) {
             if (el instanceof SVGElement) {
                 el.removeAttribute('cx');

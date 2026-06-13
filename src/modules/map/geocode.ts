@@ -6,8 +6,8 @@ import offlineGeoCsv from "./cities.csv?raw";
 
 const CACHE_KEY = "rymmt_geocode_cache_v1";
 const cache: Record<string, CityPoint> = JSON.parse(
-	localStorage.getItem(CACHE_KEY) || "{}",
-);
+	localStorage.getItem(CACHE_KEY) ?? "{}",
+) as Record<string, CityPoint>;
 let lastRequestAt = 0;
 const MIN_DELAY = 1100; // 1.1s between requests to be polite to Nominatim
 
@@ -66,7 +66,7 @@ export function getOfflineLocationByName(name: string): CityPoint | null {
 
 export function findOfflineLocation(query: string): CityPoint | null {
 	if (!query) return null;
-	const idMatch = query.trim().match(/loc_\d+/i);
+	const idMatch = /loc_\d+/i.exec(query.trim());
 	if (idMatch) return getOfflineLocationById(idMatch[0]);
 	return getOfflineLocationByName(query);
 }
@@ -103,7 +103,7 @@ export async function geocodeCity(city: string): Promise<CityPoint | null> {
 		lastRequestAt = Date.now();
 		if (!res.ok) return null;
 		const arr = await res.json();
-		if (!arr || !arr.length) return null;
+		if (!arr?.length) return null;
 		const first = arr[0];
 		const point: CityPoint = {
 			name: city,

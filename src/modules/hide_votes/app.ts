@@ -31,15 +31,15 @@ function extractVoteCount(html: string): number {
 	// Match the number after "voted for:" or "voted against:" and before the parenthesis
 	// For descriptor pages: "(321 / <span..." or "(7):"
 	// For genre pages: "(22) :"
-	const match = html.match(/<b>voted (?:for|against):<\/b>\s*\((\d+)/);
-	return match ? parseInt(match[1], 10) : 0;
+	const match = /<b>voted (?:for|against):<\/b>\s*\((\d+)/.exec(html);
+	return match ? Number.parseInt(match[1], 10) : 0;
 }
 
 function addHideButton(spanElement: HTMLElement, voteForCount: number, voteAgainstCount: number): void {
 	if (spanElement.querySelector(".ebr-hide-votes-button")) return;
 
 	const html = spanElement.innerHTML;
-	const match = html.match(VOTE_HEADER_PATTERN);
+	const match = VOTE_HEADER_PATTERN.exec(html);
 
 	let before: string;
 	let userListHtml: string;
@@ -77,7 +77,7 @@ function addHideButton(spanElement: HTMLElement, voteForCount: number, voteAgain
 
 	spanElement.innerHTML =
 		updatedBefore +
-		`<span class="ebr-hide-votes-button" style="cursor: pointer;">Hide</span>` +
+		`<span class="ebr-hide-votes-button">Hide</span>` +
 		`<span class="ebr-user-list">${userListHtml}</span>` +
 		`<span class="ebr-user-count"></span>`;
 
@@ -130,7 +130,7 @@ function processVoteSpans(): void {
 	}
 
 	// Process each container's spans
-	for (const [container, containerSpans] of containerMap) {
+	for (const [, containerSpans] of containerMap) {
 		let voteForCount = 0;
 		let voteAgainstCount = 0;
 
@@ -153,14 +153,14 @@ function processVoteSpans(): void {
 }
 
 function addSwitchLink(): void {
-	const url = window.location.href;
+	const url = globalThis.location.href;
 	const isGenrePage = url.includes("/rgenre/");
 	const isDescriptorPage = url.includes("/rdescriptor/");
 
 	if (!isGenrePage && !isDescriptorPage) return;
 
 	// Extract album_id from URL
-	const albumIdMatch = url.match(/album_id=(\d+)/);
+	const albumIdMatch = /album_id=(\d+)/.exec(url)
 	if (!albumIdMatch) return;
 	const albumId = albumIdMatch[1];
 
@@ -200,7 +200,7 @@ function addSwitchLink(): void {
 }
 
 function addCollapseAllButton(): void {
-	const url = window.location.href;
+	const url = globalThis.location.href;
 	const isGenrePage = url.includes("/rgenre/");
 	const isDescriptorPage = url.includes("/rdescriptor/");
 
@@ -240,7 +240,7 @@ function addCollapseAllButton(): void {
 			}
 		});
 
-		(collapseButton as HTMLInputElement).value = allCollapsed ? "Expand All" : "Collapse All";
+		collapseButton.value = allCollapsed ? "Expand All" : "Collapse All";
 	});
 
 	form.appendChild(collapseButton);
@@ -253,7 +253,7 @@ export async function main(): Promise<void> {
 	style.textContent = STYLE;
 	document.head.appendChild(style);
 
-	const url = window.location.href;
+	const url = globalThis.location.href;
 	const isGenrePage = url.includes("/rgenre/");
 	const isDescriptorPage = url.includes("/rdescriptor/");
 
