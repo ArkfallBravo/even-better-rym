@@ -90,6 +90,8 @@ export async function geocodeCity(city: string): Promise<CityPoint | null> {
 		return offline;
 	}
 
+	// TODO: Add request de-duplication/queueing so simultaneous uncached cities
+	// do not trigger overlapping Nominatim requests.
 	const since = Date.now() - lastRequestAt;
 	if (since < MIN_DELAY) await delay(MIN_DELAY - since);
 

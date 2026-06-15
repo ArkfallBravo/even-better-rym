@@ -14,14 +14,6 @@ const STYLE = `
 	.ebr-votes-hidden .ebr-user-list {
 		display: none !important;
 	}
-	.ebr-user-count {
-		display: none;
-		color: #666;
-		font-size: 0.9em;
-	}
-	.ebr-votes-hidden .ebr-user-count {
-		display: inline;
-	}
 `;
 
 const VOTE_HEADER_PATTERN =
@@ -44,7 +36,7 @@ function addHideButton(spanElement: HTMLElement, voteForCount: number, voteAgain
 	let before: string;
 	let userListHtml: string;
 
-	if (match && match.index !== undefined) {
+	if (match?.index !== undefined) {
 		// Standard case: has vote header like "voted for: (XXX) :"
 		const insertPosition = match.index + match[0].length;
 		before = html.substring(0, insertPosition);
@@ -78,27 +70,29 @@ function addHideButton(spanElement: HTMLElement, voteForCount: number, voteAgain
 	spanElement.innerHTML =
 		updatedBefore +
 		`<span class="ebr-hide-votes-button">Hide</span>` +
-		`<span class="ebr-user-list">${userListHtml}</span>` +
-		`<span class="ebr-user-count"></span>`;
+		`<span class="ebr-user-list">${userListHtml}</span>`
 
 	const button = spanElement.querySelector<HTMLElement>(".ebr-hide-votes-button");
-	if (!button) return;
+
+	if (button === null) {
+		return;
+	}
 
 	button.addEventListener("click", () => {
 		spanElement.classList.toggle("ebr-votes-hidden");
 		if (spanElement.classList.contains("ebr-votes-hidden")) {
 			button.textContent = "Show";
-			const users = spanElement.querySelectorAll("a.user, span.userd");
 		} else {
 			button.textContent = "Hide";
 		}
 	});
 }
 
-function processVoteSpans(): void {
-	const spans = document.querySelectorAll("span.small");
+function collectVoteSpans(
+	spans: NodeListOf<Element>,
+): Map<HTMLElement, HTMLElement[]> {
 
-	// Group spans by their container (genrea or descriptora)
+// Group spans by their container (genrea or descriptora)
 	const containerMap = new Map<HTMLElement, HTMLElement[]>();
 
 	for (const span of spans) {
@@ -129,27 +123,40 @@ function processVoteSpans(): void {
 		}
 	}
 
-	// Process each container's spans
-	for (const [, containerSpans] of containerMap) {
-		let voteForCount = 0;
-		let voteAgainstCount = 0;
+	return containerMap;
+}
 
-		// Extract vote counts from spans
-		for (const span of containerSpans) {
-			const html = span.innerHTML;
-			const count = extractVoteCount(html);
-			if (html.includes("voted for:")) {
-				voteForCount = count;
-			} else if (html.includes("voted against:")) {
-				voteAgainstCount = count;
-			}
-		}
+function getVoteCounts(containerSpans: HTMLElement[]) {
+	let voteForCount = 0;
+	let voteAgainstCount = 0;
 
-		// Add buttons with vote counts
-		for (const span of containerSpans) {
-			addHideButton(span, voteForCount, voteAgainstCount);
+	for (const span of containerSpans) {
+		const html = span.innerHTML;
+		const count = extractVoteCount(html);
+
+		if (html.includes("voted for:")) {
+			voteForCount = count;
+		} else if (html.includes("voted against:")) {
+			voteAgainstCount = count;
 		}
 	}
+
+	return { voteForCount, voteAgainstCount };
+}
+
+function processVoteSpans(): void {
+	const spans = document.querySelectorAll("span.small");
+
+	const containerMap = collectVoteSpans(spans);
+
+	for (const [, containerSpans] of containerMap) {
+	const { voteForCount, voteAgainstCount } =
+		getVoteCounts(containerSpans);
+
+	for (const span of containerSpans) {
+		addHideButton(span, voteForCount, voteAgainstCount);
+	}
+}
 }
 
 function addSwitchLink(): void {
@@ -160,9 +167,8 @@ function addSwitchLink(): void {
 	if (!isGenrePage && !isDescriptorPage) return;
 
 	// Extract album_id from URL
-	const albumIdMatch = /album_id=(\d+)/.exec(url)
+	const albumIdMatch = /album_id=(\d+)/.exec(url);
 	if (!albumIdMatch) return;
-	const albumId = albumIdMatch[1];
 
 	if (isGenrePage) {
 		// Find "Primary Genres" h3 and add "Switch to Descriptor" link
@@ -265,27 +271,36 @@ export async function main(): Promise<void> {
 
 	// Wait for loading image to have "blank" in src before processing vote spans
 	const waitForLoadingComplete = (): Promise<void> => {
-		return new Promise((resolve) => {
-			const loadingImg = document.getElementById("loading");
-			if (!loadingImg) {
-				// No loading image found, proceed immediately
-				resolve();
+	return new Promise((resolve) => {
+		const loadingImg = document.getElementById("loading") as HTMLImageElement | null;
+
+		if (loadingImg === null) {
+			resolve();
+			return;
+		}
+
+		const isLoaded 	= () => loadingImg.src.includes("/images/blank.png");
+
+		if (isLoaded()) {
+			resolve();
+			return;
+		}
+
+		const observer = new MutationObserver(() => {
+			if (!isLoaded()) {
 				return;
 			}
 
-			const checkLoading = () => {
-				const src = (loadingImg as HTMLImageElement).src;
-				if (src.includes("blank")) {
-					resolve();
-				} else {
-					// Check again in 100ms
-					setTimeout(checkLoading, 100);
-				}
-			};
-
-			checkLoading();
+			observer.disconnect();
+			resolve();
 		});
-	};
+
+		observer.observe(loadingImg, {
+			attributes: true,
+			attributeFilter: ["src"],
+		});
+	});
+};
 
 	// Wait for loading to complete, then process vote spans
 	await waitForLoadingComplete();

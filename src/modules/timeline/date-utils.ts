@@ -1,17 +1,25 @@
-export const MONTH_NAMES: Readonly<Record<string, number>> = {
-	january: 1,
-	february: 2,
-	march: 3,
-	april: 4,
-	may: 5,
-	june: 6,
-	july: 7,
-	august: 8,
-	september: 9,
-	october: 10,
-	november: 11,
-	december: 12,
-};
+const MONTHS = [
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December",
+] as const;
+
+export const MONTH_NAMES: Readonly<Record<string, number>> = Object.fromEntries(
+	MONTHS.map((month, index) => [month.toLowerCase(), index + 1]),
+);
+
+function getShortMonthName(month: number): string {
+	return MONTHS[month - 1].slice(0, 3);
+}
 
 export function isLeapYear(y: number): boolean {
 	return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
@@ -39,66 +47,68 @@ export function getDayOfYear(year: number, month: number, day: number): number {
 }
 
 export function parseDateFromText(text: string): Date | null {
-	const s = String(text || "").trim();
+	const parts = parseDatePartsFromText(text);
 
-	const fullMatch = /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/.exec(s);
-	if (fullMatch) {
-		const day = Number.parseInt(fullMatch[1], 10);
-		const month = MONTH_NAMES[fullMatch[2].toLowerCase()];
-		const year = Number.parseInt(fullMatch[3], 10);
-		if (month && Number.isFinite(year) && day >= 1 && day <= 31) {
-			return new Date(year, month - 1, day);
-		}
+	if (!parts) {
+		return null;
 	}
 
-	const monthYearMatch = /([A-Za-z]+)\s+(\d{4})/.exec(s);
-	if (monthYearMatch) {
-		const month = MONTH_NAMES[monthYearMatch[1].toLowerCase()];
-		const year = Number.parseInt(monthYearMatch[2], 10);
-		if (month && Number.isFinite(year)) {
-			return new Date(year, month - 1, 15);
-		}
+	if (parts.day && parts.month) {
+		return new Date(parts.year, parts.month - 1, parts.day);
 	}
 
-	const yearMatch = /\b(19|20)\d{2}\b/.exec(s);
-	if (yearMatch) {
-		return new Date(Number.parseInt(yearMatch[0], 10), 0, 1);
+	if (parts.month) {
+		return new Date(parts.year, parts.month - 1, 15);
 	}
 
-	return null;
+	return new Date(parts.year, 0, 1);
+}
+
+export function parseDecimalYearFromDateString(text: string): number | null {
+	const date = parseDateFromText(text);
+
+	if (!date) {
+		return null;
+	}
+
+	return decimalYearOf(date);
 }
 
 export function parseFullDateFromText(text: string): Date | null {
-	const s = String(text || "").trim();
-	const fullMatch = /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/.exec(s);
-	if (!fullMatch) return null;
+	const parts = parseDatePartsFromText(text);
 
-	const day = Number.parseInt(fullMatch[1], 10);
-	const month = MONTH_NAMES[fullMatch[2].toLowerCase()];
-	const year = Number.parseInt(fullMatch[3], 10);
-	if (month && Number.isFinite(year) && day >= 1 && day <= 31) {
-		return new Date(year, month - 1, day);
+	if (!parts?.day || !parts.month) {
+		return null;
 	}
 
-	return null;
+	return new Date(parts.year, parts.month - 1, parts.day);
 }
 
-const MONTH_SHORT_NAMES: Readonly<Record<number, string>> = {
-	1: "Jan",
-	2: "Feb",
-	3: "Mar",
-	4: "Apr",
-	5: "May",
-	6: "Jun",
-	7: "Jul",
-	8: "Aug",
-	9: "Sep",
-	10: "Oct",
-	11: "Nov",
-	12: "Dec",
+export function parseDateLabelFromText(text: string): string | null {
+	const parts = parseDatePartsFromText(text);
+
+	if (!parts) {
+		return null;
+	}
+
+	if (parts.day && parts.month) {
+		return `${String(parts.day).padStart(2, "0")} ${getShortMonthName(parts.month)} ${parts.year}`;
+	}
+
+	if (parts.month) {
+		return `${getShortMonthName(parts.month)} ${parts.year}`;
+	}
+
+	return String(parts.year);
+}
+
+type ParsedDateParts = {
+	day?: number;
+	month?: number;
+	year: number;
 };
 
-export function parseDateLabelFromText(text: string): string | null {
+function parseDatePartsFromText(text: string): ParsedDateParts | null {
 	const s = String(text || "").trim();
 
 	const fullMatch = /(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/.exec(s);
@@ -106,8 +116,9 @@ export function parseDateLabelFromText(text: string): string | null {
 		const day = Number.parseInt(fullMatch[1], 10);
 		const month = MONTH_NAMES[fullMatch[2].toLowerCase()];
 		const year = Number.parseInt(fullMatch[3], 10);
+
 		if (month && Number.isFinite(year) && day >= 1 && day <= 31) {
-			return `${String(day).padStart(2, "0")} ${MONTH_SHORT_NAMES[month]} ${year}`;
+			return { day, month, year };
 		}
 	}
 
@@ -115,14 +126,15 @@ export function parseDateLabelFromText(text: string): string | null {
 	if (monthYearMatch) {
 		const month = MONTH_NAMES[monthYearMatch[1].toLowerCase()];
 		const year = Number.parseInt(monthYearMatch[2], 10);
+
 		if (month && Number.isFinite(year)) {
-			return `${MONTH_SHORT_NAMES[month]} ${year}`;
+			return { month, year };
 		}
 	}
 
 	const yearMatch = /\b(19|20)\d{2}\b/.exec(s);
 	if (yearMatch) {
-		return yearMatch[0];
+		return { year: Number.parseInt(yearMatch[0], 10) };
 	}
 
 	return null;

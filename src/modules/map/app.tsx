@@ -55,11 +55,10 @@ function createMarker(point: CityPoint, index: number) {
 		circle.r.baseVal.value = r;
 		circle.cx.baseVal.value = cx;
 		circle.cy.baseVal.value = cy;
-		// Ensure stroke width is applied as a presentation attribute too
-		// (some environments prefer attribute over style)
 		circle.setAttribute('stroke-width', String(strokeW));
-	} catch (e) {
-		// ignore if DOM property access fails in peculiar environments
+	} catch (error) {
+		// TODO: Decide whether SVG DOM property failures should be reported.
+		console.warn("Failed to set SVG marker DOM properties", error);
 	}
 
 	return circle;
@@ -78,7 +77,13 @@ export default function MapApp({ cities = [] }: Readonly<Props>) {
 		// so the TypeScript runtime fully controls marker rendering.
 		const preGroups = root.querySelectorAll<SVGGElement>(`.${MARKER_GROUP_CLASS}`);
 		for (const g of Array.from(preGroups)) {
-			try { g.innerHTML = ''; } catch (e) { g.remove(); }
+			try {
+				g.innerHTML = '';
+			} catch (error) {
+				// TODO: Decide whether marker cleanup failures should be reported.
+				console.warn("Failed to clear pre-rendered marker group", error);
+				g.remove();
+			}
 		}
 		const preMarkers = root.querySelectorAll<SVGElement>('.rymmt-small-map-marker');
 		for (const m of Array.from(preMarkers)) {
