@@ -97,8 +97,15 @@ export function applySmallMapCoords(): void {
 
 		applyCityNameMatches(textCandidates);
 	} catch (error: unknown) {
-		// TODO: Handle SVG overlay failures with a typed error strategy.
-		console.warn("[map][overlay] apply failed", error);
+		if (error instanceof DOMException) {
+			console.warn("[map][overlay] DOM error during apply", error.message);
+		} else if (error instanceof TypeError) {
+			console.warn("[map][overlay] Type error during apply", error.message);
+		} else if (error instanceof RangeError) {
+			console.warn("[map][overlay] Range error during apply", error.message);
+		} else {
+			console.warn("[map][overlay] Unexpected error during apply", error);
+		}
 	}
 }
 
@@ -117,8 +124,13 @@ export function clearSmallMapOverlay(): void {
 			el.classList.remove("rymmt-small-map-applied");
 		}
 	} catch (error: unknown) {
-		// TODO: Decide whether overlay cleanup failures should be surfaced.
-		console.warn("[map][overlay] cleanup failed", error);
+		if (error instanceof DOMException) {
+			console.warn("[map][overlay] DOM error during cleanup", error.message);
+		} else if (error instanceof TypeError) {
+			console.warn("[map][overlay] Type error during cleanup", error.message);
+		} else {
+			console.warn("[map][overlay] Unexpected error during cleanup", error);
+		}
 	}
 }
 

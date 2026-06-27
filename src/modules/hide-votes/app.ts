@@ -322,6 +322,7 @@ export async function main(): Promise<void> {
 							element.querySelector?.(".genrea, .genred, .descriptora, .descriptord")
 						) {
 							// Re-process vote spans when new content is added
+							// TODO: add a mechanism to trigger that based on the page changes instead of being time-based.
 							setTimeout(() => {
 								processVoteSpans();
 							}, 500);
