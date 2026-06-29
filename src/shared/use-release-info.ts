@@ -11,6 +11,7 @@ export type FetchFunction = (
 ) => Promise<InfoState>;
 export type UseReleaseInfoValue = {
 	info: InfoState;
+	setInfo: (info: InfoState) => void;
 	fetchInfo: FetchFunction;
 };
 
@@ -21,11 +22,11 @@ export const useReleaseInfo = (): UseReleaseInfoValue => {
 		setInfo(loading);
 		const nextInfo = await service
 			.resolve(url)
-			.then((info) => complete(info))
+			.then((data) => complete(data))
 			.catch((error) => failed(error));
-		setInfo(nextInfo);
+		if (nextInfo.type !== "complete") setInfo(nextInfo);
 		return nextInfo;
 	}, []);
 
-	return { info, fetchInfo };
+	return { info, setInfo, fetchInfo };
 };
