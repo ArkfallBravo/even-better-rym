@@ -97,15 +97,36 @@ const parseLabelAndType = (
 	};
 };
 
+const getTrackArtists = (document_: Document): Map<number, string> => {
+	const map = new Map<number, string>();
+	const regex =
+		/"trackNumber":(\d+)(?:(?!"trackNumber":).)*?"subtitleLinks":\[\{"title":"([^"]*)"/gs;
+	for (const script of document_.querySelectorAll("script")) {
+		if (!script.text.includes("track-lockup")) continue;
+		for (const match of script.text.matchAll(regex)) {
+			const trackNum = Number.parseInt(match[1], 10);
+			if (!map.has(trackNum)) map.set(trackNum, match[2]);
+		}
+		break;
+	}
+	return map;
+};
+
 const resolveAlbumFields = (
 	release: ReleaseData,
 	document_: Document,
 ): ResolvedFields => {
-	const tracks = release.tracks.map((t, i) => ({
-		position: String(i + 1),
-		title: t.name,
-		duration: ifDefined(convertAppleMusicDuration)(t.duration),
-	}));
+	const trackArtists = getTrackArtists(document_);
+	const tracks = release.tracks.map((t, i) => {
+		const position = String(i + 1);
+		const artist = trackArtists.get(i + 1);
+		return {
+			position,
+			title: t.name,
+			duration: ifDefined(convertAppleMusicDuration)(t.duration),
+			...(artist !== undefined ? { artists: [artist] } : {}),
+		};
+	});
 
 	const { title, type: titleType } = parseTitleAndType(
 		release.name,
