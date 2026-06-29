@@ -23,28 +23,31 @@ export default async function injectImportControls() {
 }
 
 function Import() {
-	const { info, fetchInfo } = useReleaseInfo();
+	const { info, setInfo, fetchInfo } = useReleaseInfo();
 	const [formOptions, setFormOptions] = useState(DEFAULT_FORM_OPTIONS);
 
 	const fetchInfoOuter = useCallback(
 		async (url: string, service: Service & Resolvable) => {
-			const info = await fetchInfo(url, service);
-			if (isComplete(info)) {
-				void fill(info.data, formOptions);
+			const resolvedInfo = await fetchInfo(url, service);
+			if (isComplete(resolvedInfo)) {
+				await fill(resolvedInfo.data, formOptions);
+				setInfo(resolvedInfo);
 
 				// emit import event
 				const importEvent = new CustomEvent<ResolveData>("importEvent", {
-					detail: info.data,
+					detail: resolvedInfo.data,
 				});
 				document.dispatchEvent(importEvent);
 
-				if (formOptions.downloadArt && info.data.coverArt) {
-					const filename = getFilename(info.data);
-					await download(info.data.coverArt.map((url) => ({ url, filename })));
+				if (formOptions.downloadArt && resolvedInfo.data.coverArt) {
+					const filename = getFilename(resolvedInfo.data);
+					await download(
+						resolvedInfo.data.coverArt.map((url) => ({ url, filename })),
+					);
 				}
 			}
 		},
-		[fetchInfo, formOptions],
+		[fetchInfo, setInfo, formOptions],
 	);
 
 	return (
