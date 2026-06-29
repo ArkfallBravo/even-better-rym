@@ -16,11 +16,19 @@ export const ROLE_CANON: RoleCanonEntry[] = [
 		match: [/^backing vocals?$/i, /background vocals?/i],
 	},
 
-	// --- Guitar ---
+	// --- Guitar & Strings ---
 	{ key: "guitar", match: [/^guitar$/i, /lead guitar/i] },
 	{ key: "rhythm guitar", match: [/^rhythm guitar$/i] },
 	{ key: "bass", match: [/^bass$/i, /bass guitar/i] },
+	{ key: "double bass", match: [/^double bass$/i] },
 	{ key: "piccolo bass", match: [/^piccolo bass$/i] },
+	{ key: "lap steel", match: [/^lap steel$/i] },
+	{ key: "lap steel guitar", match: [/^lap steel guitar$/i] },
+	{ key: "dulcimer", match: [/^dulcimer$/i] },
+	{ key: "hammered dulcimer", match: [/^hammered dulcimer$/i] },
+	{ key: "viola", match: [/^viola$/i] },
+	{ key: "cello", match: [/^cello$/i] },
+	{ key: "violin", match: [/^violin$/i] },
 
 	// --- Keyboards ---
 	{ key: "keyboards", match: [/^keyboards?$/i] },
@@ -34,6 +42,9 @@ export const ROLE_CANON: RoleCanonEntry[] = [
 	{ key: "ondes martenot", match: [/ondes\s*martenot/i] },
 	{ key: "sampler", match: [/^sampler$/i] },
 	{ key: "laptop", match: [/^laptop$/i] },
+	{ key: "electronic organ", match: [/^electronic organ$/i] },
+	{ key: "organ", match: [/^organ$/i] },
+	{ key: "mellotron", match: [/^mellotron$/i] },
 	{ key: "glockenspiel", match: [/^glockenspiel$/i] },
 
 	// --- Drums & Percussion ---
@@ -42,17 +53,27 @@ export const ROLE_CANON: RoleCanonEntry[] = [
 	{ key: "congas", match: [/^congas?$/i] },
 	{ key: "bongos", match: [/^bongos?$/i] },
 	{ key: "timbales", match: [/^timbales?$/i] },
+	{ key: "bells", match: [/^bells?$/i] },
+	{ key: "vibraphone", match: [/^vibraphone$/i] },
 
 	// --- Brass & Woodwinds ---
 	{ key: "saxophone", match: [/^saxophone$/i, /\bsax\b/i] },
 	{ key: "trumpet", match: [/^trumpet$/i] },
 	{ key: "trombone", match: [/^trombone$/i] },
+	{ key: "french horn", match: [/^french horn$/i] },
 	{ key: "flute", match: [/^flute$/i] },
+	{ key: "harmonica", match: [/^harmonica$/i] },
+	{ key: "melodica", match: [/^melodica$/i] },
+	{ key: "jew's harp", match: [/^jew(')?s harp$/i] },
+	{ key: "winds", match: [/^winds?$/i] },
 
 	// --- Production ---
 	{ key: "producer", match: [/^producer$/i] },
 	{ key: "orchestration", match: [/orchestration/i] },
 	{ key: "effects", match: [/^effects?$/i] },
+	{ key: "electronics", match: [/^electronics$/i] },
+	{ key: "programming", match: [/^programming$/i] },
+	{ key: "tapes", match: [/^tapes?$/i] },
 ];
 
 export const KNOWN_ROLES = new Set(ROLE_CANON.map((e) => e.key));
@@ -87,21 +108,33 @@ const KNOWN_ROLE_HUES: Readonly<Partial<Record<string, number>>> = {
 	// Vocals family - 330°–350°
 	vocals: 350,
 	"backing vocals": 330,
-	// Guitar family - 85°–142°
+	// Guitar & Strings family - 85°–142°
 	guitar: 142,
 	"rhythm guitar": 85,
-	// Bass - 217°–221°
+	"lap steel guitar": 128,
+	"lap steel": 135,
+	hammered: 115,
+	dulcimer: 122,
+	viola: 108,
+	cello: 100,
+	violin: 105,
+	// Bass - 215°–221°
 	bass: 217,
+	"double bass": 219,
 	"piccolo bass": 221,
-	// Percussion - 0°–56°
+	// Percussion - 0°–70°
 	timbales: 0,
 	bongos: 21,
 	congas: 24,
 	drums: 38,
 	percussion: 48,
+	vibraphone: 60,
+	bells: 65,
 	glockenspiel: 56,
 	// Keyboards - 237°–292°
 	laptop: 237,
+	electronics: 235,
+	electronic: 243,
 	synthesizer: 248,
 	"analogue synthesizer": 258,
 	sampler: 271,
@@ -109,13 +142,22 @@ const KNOWN_ROLE_HUES: Readonly<Partial<Record<string, number>>> = {
 	keyboards: 270,
 	piano: 284,
 	"toy piano": 292,
-	// Winds & Brass - 162°–203°
+	mellotron: 280,
+	organ: 265,
+	// Winds & Brass - 160°–203°
+	winds: 160,
+	"jew's harp": 165,
+	melodica: 170,
 	flute: 162,
 	saxophone: 183,
+	harmonica: 175,
 	trumpet: 195,
 	trombone: 203,
+	"french horn": 200,
 	// Production - 210°–230°
+	tapes: 213,
 	producer: 210,
+	programming: 225,
 	orchestration: 222,
 	effects: 230,
 };

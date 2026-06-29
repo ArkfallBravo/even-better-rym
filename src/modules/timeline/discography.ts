@@ -1,8 +1,11 @@
 import {
+	currentDecimalYear,
 	getDayOfYear,
 	isLeapYear,
 	MONTH_NAMES,
-	parseDateFromText,
+	parseDateLabelFromText,
+	parseDecimalYearFromDateString,
+	parseFullDateFromText,
 } from "./date-utils";
 import { findAdjacentInfoContent } from "./dom-helpers";
 import type { Bounds, DiscoMarker, DiscoType, MarkersByType } from "./types";
@@ -85,6 +88,7 @@ export function extractDiscographyMarkersFromDOM(
 		single: [],
 		ep: [],
 		additional: [],
+		show: [],
 	};
 
 	const discographyRoot = document.getElementById("discography");
@@ -162,9 +166,19 @@ export function readFormedAndDisbanded(
 		const contentEl = findAdjacentInfoContent(header);
 		if (!contentEl) continue;
 
-		const date = parseDateFromText(contentEl.textContent || "");
+		const labelText = parseDateLabelFromText(contentEl.textContent || "");
+		const date = parseFullDateFromText(contentEl.textContent || "");
+		if (labelText) {
+			if (label === "formed") result.formedLabel = labelText;
+			if (label === "disbanded") result.disbandedLabel = labelText;
+		}
 		if (date) updateBoundsFromLabel(result, label, date);
 	}
 
 	return result;
 }
+
+export {
+	extractShowMarkersFromDOM,
+	openPastShows,
+} from "./show";

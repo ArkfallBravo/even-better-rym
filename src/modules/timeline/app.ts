@@ -2,6 +2,7 @@ import { waitForCallback } from "~/shared/utils/dom";
 
 import { togglePanel } from "./panel";
 import { isDarkPage } from "./theme";
+import { addMapLink } from "./map-link";
 
 const LINK_CLASS = "rymmt-link";
 
@@ -14,17 +15,38 @@ export const main = async (): Promise<void> => {
 		return undefined;
 	});
 
-	// Rail-guard: do not inject if the link is already present
-	if (membersHeaderEl.querySelector(`.${LINK_CLASS}`)) return;
+	// Only add Timeline link if Members section exists
+	if (membersHeaderEl) {
+		// Rail-guard: do not inject if the link is already present
+		if (membersHeaderEl.querySelector(`.${LINK_CLASS}`)) {
+			// Timeline link already exists, but still check for Map link below
+		} else {
+			const link = document.createElement("span");
+			link.className = LINK_CLASS;
+			link.textContent = "[Timeline]";
+			// Use a light blue in dark mode so the link is visible against the dark header
+			if (isDarkPage(membersHeaderEl)) link.style.color = "#7eb8f7";
+			link.addEventListener("click", () => {
+				togglePanel(membersHeaderEl);
+			});
 
-	const link = document.createElement("span");
-	link.className = LINK_CLASS;
-	link.textContent = "[Timeline]";
-	// Use a light blue in dark mode so the link is visible against the dark header
-	if (isDarkPage(membersHeaderEl)) link.style.color = "#7eb8f7";
-	link.addEventListener("click", () => {
-		togglePanel(membersHeaderEl);
+			membersHeaderEl.appendChild(link);
+		}
+	}
+
+	const showsHeaderEl = await waitForCallback<HTMLElement>(() => {
+		const header = document.querySelector<HTMLElement>(
+			".section_artist_shows .artist_page_header h2",
+		);
+
+		if (header && (header.textContent || "").trim() === "Shows") {
+			return header;
+		}
+
+		return undefined;
 	});
 
-	membersHeaderEl.appendChild(link);
+	if (showsHeaderEl) {
+		addMapLink(showsHeaderEl);
+	}
 };

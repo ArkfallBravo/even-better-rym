@@ -26,6 +26,7 @@ const DISCO_TYPE_LABELS: Record<string, string> = {
 	ep: "EP",
 	single: "Single",
 	additional: "Add.",
+	show: "Show",
 };
 
 export function buildMarkersOverlayHtml(
@@ -57,9 +58,12 @@ export function buildMarkersOverlayHtml(
 			const entries = yearMap.get(year)!;
 
 			const tooltipText = entries
-				.map((e) => `${e.title} (${DISCO_TYPE_LABELS[e.type] ?? e.type})`)
-				.join("\n");
-
+			.map((e) =>
+				e.type === "show"
+					? e.title
+					: `${e.title} (${DISCO_TYPE_LABELS[e.type] ?? e.type})`,
+			)
+			.join("\n");
 			// One color segment per unique type at this year
 			const seenTypes = new Set<string>();
 			const segments = entries
@@ -88,10 +92,11 @@ function buildMemberStripes(
 	if (!roles.length) {
 		return `<div class="rymmt-stripe rymmt-stripe-neutral"></div>`;
 	}
+	const allRolesTitle = escapeHtml(roles.join(", "));
 	return roles
 		.map(
 			(role) =>
-				`<div class="rymmt-stripe" title="${escapeHtml(role)}" style="background:${colorMap.get(role) ?? "transparent"}"></div>`,
+				`<div class="rymmt-stripe" title="${allRolesTitle}" style="background:${colorMap.get(role) ?? "transparent"}"></div>`,
 		)
 		.join("");
 }
@@ -180,7 +185,6 @@ function buildMemberRowHtml(
 	axisMin: number,
 	axisMax: number,
 	total: number,
-	ticksHtml: string,
 	colorMap: Map<string, string>,
 ): string {
 	const stripes = buildMemberStripes(member.roles ?? [], colorMap);
@@ -197,10 +201,10 @@ function buildMemberRowHtml(
 	const stints: Stint[] =
 		Array.isArray(member.stints) && member.stints.length
 			? member.stints.filter(
-					(stint): stint is Stint =>
-						!!stint &&
-						Number.isFinite(stint.start) &&
-						Number.isFinite(stint.end),
+				(stint): stint is Stint =>
+					!!stint &&
+					Number.isFinite(stint.start) &&
+					Number.isFinite(stint.end),
 				)
 			: [{ start: fallbackStart, end: fallbackEnd }];
 
@@ -210,9 +214,16 @@ function buildMemberRowHtml(
 		)
 		.join("");
 
+	const linkTitle = member.title ?? member.name;
+	const nameContent = member.url
+		? `<a href="${escapeHtml(member.url)}" class="rymmt-name-link" title="${escapeHtml(
+			linkTitle,
+		)}">${escapeHtml(member.name)}</a>`
+		: escapeHtml(member.name);
+
 	return `<div class="rymmt-row">
-        <div class="rymmt-name" title="${escapeHtml(member.name)}">${escapeHtml(member.name)}</div>
-        <div class="rymmt-track">${ticksHtml}${bars}</div>
+        <div class="rymmt-name" title="${escapeHtml(member.name)}">${nameContent}</div>
+        <div class="rymmt-track">${bars}</div>
       </div>`;
 }
 
@@ -250,9 +261,8 @@ function computeAxisBounds(
 		...(opts.markers?.live ?? []).map((marker) => Math.floor(marker.year)),
 		...(opts.markers?.single ?? []).map((marker) => Math.floor(marker.year)),
 		...(opts.markers?.ep ?? []).map((marker) => Math.floor(marker.year)),
-		...(opts.markers?.additional ?? []).map((marker) =>
-			Math.floor(marker.year),
-		),
+		...(opts.markers?.additional ?? []).map((marker) => Math.floor(marker.year)),
+		...(opts.markers?.show ?? []).map((marker) => Math.floor(marker.year)),
 	];
 
 	const allYears = collectMemberStintYears(members, markerYears);
@@ -301,6 +311,11 @@ function buildReleasesLegendHtml(markers?: MarkersByType): string {
 	if (markers.additional.length) {
 		chips.push(
 			`<button class="rymmt-role-chip rymmt-release-chip" data-rymmt-type="additional" title="Click to hide/show Additional"><span class="rymmt-role-swatch" style="background:var(--rymmt-additional-color)"></span>Additional</button>`,
+		);
+	}
+	if (markers.show.length) {
+		chips.push(
+			`<button class="rymmt-role-chip rymmt-release-chip" data-rymmt-type="show" title="Click to hide/show Shows"><span class="rymmt-role-swatch" style="background:var(--rymmt-show-color)"></span>Shows</button>`,
 		);
 	}
 	return chips.join("");
@@ -358,12 +373,10 @@ export function buildGraph(
 		opts.markers,
 	);
 	const total = axisMax - axisMin || 1;
-	const axisStartLabel = axisMinKnown
-		? String(Math.floor(axisMin))
-		: "First Release";
-	const axisEndLabel = Number.isFinite(opts.disbandedYear)
-		? String(Math.floor(axisMax))
-		: "Now";
+	const axisStartLabel = opts.axisStartLabel ??
+		(axisMinKnown ? String(Math.floor(axisMin)) : "First Release");
+	const axisEndLabel = opts.axisEndLabel ??
+		(Number.isFinite(opts.disbandedYear) ? String(Math.floor(axisMax)) : "Now");
 
 	const rowsHtml = normalizedMembers
 		.map((member) =>
@@ -372,7 +385,6 @@ export function buildGraph(
 				axisMin,
 				axisMax,
 				total,
-				ticksHtml,
 				chartColorMap,
 			),
 		)
@@ -386,8 +398,9 @@ export function buildGraph(
         <button class="rymmt-btn rymmt-fs-close-btn" title="Exit fullscreen" aria-label="Exit fullscreen">&#x2715; Exit fullscreen</button>
       </div>
       <div class="rymmt-grid rymmt-grid-has-overlay">
-        ${markersOverlayHtml}
         ${rowsHtml}
+        ${markersOverlayHtml}
+        <div class="rymmt-ticks">${ticksHtml}</div>
       </div>
       <div class="rymmt-axis">
         <div></div>
@@ -407,7 +420,7 @@ export function buildGraph(
 
 export function attachGraphInteractivity(panel: HTMLElement): void {
 	// Types hidden on initial open (only Albums shown by default)
-	const INITIALLY_HIDDEN = new Set(["live", "ep", "single", "additional"]);
+	const INITIALLY_HIDDEN = new Set(["live", "ep", "single", "additional", "show"]);
 	const hiddenTypes = new Set<string>(INITIALLY_HIDDEN);
 
 	// Re-evaluate each mgroup: hide it entirely when every one of its segments
