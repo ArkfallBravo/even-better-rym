@@ -11,12 +11,13 @@ import {
 	failed,
 	fold,
 	initial,
+	isComplete,
 	loading,
 } from "~/shared/utils/one-shot";
 import { pipe } from "~/shared/utils/pipe";
 
 export function CoverArtDownloader() {
-	const { info, fetchInfo } = useReleaseInfo();
+	const { info, setInfo, fetchInfo } = useReleaseInfo();
 	const [state, setState] = useState<OneShot<Error, ResolveData>>(initial);
 
 	useEffect(() => {
@@ -71,7 +72,10 @@ export function CoverArtDownloader() {
 					services={RESOLVABLES}
 					submitText="Download"
 					data={state}
-					onSubmit={(url, service) => void fetchInfo(url, service)}
+					onSubmit={async (url, service) => {
+						const result = await fetchInfo(url, service);
+						if (isComplete(result)) setInfo(result);
+					}}
 				/>
 			</div>
 		</>
