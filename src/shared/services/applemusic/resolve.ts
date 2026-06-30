@@ -97,6 +97,16 @@ const parseLabelAndType = (
 	};
 };
 
+const getIsVariousArtists = (document_: Document): boolean => {
+	for (const script of document_.querySelectorAll("script")) {
+		if (!script.text.includes("track-lockup")) continue;
+		if (script.text.includes('"subtitleLinks":[{"title":"Various Artists"'))
+			return true;
+		break;
+	}
+	return false;
+};
+
 const getTrackArtists = (document_: Document): Map<number, string> => {
 	const map = new Map<number, string>();
 	const regex =
@@ -149,8 +159,12 @@ const resolveAlbumFields = (
 		),
 	);
 
+	const artists = getIsVariousArtists(document_)
+		? ["Various Artists"]
+		: release.byArtist.map((a) => a.name);
+
 	return {
-		artists: release.byArtist.map((a) => a.name),
+		artists,
 		title,
 		type,
 		format: "lossless digital",
