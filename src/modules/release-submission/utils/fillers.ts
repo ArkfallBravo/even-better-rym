@@ -77,8 +77,12 @@ async function fillExtraFields(
 
 async function fillArtists(artists: string[]) {
 	if (artists[0]?.toLowerCase() === "various artists") {
-		// Various Artists release
 		forceQuerySelector<HTMLInputElement>(document)("#cat_va").click();
+		for (const link of document.querySelectorAll<HTMLAnchorElement>(
+			"#filed_under_performerx .filed_under_delete a",
+		)) {
+			link.click();
+		}
 	} else {
 		// Regular release
 		if (document.querySelector(".sortable_filed_under_performer") !== null)
