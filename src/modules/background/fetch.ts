@@ -18,7 +18,11 @@ export const backgroundFetch = async ({
 	});
 	const responseBody = await response.text();
 	if (!response.ok)
-		return { id, type: "fetch", data: { error: `HTTP ${response.status}: ${responseBody}` } };
+		return {
+			id,
+			type: "fetch",
+			data: { error: `HTTP ${response.status}: ${responseBody}` },
+		};
 
 	return { id, type: "fetch", data: { body: responseBody } };
 };
