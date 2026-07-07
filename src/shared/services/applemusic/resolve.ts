@@ -15,6 +15,7 @@ import type {
 } from "../types";
 import type { MusicVideoData, ReleaseData } from "./codec";
 import { convertAppleMusicDuration } from "./convert";
+import { getTrackArtists } from "./track-artists";
 
 const FULL_IMAGE_SIZE = "3000x3000bb.jpg";
 
@@ -105,21 +106,6 @@ const getIsVariousArtists = (document_: Document): boolean => {
 		break;
 	}
 	return false;
-};
-
-const getTrackArtists = (document_: Document): Map<number, string> => {
-	const map = new Map<number, string>();
-	const regex =
-		/"trackNumber":(\d+)(?:(?!"trackNumber":).)*?"subtitleLinks":\[\{"title":"([^"]*)"/gs;
-	for (const script of document_.querySelectorAll("script")) {
-		if (!script.text.includes("track-lockup")) continue;
-		for (const match of script.text.matchAll(regex)) {
-			const trackNum = Number.parseInt(match[1], 10);
-			if (!map.has(trackNum)) map.set(trackNum, match[2]);
-		}
-		break;
-	}
-	return map;
 };
 
 const resolveAlbumFields = (
