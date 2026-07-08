@@ -9,9 +9,7 @@ scripts/output/
 scripts/*.htm
 
 # Xcode
-EvenBetterRYM/build/
-EvenBetterRYM/*.xcodeproj/xcuserdata/
-EvenBetterRYM/*.xcodeproj/project.xcworkspace/xcuserdata/
+EvenBetterRYM/
 DerivedData/
 
 .claude/
