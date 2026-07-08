@@ -78,17 +78,51 @@ async function fillExtraFields(
 async function fillArtists(artists: string[]) {
 	if (artists[0]?.toLowerCase() === "various artists") {
 		forceQuerySelector<HTMLInputElement>(document)("#cat_va").click();
-		for (const link of document.querySelectorAll<HTMLAnchorElement>(
-			"#filed_under_performerx .filed_under_delete a",
-		)) {
-			link.click();
-		}
-	} else {
-		// Regular release
-		if (document.querySelector(".sortable_filed_under_performer") !== null)
-			return;
+		switchAwayFromSameAsParent();
+		clearFiledUnderPerformers();
+		return;
+	}
 
-		for (const artist of artists) await fillArtist(artist);
+	if (filedUnderPerformersMatch(artists)) return;
+
+	switchAwayFromSameAsParent();
+	clearFiledUnderPerformers();
+	for (const artist of artists) await fillArtist(artist);
+}
+
+function getFiledUnderPerformerNames(): string[] {
+	return [...document.querySelectorAll(".sortable_filed_under_performer")].map(
+		(entry) =>
+			entry
+				.querySelector(".filed_under_artist_preview .rendered_text")
+				?.textContent?.trim() ?? "",
+	);
+}
+
+function filedUnderPerformersMatch(artists: string[]): boolean {
+	const current = getFiledUnderPerformerNames();
+	if (current.length !== artists.length) return false;
+
+	const normalize = (names: string[]) =>
+		names.map((name) => name.toLowerCase()).sort();
+	const normalizedCurrent = normalize(current);
+	const normalizedArtists = normalize(artists);
+	return normalizedCurrent.every(
+		(name, index) => name === normalizedArtists[index],
+	);
+}
+
+function switchAwayFromSameAsParent() {
+	document
+		.querySelector<HTMLInputElement>("#filed_under_same_as_parent_no")
+		?.click();
+}
+
+function clearFiledUnderPerformers() {
+	for (const link of document.querySelectorAll<HTMLAnchorElement>(
+		"#filed_under_performerx .filed_under_delete a",
+	)) {
+		link.click();
 	}
 }
 
