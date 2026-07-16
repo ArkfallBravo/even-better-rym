@@ -158,11 +158,12 @@ const ManifestV3 = {
 
 export function getManifest(
 	manifestVersion: number,
+	displayName?: string,
 ): chrome.runtime.ManifestV2 | chrome.runtime.ManifestV3 {
 	const manifest = {
 		author: pkg.author,
 		description: pkg.description,
-		name: pkg.displayName ?? pkg.name,
+		name: displayName ?? pkg.displayName ?? pkg.name,
 		version: pkg.version,
 	};
 

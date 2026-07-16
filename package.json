@@ -7,7 +7,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "vite build",
-		"build:safari": "MANIFEST_VERSION=2 vite build",
+		"build:safari": "MANIFEST_VERSION=2 EXTENSION_DISPLAY_NAME=\"EvenBetterRYM for Safari\" vite build",
 		"watch": "vite build --watch --mode development --minify false",
 		"dev": "vite",
 		"serve:firefox": "web-ext run --start-url \"https://rateyourmusic.com/release/album/the-collapsible-mammals/the-collapsible-mammals\"  --source-dir ./dist/",
