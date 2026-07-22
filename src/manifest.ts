@@ -114,7 +114,10 @@ const sharedManifest = {
 		},
 		{
 			js: ["src/modules/hide-votes/main.ts"],
-			matches: ["*://*.rateyourmusic.com/rgenre/*", "*://*.rateyourmusic.com/rdescriptor/*"],
+			matches: [
+				"*://*.rateyourmusic.com/rgenre/*",
+				"*://*.rateyourmusic.com/rdescriptor/*",
+			],
 			run_at: "document_idle",
 		},
 	],
@@ -125,10 +128,12 @@ const sharedManifest = {
 	},
 	permissions: [
 		"storage",
+		"unlimitedStorage",
 		"downloads",
 		"tabs",
 		"scripting",
 		"activeTab",
+		"nativeMessaging",
 	] as chrome.runtime.ManifestPermissions[],
 } satisfies Partial<chrome.runtime.ManifestBase>;
 
@@ -141,7 +146,7 @@ const ManifestV2 = {
 	...sharedManifest,
 	background: {
 		scripts: ["src/modules/background/index.ts"],
-		persistent: false,
+		persistent: true,
 	},
 	browser_action: browserAction,
 	permissions: [...sharedManifest.permissions, ...hostsArray],

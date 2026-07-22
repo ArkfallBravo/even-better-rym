@@ -1,14 +1,88 @@
 import browser from "webextension-polyfill";
 
-import { getPageEnabled } from "~/shared/page-settings";
 import type { PageKey } from "~/shared/pages";
 import { globalPageKeys, pages } from "~/shared/pages";
-import type { BackgroundResponse } from "~/shared/utils/messaging";
+import type {
+	BackgroundResponse,
+	SettingsGetAllRequest,
+	SettingsGetAllResponse,
+	SettingsSetRequest,
+	SettingsSetResponse,
+	StorageSetRequest,
+	StorageSetResponse,
+} from "~/shared/utils/messaging";
 import { isBackgroundRequest } from "~/shared/utils/messaging";
+import type { SettingsDict } from "~/shared/utils/native-settings";
+import {
+	nativeGetAllSettings,
+	nativeSetOneSetting,
+} from "~/shared/utils/native-settings";
+import * as storage from "~/shared/utils/storage";
 
 import { download } from "./download";
 import { backgroundFetch } from "./fetch";
 import { script } from "./script";
+
+const setStorageFromMessage = async (
+	message: StorageSetRequest,
+): Promise<StorageSetResponse> => {
+	await storage.set(message.data.key, message.data.value);
+	return { id: message.id, type: "storageSet" };
+};
+
+let settingsCache: SettingsDict = {};
+let hydrationPromise: Promise<void> | undefined;
+
+// Best-effort, non-blocking: any pre-existing `pages.*` values still sitting
+// in browser.storage.local (from a live session predating this change) are
+// seeded into native settings once, so upgrading users don't see their
+// customized toggles silently reset to all-enabled.
+const migratedFlagKey = "pages.migratedToNativeSettings";
+
+const migrateLegacyStorageSettings = async (): Promise<void> => {
+	const alreadyMigrated = await storage.get<boolean>(migratedFlagKey);
+	if (alreadyMigrated) return;
+
+	const legacyEntries = Object.entries(await storage.getAll()).filter(
+		(entry): entry is [string, boolean] =>
+			entry[0].startsWith("pages.") &&
+			entry[0] !== migratedFlagKey &&
+			typeof entry[1] === "boolean",
+	);
+
+	await Promise.all(
+		legacyEntries.map(([key, value]) =>
+			nativeSetOneSetting(key.slice("pages.".length) as PageKey, value),
+		),
+	);
+
+	await storage.set(migratedFlagKey, true);
+};
+
+const ensureSettings = (): Promise<void> => {
+	hydrationPromise ??= (async () => {
+		try {
+			await migrateLegacyStorageSettings();
+			settingsCache = await nativeGetAllSettings();
+		} catch (error) {
+			console.error("[settings] failed to hydrate from native side", error);
+			settingsCache = {};
+		}
+	})();
+	return hydrationPromise;
+};
+
+const getSettingsSnapshot = async (): Promise<SettingsDict> => {
+	await ensureSettings();
+	return settingsCache;
+};
+
+const setSetting = async (key: PageKey, value: boolean): Promise<void> => {
+	await nativeSetOneSetting(key, value);
+	settingsCache = { ...settingsCache, [key]: value };
+};
+
+void ensureSettings();
 
 const getResponse = (
 	message: unknown,
@@ -22,7 +96,42 @@ const getResponse = (
 	throw new Error(`Invalid message: ${JSON.stringify(message)}`);
 };
 
+const getSettingsGetAllResponse = async (
+	message: SettingsGetAllRequest,
+): Promise<SettingsGetAllResponse> => ({
+	id: message.id,
+	type: "settingsGetAll",
+	data: await getSettingsSnapshot(),
+});
+
+const getSettingsSetResponse = async (
+	message: SettingsSetRequest,
+): Promise<SettingsSetResponse> => {
+	await setSetting(message.data.key, message.data.value);
+	return { id: message.id, type: "settingsSet" };
+};
+
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	// storageSet/settingsGetAll/settingsSet have no associated tab (e.g. sent
+	// from the popup), so they're handled before the tab-scoped messages below.
+	if (isBackgroundRequest(message) && message.type === "storageSet") {
+		const respond = sendResponse as (response: BackgroundResponse) => void;
+		void setStorageFromMessage(message).then(respond);
+		return true;
+	}
+
+	if (isBackgroundRequest(message) && message.type === "settingsGetAll") {
+		const respond = sendResponse as (response: BackgroundResponse) => void;
+		void getSettingsGetAllResponse(message).then(respond);
+		return true;
+	}
+
+	if (isBackgroundRequest(message) && message.type === "settingsSet") {
+		const respond = sendResponse as (response: BackgroundResponse) => void;
+		void getSettingsSetResponse(message).then(respond);
+		return true;
+	}
+
 	const tabId = sender.tab?.id;
 	if (tabId === undefined) return;
 
@@ -30,7 +139,13 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		const respond = sendResponse as (response: BackgroundResponse) => void;
 		getResponse(message, tabId)
 			.then(respond)
-			.catch((err: unknown) => respond({ id: "", type: "fetch", data: { body: "", error: String(err) } }));
+			.catch((err: unknown) =>
+				respond({
+					id: "",
+					type: "fetch",
+					data: { body: "", error: String(err) },
+				}),
+			);
 		return true; // keep channel open until sendResponse is called
 	}
 });
@@ -69,11 +184,11 @@ browser.tabs.onUpdated.addListener((id, _changeInfo, tab) => {
 
 	if (matchingKeys.length === 0) return;
 
-	void Promise.all(matchingKeys.map((key) => getPageEnabled(key))).then(
-		(results) => {
-			const enabled = results.some(Boolean);
-			setTabIcon(id, enabled);
-			void browser.action.enable(id);
-		},
-	);
+	// Reads settingsCache directly rather than going through getPageEnabled,
+	// which would round-trip a sendMessage back to this same script.
+	void ensureSettings().then(() => {
+		const enabled = matchingKeys.some((key) => settingsCache[key] ?? true);
+		setTabIcon(id, enabled);
+		void browser.action.enable(id);
+	});
 });

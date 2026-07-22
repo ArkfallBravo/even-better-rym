@@ -1,4 +1,9 @@
-import type { FetchRequest, FetchResponse } from "./messaging";
+import type {
+	FetchRequest,
+	FetchResponse,
+	ScriptRequest,
+	ScriptResponse,
+} from "./messaging";
 import { sendBackgroundMessage } from "./messaging";
 
 export const fetch = async (data: FetchRequest["data"]): Promise<string> => {
@@ -77,7 +82,7 @@ export const fetchInPage = async (
 			return btoa(binary);
 		};
 		const serialized = unicodeBase64(JSON.stringify(data));
-		void sendBackgroundMessage({
+		void sendBackgroundMessage<ScriptRequest, ScriptResponse>({
 			type: "script",
 			data: {
 				// the injected script runs in the page's main world

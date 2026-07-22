@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
 import browser from "webextension-polyfill";
 
+import type { PageKey } from "~/shared/pages";
+
 export type FetchRequest = {
 	id: string;
 	type: "fetch";
@@ -53,11 +55,59 @@ export type ScriptResponse = {
 	type: "script";
 };
 
-export type BackgroundRequest = FetchRequest | DownloadRequest | ScriptRequest;
+export type StorageSetRequest = {
+	id: string;
+	type: "storageSet";
+	data: {
+		key: string;
+		value: unknown;
+	};
+};
+
+export type StorageSetResponse = {
+	id: string;
+	type: "storageSet";
+};
+
+export type SettingsGetAllRequest = {
+	id: string;
+	type: "settingsGetAll";
+};
+
+export type SettingsGetAllResponse = {
+	id: string;
+	type: "settingsGetAll";
+	data: Partial<Record<PageKey, boolean>>;
+};
+
+export type SettingsSetRequest = {
+	id: string;
+	type: "settingsSet";
+	data: {
+		key: PageKey;
+		value: boolean;
+	};
+};
+
+export type SettingsSetResponse = {
+	id: string;
+	type: "settingsSet";
+};
+
+export type BackgroundRequest =
+	| FetchRequest
+	| DownloadRequest
+	| ScriptRequest
+	| StorageSetRequest
+	| SettingsGetAllRequest
+	| SettingsSetRequest;
 export type BackgroundResponse =
 	| FetchResponse
 	| DownloadResponse
-	| ScriptResponse;
+	| ScriptResponse
+	| StorageSetResponse
+	| SettingsGetAllResponse
+	| SettingsSetResponse;
 
 export const isBackgroundRequest = (o: unknown): o is BackgroundRequest =>
 	typeof o === "object" && o !== null && "id" in o && "type" in o;
