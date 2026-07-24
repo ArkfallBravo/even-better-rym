@@ -146,7 +146,7 @@ const ManifestV2 = {
 	...sharedManifest,
 	background: {
 		scripts: ["src/modules/background/index.ts"],
-		persistent: true,
+		persistent: false,
 	},
 	browser_action: browserAction,
 	permissions: [...sharedManifest.permissions, ...hostsArray],
