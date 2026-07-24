@@ -20,12 +20,16 @@
 	--rymmt-track-border: currentColor;
 
 	--rymmt-muted-text: inherit;
+	--rymmt-row-alt-bg: transparent;
+	--rymmt-link-color: #0645ad;
+	--rymmt-link-hover-color: #0b539c;
 
 	--rymmt-album-color: transparent;
 	--rymmt-live-color: transparent;
 	--rymmt-ep-color: transparent;
 	--rymmt-single-color: transparent;
 	--rymmt-additional-color: transparent;
+	--rymmt-show-color: transparent;
 	--rymmt-tick-color: rgba(255, 255, 255, 0.25);
 	--rymmt-tick-major-color: rgba(255, 255, 255, 0.45);
 	--rymmt-marker-border: rgba(0, 0, 0, 0.6);
@@ -37,32 +41,52 @@
 
 	--rymmt-role-guitar: #22c55e;
 	--rymmt-role-rhythm-guitar: #84cc16;
-
+	--rymmt-role-lap-steel: #7ed321;
+	--rymmt-role-lap-steel-guitar: #65d33f;
+	--rymmt-role-double-bass: #2e6dff;
 	--rymmt-role-bass: #3b82f6;
 	--rymmt-role-piccolo-bass: #2563eb;
+	--rymmt-role-dulcimer: #50b962;
+	--rymmt-role-hammered-dulcimer: #4aa352;
+	--rymmt-role-viola: #3d8a42;
+	--rymmt-role-cello: #35a052;
+	--rymmt-role-violin: #2e9642;
 
 	--rymmt-role-timbales: #dc2626;
 	--rymmt-role-bongos: #ea580c;
 	--rymmt-role-congas: #f97316;
 	--rymmt-role-drums: #f59e0b;
 	--rymmt-role-percussion: #facc15;
+	--rymmt-role-vibraphone: #fcd34d;
+	--rymmt-role-bells: #fef3c7;
 	--rymmt-role-glockenspiel: #d4bf18;
 
 	--rymmt-role-laptop: #5b6de8;
+	--rymmt-role-electronics: #6475f0;
 	--rymmt-role-synthesizer: #7060ef;
 	--rymmt-role-analogue-synthesizer: #8248ec;
 	--rymmt-role-sampler: #9638d4;
 	--rymmt-role-ondes-martenot: #9d3de8;
 	--rymmt-role-keyboards: #a855f7;
+	--rymmt-role-electronic-organ: #b565f2;
+	--rymmt-role-organ: #9d4de8;
+	--rymmt-role-mellotron: #a84bed;
 	--rymmt-role-piano: #b540ee;
 	--rymmt-role-toy-piano: #d946ef;
 
+	--rymmt-role-winds: #0ea5b8;
 	--rymmt-role-flute: #1dbf98;
+	--rymmt-role-jews-harp: #16b5a9;
+	--rymmt-role-melodica: #1fa99f;
+	--rymmt-role-harmonica: #1b9d95;
 	--rymmt-role-saxophone: #0db8c8;
 	--rymmt-role-trumpet: #0ca4d8;
 	--rymmt-role-trombone: #0a82be;
+	--rymmt-role-french-horn: #0b93cc;
 
+	--rymmt-role-tapes: #5aa4bc;
 	--rymmt-role-producer: #5a8ab8;
+	--rymmt-role-programming: #6595c5;
 	--rymmt-role-orchestration: #5070a8;
 	--rymmt-role-effects: #6070b8;
 
@@ -74,10 +98,7 @@
 	overflow: visible;
 	background: var(--rymmt-panel-bg);
 	color: var(--rymmt-panel-text);
-	border: 1px solid var(--rymmt-panel-border);
-	border-radius: 12px;
 	z-index: 2147483647;
-	box-shadow: 0 14px 42px rgba(0, 0, 0, 0.55);
 	max-height: none !important;
 }
 
@@ -98,7 +119,7 @@
 	padding: 10px 12px;
 	gap: 10px;
 	top: 0;
-	background: rgba(0, 0, 0, 0.92);
+	background: var(--mono-f8, rgba(255,255,255,0.08));
 	border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 	backdrop-filter: blur(8px);
 }
@@ -175,10 +196,8 @@
 	overflow: visible !important;
 	position: static !important; /* prevents sticky/fixed hacks from taking effect */
 	border: 1px solid var(--rymmt-panel-border);
-	background: var(--rymmt-panel-bg);
 	color: var(--rymmt-panel-text);
 	padding: 10px;
-	border-radius: 6px;
 
 	width: 100%; /* NEW: make it respect container width */
 	max-width: 100%; /* NEW */
@@ -265,12 +284,16 @@ body.rymmt-fs-open {
 	grid-template-columns: 160px minmax(0, 1fr);
 	column-gap: 12px;
 	align-items: center;
+	min-height: 1.5em;
 
-	/* Lift rows above the markers-global overlay (z-index 1) */
 	position: relative;
-	z-index: 2;
+	z-index: 0;
 	/* Pass pointer events through the row gaps so marker tooltips remain hoverable */
 	pointer-events: none;
+}
+
+#rymmt-panel .rymmt-row:nth-child(odd) {
+	background-color: var(--rymmt-row-alt-bg);
 }
 
 /* Restore interactivity on the interactive parts of each row */
@@ -281,17 +304,27 @@ body.rymmt-fs-open {
 
 #rymmt-panel .rymmt-name {
 	font-size: 13px;
-	color: var(--rymmt-panel-text);
 	opacity: 0.9;
 	line-height: 1.2;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+#rymmt-panel .rymmt-name a,
+#rymmt-panel .rymmt-name-link {
+	color: var(--rymmt-link-color);
+	text-decoration: none;
+	font-weight: 700;
+}
+#rymmt-panel .rymmt-name a:hover,
+#rymmt-panel .rymmt-name-link:hover {
+	color: var(--rymmt-link-hover-color);
+	text-decoration: underline;
+}
 
 #rymmt-panel .rymmt-track {
 	position: relative;
-	height: 16px;
+	height: 20px;
 	border: 0;
 	background: transparent;
 	overflow: visible;
@@ -302,7 +335,10 @@ body.rymmt-fs-open {
 /* Ticks behind everything */
 #rymmt-panel .rymmt-ticks {
 	position: absolute;
-	inset: 0;
+	top: 0;
+	bottom: 0;
+	left: calc(160px + 12px);
+	right: 0;
 	pointer-events: none;
 	z-index: 1;
 }
@@ -320,9 +356,8 @@ body.rymmt-fs-open {
 /* Member role bar */
 #rymmt-panel .rymmt-bar {
 	position: absolute;
-	top: 2px;
-	height: 14px;
-	border-radius: 2px;
+	height: 100%;
+	border-radius: 1px;
 	z-index: 2;
 
 	/* Stripes fill the bar proportionally - no gap/padding to avoid whitespace */
@@ -396,6 +431,9 @@ body.rymmt-fs-open {
 #rymmt-panel .rymmt-mseg-additional {
 	background: var(--rymmt-additional-color);
 }
+#rymmt-panel .rymmt-mseg-show {
+	background: var(--rymmt-show-color);
+}
 
 /* Hide marker segments when their type is toggled off */
 #rymmt-panel[data-hide-album] .rymmt-mseg-album {
@@ -411,6 +449,9 @@ body.rymmt-fs-open {
 	display: none;
 }
 #rymmt-panel[data-hide-additional] .rymmt-mseg-additional {
+	display: none;
+}
+#rymmt-panel[data-hide-show] .rymmt-mseg-show {
 	display: none;
 }
 
@@ -550,6 +591,9 @@ body.rymmt-fs-open {
 		grid-template-columns: 120px minmax(0, 1fr);
 	}
 	#rymmt-panel .rymmt-markers-global {
+		left: calc(120px + 12px);
+	}
+	#rymmt-panel .rymmt-ticks {
 		left: calc(120px + 12px);
 	}
 }
