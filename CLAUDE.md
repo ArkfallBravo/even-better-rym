@@ -36,6 +36,10 @@ V2 (Safari) uses a persistent-page background (`background.scripts` + `persisten
 
 Safari-specific native settings persistence: content scripts/popup talk to the background script via `browser.runtime.sendMessage` (see `src/shared/utils/messaging.ts`), and the background script (`src/modules/background/index.ts`) proxies feature-toggle settings through `browser.runtime.sendNativeMessage` to `SafariWebExtensionHandler.swift` (`EvenBetterRYM/Shared (Extension)/`), which persists them via native `UserDefaults` rather than `storage.local` — this was a deliberate change (see `native-settings.ts`) so settings survive Safari's "clear web history" action, which wipes extension storage but not native UserDefaults.
 
+## App Store privacy policy
+
+The Safari app's App Store Connect listing needs a Privacy Policy URL. This is hosted as a static page on a dedicated `gh-pages` branch (root `index.html`, orphan branch — no shared history with `main`), published via GitHub Pages at `https://arkfallbravo.github.io/even-better-rym/`. Kept on its own branch rather than in `main`'s `docs/` folder (which holds internal architecture notes like `codebase.md`/`plan.md`, not public content) so `main`'s tree/history stays free of unrelated public-facing HTML. To update the policy text, edit `index.html` on the `gh-pages` branch directly and push — it is not part of the Vite build or `dist/`.
+
 ## Architecture
 
 ### Feature module pattern
