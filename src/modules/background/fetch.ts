@@ -21,7 +21,10 @@ export const backgroundFetch = async ({
 		return {
 			id,
 			type: "fetch",
-			data: { error: `HTTP ${response.status}: ${responseBody}` },
+			data: {
+				body: responseBody,
+				error: `HTTP ${response.status}: ${responseBody}`,
+			},
 		};
 
 	return { id, type: "fetch", data: { body: responseBody } };
