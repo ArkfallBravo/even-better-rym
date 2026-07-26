@@ -16,8 +16,7 @@ const STYLE = `
 	}
 `;
 
-const VOTE_HEADER_PATTERN =
-	/(<b>voted (?:for|against):<\/b>.*?:)/i;
+const VOTE_HEADER_PATTERN = /(<b>voted (?:for|against):<\/b>.*?:)/i;
 
 function extractVoteCount(html: string): number {
 	// Match the number after "voted for:" or "voted against:" and before the parenthesis
@@ -27,7 +26,11 @@ function extractVoteCount(html: string): number {
 	return match ? Number.parseInt(match[1], 10) : 0;
 }
 
-function addHideButton(spanElement: HTMLElement, voteForCount: number, voteAgainstCount: number): void {
+function addHideButton(
+	spanElement: HTMLElement,
+	voteForCount: number,
+	voteAgainstCount: number,
+): void {
 	if (spanElement.querySelector(".ebr-hide-votes-button")) return;
 
 	const html = spanElement.innerHTML;
@@ -51,7 +54,8 @@ function addHideButton(spanElement: HTMLElement, voteForCount: number, voteAgain
 	const totalVotes = voteForCount + voteAgainstCount;
 	const isVoteFor = html.includes("voted for:");
 	const currentCount = isVoteFor ? voteForCount : voteAgainstCount;
-	const percentage = totalVotes > 0 ? ((currentCount / totalVotes) * 100).toFixed(1) : "0.0";
+	const percentage =
+		totalVotes > 0 ? ((currentCount / totalVotes) * 100).toFixed(1) : "0.0";
 
 	// Insert percentage after the vote count in the header
 	// For descriptor pages with score section, append percentage after the colon
@@ -64,15 +68,20 @@ function addHideButton(spanElement: HTMLElement, voteForCount: number, voteAgain
 		updatedBefore = before + ` ${currentCount}/${totalVotes}, ${percentage}%`;
 	} else {
 		// Genre page: replace the vote count with percentage
-		updatedBefore = before.replace(/\((\d+)\)/, `($1/${totalVotes}, ${percentage}%)`);
+		updatedBefore = before.replace(
+			/\((\d+)\)/,
+			`($1/${totalVotes}, ${percentage}%)`,
+		);
 	}
 
 	spanElement.innerHTML =
 		updatedBefore +
 		`<span class="ebr-hide-votes-button">Hide</span>` +
-		`<span class="ebr-user-list">${userListHtml}</span>`
+		`<span class="ebr-user-list">${userListHtml}</span>`;
 
-	const button = spanElement.querySelector<HTMLElement>(".ebr-hide-votes-button");
+	const button = spanElement.querySelector<HTMLElement>(
+		".ebr-hide-votes-button",
+	);
 
 	if (button === null) {
 		return;
@@ -91,8 +100,7 @@ function addHideButton(spanElement: HTMLElement, voteForCount: number, voteAgain
 function collectVoteSpans(
 	spans: NodeListOf<Element>,
 ): Map<HTMLElement, HTMLElement[]> {
-
-// Group spans by their container (genrea or descriptora)
+	// Group spans by their container (genrea or descriptora)
 	const containerMap = new Map<HTMLElement, HTMLElement[]>();
 
 	for (const span of spans) {
@@ -103,8 +111,13 @@ function collectVoteSpans(
 		const hasUserLinks = span.querySelector("a.user");
 
 		// Only process spans with vote text or user links
-		if (text && (text.startsWith("voted for:") || text.startsWith("voted against:"))) {
-			const container = span.closest(".genrea, .genred, .descriptora, .descriptord") as HTMLElement;
+		if (
+			text &&
+			(text.startsWith("voted for:") || text.startsWith("voted against:"))
+		) {
+			const container = span.closest(
+				".genrea, .genred, .descriptora, .descriptord",
+			) as HTMLElement;
 			if (container) {
 				if (!containerMap.has(container)) {
 					containerMap.set(container, []);
@@ -150,13 +163,12 @@ function processVoteSpans(): void {
 	const containerMap = collectVoteSpans(spans);
 
 	for (const [, containerSpans] of containerMap) {
-	const { voteForCount, voteAgainstCount } =
-		getVoteCounts(containerSpans);
+		const { voteForCount, voteAgainstCount } = getVoteCounts(containerSpans);
 
-	for (const span of containerSpans) {
-		addHideButton(span, voteForCount, voteAgainstCount);
+		for (const span of containerSpans) {
+			addHideButton(span, voteForCount, voteAgainstCount);
+		}
 	}
-}
 }
 
 function addSwitchLink(): void {
@@ -174,7 +186,10 @@ function addSwitchLink(): void {
 		// Find "Primary Genres" h3 and add "Switch to Descriptor" link
 		const h3s = document.querySelectorAll("h3");
 		for (const h3 of h3s) {
-			if (h3.textContent?.includes("Primary Genres") && !h3.querySelector("a")) {
+			if (
+				h3.textContent?.includes("Primary Genres") &&
+				!h3.querySelector("a")
+			) {
 				const link = document.createElement("a");
 				link.textContent = "Switch to Descriptors";
 				link.href = url.replace("/rgenre/", "/rdescriptor/");
@@ -218,7 +233,9 @@ function addCollapseAllButton(): void {
 		form = document.querySelector(".votingbox form");
 	} else {
 		// Descriptor page: find form with prigen input
-		form = document.querySelector("form input#prigen")?.closest("form") as HTMLElement | null;
+		form = document
+			.querySelector("form input#prigen")
+			?.closest("form") as HTMLElement | null;
 	}
 
 	if (!form) return;
@@ -271,36 +288,38 @@ export async function main(): Promise<void> {
 
 	// Wait for loading image to have "blank" in src before processing vote spans
 	const waitForLoadingComplete = (): Promise<void> => {
-	return new Promise((resolve) => {
-		const loadingImg = document.getElementById("loading") as HTMLImageElement | null;
+		return new Promise((resolve) => {
+			const loadingImg = document.getElementById(
+				"loading",
+			) as HTMLImageElement | null;
 
-		if (loadingImg === null) {
-			resolve();
-			return;
-		}
-
-		const isLoaded 	= () => loadingImg.src.includes("/images/blank.png");
-
-		if (isLoaded()) {
-			resolve();
-			return;
-		}
-
-		const observer = new MutationObserver(() => {
-			if (!isLoaded()) {
+			if (loadingImg === null) {
+				resolve();
 				return;
 			}
 
-			observer.disconnect();
-			resolve();
-		});
+			const isLoaded = () => loadingImg.src.includes("/images/blank.png");
 
-		observer.observe(loadingImg, {
-			attributes: true,
-			attributeFilter: ["src"],
+			if (isLoaded()) {
+				resolve();
+				return;
+			}
+
+			const observer = new MutationObserver(() => {
+				if (!isLoaded()) {
+					return;
+				}
+
+				observer.disconnect();
+				resolve();
+			});
+
+			observer.observe(loadingImg, {
+				attributes: true,
+				attributeFilter: ["src"],
+			});
 		});
-	});
-};
+	};
 
 	// Wait for loading to complete, then process vote spans
 	await waitForLoadingComplete();
@@ -319,7 +338,9 @@ export async function main(): Promise<void> {
 							element.classList?.contains("genred") ||
 							element.classList?.contains("descriptora") ||
 							element.classList?.contains("descriptord") ||
-							element.querySelector?.(".genrea, .genred, .descriptora, .descriptord")
+							element.querySelector?.(
+								".genrea, .genred, .descriptora, .descriptord",
+							)
 						) {
 							// Re-process vote spans when new content is added
 							// TODO: add a mechanism to trigger that based on the page changes instead of being time-based.

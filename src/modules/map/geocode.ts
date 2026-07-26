@@ -1,5 +1,5 @@
-import type { CityPoint } from "./types";
 import offlineGeoCsv from "./cities.csv?raw";
+import type { CityPoint } from "./types";
 
 // Simple Nominatim geocode helper with localStorage caching and basic rate-limiting.
 // Notes: Nominatim is free and reliable for light use but rate-limited for heavy traffic.

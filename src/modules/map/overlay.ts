@@ -1,4 +1,8 @@
-import { getOfflineLocationById, getOfflineLocationByName, latLonToSmallMapCoords } from "./geocode";
+import {
+	getOfflineLocationById,
+	getOfflineLocationByName,
+	latLonToSmallMapCoords,
+} from "./geocode";
 
 function findSvgWithLocs(): SVGSVGElement | null {
 	const svgs = Array.from(document.querySelectorAll("svg"));
@@ -61,15 +65,17 @@ function applyCityNameMatches(textCandidates: HTMLElement[]): void {
 
 		if (!svg) continue;
 
-		const child = Array.from(svg.querySelectorAll("[id], [data-name]")).find((candidate) => {
-			const id = candidate.getAttribute("id") ?? "";
-			const dataName = candidate.getAttribute("data-name") ?? "";
+		const child = Array.from(svg.querySelectorAll("[id], [data-name]")).find(
+			(candidate) => {
+				const id = candidate.getAttribute("id") ?? "";
+				const dataName = candidate.getAttribute("data-name") ?? "";
 
-			return (
-				id.toLowerCase().includes(txt.toLowerCase()) ||
-				dataName.toLowerCase().includes(txt.toLowerCase())
-			);
-		});
+				return (
+					id.toLowerCase().includes(txt.toLowerCase()) ||
+					dataName.toLowerCase().includes(txt.toLowerCase())
+				);
+			},
+		);
 
 		if (!(child instanceof SVGElement)) continue;
 

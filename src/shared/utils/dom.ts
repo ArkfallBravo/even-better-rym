@@ -1,4 +1,3 @@
-
 export const isDocumentReady = (): boolean =>
 	document.readyState === "complete" || document.readyState === "interactive";
 

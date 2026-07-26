@@ -2,8 +2,8 @@ import { currentDecimalYear, decimalYearOf } from "./date-utils";
 import {
 	extractDiscographyMarkersFromDOM,
 	extractShowMarkersFromDOM,
-	readFormedAndDisbanded,
 	openPastShows,
+	readFormedAndDisbanded,
 } from "./discography";
 import {
 	findAdjacentInfoContent,
@@ -41,10 +41,10 @@ async function renderIntoPanel(
 
 	const axisStartLabel = bounds.formedDate
 		? formatFullDate(bounds.formedDate)
-		: bounds.formedLabel ?? "First Release";
+		: (bounds.formedLabel ?? "First Release");
 	const axisEndLabel = bounds.disbandedDate
 		? formatFullDate(bounds.disbandedDate)
-		: bounds.disbandedLabel ?? "Now";
+		: (bounds.disbandedLabel ?? "Now");
 
 	const disco = extractDiscographyMarkersFromDOM(disbandedYear);
 	const showMarkers = await extractShowMarkersFromDOM(disbandedYear);

@@ -75,7 +75,6 @@ function mergeIntoMemberMap(
 		member.url = urlsByName.get(name);
 	}
 
-
 	for (const role of cleanRoles) {
 		if (!member.roles.includes(role)) member.roles.push(role);
 	}
@@ -144,7 +143,9 @@ export function parseMembersFromText(
 	const urlsByName = new Map<string, string>();
 	const titlesByName = new Map<string, string>();
 	if (domElement) {
-		for (const link of domElement.querySelectorAll<HTMLAnchorElement>("a.artist")) {
+		for (const link of domElement.querySelectorAll<HTMLAnchorElement>(
+			"a.artist",
+		)) {
 			const name = (link.textContent ?? "").trim();
 			const href = link.getAttribute("href");
 			const title = link.getAttribute("title")?.trim();
