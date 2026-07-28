@@ -30,3 +30,53 @@
   `/Applications` (blocked on Xcode script sandboxing; user is doing this
   one manually). The third item (matching hint text font/color to RYM's
   label) resolved itself as a side effect of the DOM-structure change above.
+
+- macOS app target build-into-`/Applications` attempt (2026-07-28, fully
+  reverted): tried making `EvenBetterRYM (macOS)` build straight into
+  `/Applications` instead of the user manually dragging the built app there.
+  Landed a Run Script build phase ("Move to /Applications", after "Embed
+  Foundation Extensions") that `rm -rf`s any existing
+  `/Applications/EvenBetterRYM.app` and then either `ditto`s or (per the
+  user's actual manual habit) literally `mv`s the built `.app` out of
+  DerivedData into `/Applications`. This required
+  `ENABLE_USER_SCRIPT_SANDBOXING = NO` on just that target's Debug/Release
+  configs (see `docs/todo.md` for why). This part worked mechanically — the
+  script did move/copy the app correctly.
+  The actual blocker: Safari's Extensions list kept showing only the Debug
+  build (the one Xcode's Run action launches from DerivedData), never the
+  `/Applications` copy the script produced, which is the opposite of what
+  the user needs (only ever one instance of the app registering the
+  extension with Safari — a second copy risks conflicting/duplicate
+  extension entries and broke the settings-popup scroll). Tried fixing this
+  by adding an explicit shared `.xcscheme`
+  (`EvenBetterRYM.xcodeproj/xcshareddata/xcschemes/EvenBetterRYM
+  (macOS).xcscheme`, previously an implicit Xcode-autocreated scheme with no
+  file on disk) that redirected the Run action to launch
+  `/Applications/EvenBetterRYM.app` directly via `PathRunnable` instead of
+  the DerivedData build product. Confirmed the scheme parsed and resolved
+  correctly (`xcodebuild -list` / `-showBuildSettings` both worked), but it
+  still didn't change which copy Safari picked up — root cause was never
+  identified (candidates not yet ruled out: code-signing/entitlement
+  differences between the DerivedData and moved/copied bundle, Safari/
+  Launch Services caching extension registration from an earlier launch
+  location, or Safari resolving the extension via the running process
+  rather than the app's on-disk path). User decided to fully revert rather
+  than keep debugging blind — all of the above (Run Script phase, the
+  sandboxing override, the shared `.xcscheme`) has been removed, back to
+  the pre-2026-07-28 state where the user copies the build into
+  `/Applications` by hand. If revisited, worth debugging with actual
+  Console.app/`pluginkit -m` output on why Safari registers the DerivedData
+  copy specifically, rather than guessing further.
+
+- `chart-searchbar` branch: committed (`0e831ab3`) a set of reference files
+  the user is using as source material for this branch's work —
+  `charts_source.html` / `apple_music_source.html` (saved RYM page-source
+  dumps) and a saved third-party GitHub issue page
+  (`uBlock-LLC:uBlock` #1366, about Safari erasing extension settings on
+  "clear web history" — background reading related to the native-settings
+  persistence approach documented in `CLAUDE.md`), plus `screenshots/`
+  (macOS app release-page/add-release screenshots at various sizes). Only
+  `screenshots/.DS_Store` was deliberately excluded from that commit (Finder
+  metadata, no value in git) — everything else was kept as-is per the user's
+  choice. No feature code for `chart-searchbar` itself has been written yet
+  as of this commit.
