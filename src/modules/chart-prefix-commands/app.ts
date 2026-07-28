@@ -76,7 +76,6 @@ const RYMCHART_PATCH_ATTEMPTS = 20;
 const RYMCHART_PATCH_INTERVAL_MS = 200;
 const SHORTCUT_SECTION_SELECTOR = ".page_chart_query_free_section_new";
 const SHORTCUT_LABEL_SELECTOR = ".page_chart_query_free_section_label";
-const SHORTCUT_HINT_ID = "ebr-chart-shortcut-hint";
 
 let suggestions: BrowseResult[] = [];
 let activeIndex = 0;
@@ -224,18 +223,16 @@ function findShortcutLabel(input: HTMLInputElement): HTMLElement | null {
 }
 
 function insertShortcutHint(input: HTMLInputElement): void {
-	if (document.getElementById(SHORTCUT_HINT_ID)) return;
-
 	const label = findShortcutLabel(input);
-	if (!label) return;
+	if (!label || label.dataset.ebrHint) return;
 
-	const hint = document.createElement("div");
-	hint.id = SHORTCUT_HINT_ID;
-	hint.className = "ebr-shortcut-hint";
-	hint.innerHTML = `Type to search &nbsp;·&nbsp;
+	label.dataset.ebrHint = "1";
+	label.insertAdjacentHTML(
+		"beforeend",
+		`<br>Type to search &nbsp;·&nbsp;
 		^1/2/3 top genre &nbsp;·&nbsp; ^D top descriptor &nbsp;·&nbsp; +Shift = exclude<br>
-		^\` toggle exclude mode &nbsp;·&nbsp; Prefix: +g −g &nbsp;+i −i &nbsp;+gi −gi &nbsp;+d −d`;
-	label.append(hint);
+		^\` toggle exclude mode &nbsp;·&nbsp; Prefix: +g −g &nbsp;+i −i &nbsp;+gi −gi &nbsp;+d −d`,
+	);
 }
 
 function suggestionRow(

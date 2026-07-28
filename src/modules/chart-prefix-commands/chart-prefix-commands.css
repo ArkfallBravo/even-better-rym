@@ -14,9 +14,3 @@
 	color: var(--color-primary, #c0392b);
 	font-weight: bold;
 }
-
-.ebr-shortcut-hint {
-	margin-top: 4px;
-	font-size: 12px;
-	opacity: 0.65;
-}

@@ -15,10 +15,18 @@
   feature branches here aren't merged straight into `main`; the user merges
   the relevant changes into their own fork's main branch by hand once a
   branch is where they want it.
-- `docs/todo.md` has three open follow-ups from this branch's work: (1)
+- The chart-prefix-commands hint text is inserted as bare content directly
+  into RYM's own `.page_chart_query_free_section_label` div via
+  `label.insertAdjacentHTML("beforeend", ...)` — no wrapping `<span>`/`<div>`
+  — so it structurally matches the label's own bare text node (confirmed
+  against a DevTools screenshot of the target DOM shape) and inherits the
+  label's font/color for free. Idempotency guard is `label.dataset.ebrHint`
+  (an ID-based `document.getElementById` guard doesn't work once there's no
+  wrapping element with an ID).
+- `docs/todo.md` has two open follow-ups from this branch's work: (1)
   whether a browser-automation MCP connector is worth setting up so future
   sessions can drive a live browser directly instead of relying on pasted
   console output, (2) making the macOS app target build straight into
   `/Applications` (blocked on Xcode script sandboxing; user is doing this
-  one manually), (3) matching the chart-prefix-commands hint text's font
-  size/color to RYM's own label text now that it's nested in the same div.
+  one manually). The third item (matching hint text font/color to RYM's
+  label) resolved itself as a side effect of the DOM-structure change above.
