@@ -129,6 +129,10 @@ function Toggle({
 const styles = {
 	root: {
 		width: 340,
+		maxHeight: 600,
+		overflow: "hidden",
+		display: "flex",
+		flexDirection: "column",
 		fontFamily:
 			'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 		fontSize: 13,
@@ -168,12 +172,16 @@ const styles = {
 		flexDirection: "column",
 		gap: 1,
 		padding: "10px 10px",
+		flex: 1,
+		minHeight: 0,
+		overflowY: "auto",
 	} satisfies CSSProperties,
 
 	card: {
 		background: "#fff",
 		borderRadius: 8,
 		overflow: "hidden",
+		flexShrink: 0,
 		boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
 	} satisfies CSSProperties,
 
@@ -181,6 +189,7 @@ const styles = {
 		background: "#fff",
 		borderRadius: 8,
 		overflow: "hidden",
+		flexShrink: 0,
 		boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
 	} satisfies CSSProperties,
 
