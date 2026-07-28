@@ -40,6 +40,15 @@ Safari-specific native settings persistence: content scripts/popup talk to the b
 
 The Safari app's App Store Connect listing needs a Privacy Policy URL. This is hosted as a static page on a dedicated `gh-pages` branch (root `index.html`, orphan branch — no shared history with `main`), published via GitHub Pages at `https://arkfallbravo.github.io/even-better-rym/`. Kept on its own branch rather than in `main`'s `docs/` folder (which holds internal architecture notes like `codebase.md`/`plan.md`, not public content) so `main`'s tree/history stays free of unrelated public-facing HTML. To update the policy text, edit `index.html` on the `gh-pages` branch directly and push — it is not part of the Vite build or `dist/`.
 
+## App Store Connect metadata (macOS/iOS "EvenBetterRYM for Safari" listing)
+
+These values live only in App Store Connect's web UI, not in this repo, so they're recorded here in case the listing needs to be recreated or updated for a future version:
+
+- **Copyright**: `2026 Helena Simson` — matches the name the Apple Developer account is registered under.
+- **Support URL**: `https://github.com/ArkfallBravo/even-better-rym/issues` — no dedicated support site, so this points at the repo's issue tracker (same pattern as the privacy policy's contact link).
+- **Age Ratings → Capabilities**: `Unrestricted Web Access` = No (the app is a Safari Web Extension whose content scripts only run on rateyourmusic.com per `manifest.ts`'s `content_scripts` matches — no in-app browser); `User-Generated Content` = No (the extension reformats/enhances RYM's existing page content but doesn't itself host, aggregate, or redistribute user-created content as part of its own feature set).
+- **Content Rights**: "Yes, it contains, shows, or accesses third-party content, and I have the necessary rights" — the extension displays RYM page content and fetches metadata/embeds from streaming services (Spotify, Apple Music, Bandcamp, Discogs, Tidal, YouTube, etc.) via each service's official public API.
+
 ## Architecture
 
 ### Feature module pattern
