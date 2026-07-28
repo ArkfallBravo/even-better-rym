@@ -74,7 +74,10 @@ const normalizeDuration = (extractedDuration: string | undefined) => {
 };
 
 export const resolve: ResolveFunction = async (url) => {
-	const usUrl = url.replace(/(?<=qobuz\.com\/)[a-z]{2}-[a-z]{2}/, "us-en");
+	const path = url
+		.replace(/^https?:\/\/[^/]+\.qobuz\.com\//, "")
+		.replace(/^[a-z]{2}-[a-z]{2}\//, "");
+	const usUrl = `https://www.qobuz.com/us-en/${path}`;
 	const response = await fetch({ url: usUrl });
 	const document_ = new DOMParser().parseFromString(response, "text/html");
 	const releaseData = getReleaseData(document_);

@@ -7,12 +7,10 @@
   rateyourmusic.com navigation. Confirmed unrelated to the CORS
   investigation above — separate real bug.
 
-- Qobuz `resolve()` throws `Could not get release data for URL …`
-  (see `docs/plan.md` for detail) — pre-existing bug unrelated to the
-  Safari/CORS investigation, not yet looked into. Likely related to the
-  `usUrl` locale-rewrite in `src/shared/services/qobuz/resolve.ts:77`
-  producing a page without the expected second `application/ld+json`
-  script tag.
+- Track-artist autofill should only auto-select an exact match; when
+  multiple candidate matches are found for a track artist, it should not
+  silently pick one — display a warning to the user instead so they can
+  resolve it manually.
 
 - Separate, unrelated error surfaced in the extension background page's
   console while debugging the above (not yet investigated, not yet
