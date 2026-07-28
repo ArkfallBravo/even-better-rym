@@ -29,9 +29,3 @@
      launched. Root cause not identified. User reverted all of it and is
      back to doing this manually in Xcode.
 
-- Remove the `chart-prefix-commands` prefix commands (`+g`/`-g`, `+i`/`-i`,
-  `+gi`/`-gi`, `+d`/`-d` typed into the search box) and just keep the
-  keyboard shortcuts (Ctrl+1/2/3/D, Ctrl+`, Ctrl+Enter). Simplifies the
-  module by dropping the prefix-parsing path (`parseInput`, `PREFIX_MAP`,
-  etc.) while keeping the part of the feature that's actually used.
-

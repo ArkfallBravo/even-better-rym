@@ -12,58 +12,12 @@ type FilterType =
 
 type Scope = "genre" | "descriptor";
 
-type PrefixDefinition = {
-	filterType: FilterType;
-	scope: Scope;
-	label: string;
-};
-
-type PrefixCommand = PrefixDefinition & {
-	prefix: string;
-	query: string;
-};
-
 type BrowseResult = {
 	display_name?: string;
 	name?: string;
 	component?: string;
 	path?: string;
 	assoc_id?: number;
-};
-
-const PREFIX_DEFINITIONS: Record<string, PrefixDefinition> = {
-	"+g": { filterType: "genre_include", scope: "genre", label: "Include genre" },
-	"-g": { filterType: "genre_exclude", scope: "genre", label: "Exclude genre" },
-	"+i": {
-		filterType: "sec_genre_include",
-		scope: "genre",
-		label: "Include influence",
-	},
-	"-i": {
-		filterType: "sec_genre_exclude",
-		scope: "genre",
-		label: "Exclude influence",
-	},
-	"+gi": {
-		filterType: "genre_either_include",
-		scope: "genre",
-		label: "Include as genre or influence",
-	},
-	"-gi": {
-		filterType: "genre_either_exclude",
-		scope: "genre",
-		label: "Exclude as genre or influence",
-	},
-	"+d": {
-		filterType: "descriptor_include",
-		scope: "descriptor",
-		label: "Include descriptor",
-	},
-	"-d": {
-		filterType: "descriptor_exclude",
-		scope: "descriptor",
-		label: "Exclude descriptor",
-	},
 };
 
 const CONTAINER_ID = "ui_browser_list_contents_page_charts_settings";
@@ -79,7 +33,6 @@ const SHORTCUT_LABEL_SELECTOR = ".page_chart_query_free_section_label";
 
 let suggestions: BrowseResult[] = [];
 let activeIndex = 0;
-let currentCommand: PrefixCommand | null = null;
 let excludeMode = false;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 const suggestionCache = new Map<string, Promise<BrowseResult[]>>();
@@ -89,36 +42,12 @@ export async function main(): Promise<void> {
 	mount(input);
 }
 
-function parsePrefixCommand(text: string): PrefixCommand | null {
-	const match = /^([+-](?:gi|g|i|d))(?:\s+(.*))?$/i.exec(text);
-	if (!match) return null;
-
-	const definition = PREFIX_DEFINITIONS[match[1].toLowerCase()];
-	if (!definition) return null;
-
-	return {
-		...definition,
-		prefix: match[1].toLowerCase(),
-		query: (match[2] ?? "").trim(),
-	};
-}
-
 function resultComponent(result: BrowseResult): string {
 	return result.component ?? (result.path ?? "").split("/")[0];
 }
 
-function matchesScope(result: BrowseResult, scope: Scope): boolean {
-	if (typeof result.component === "string") return result.component === scope;
-	if (typeof result.path === "string")
-		return result.path.startsWith(`${scope}/`);
-	return false;
-}
-
-function fetchSuggestions(
-	query: string,
-	scope: Scope | "all",
-): Promise<BrowseResult[]> {
-	const cacheKey = `${scope}:${query.toLowerCase().trim()}`;
+function fetchSuggestions(query: string): Promise<BrowseResult[]> {
+	const cacheKey = query.toLowerCase().trim();
 	const cached = suggestionCache.get(cacheKey);
 	if (cached) return cached;
 
@@ -128,14 +57,9 @@ function fetchSuggestions(
 
 	const request = fetch(url.toString(), { credentials: "include" })
 		.then((response) => response.json())
-		.then((data: { results?: BrowseResult[] }) => {
-			const results = data.results ?? [];
-			const filtered =
-				scope === "all"
-					? results.slice(0, MAX_SUGGESTIONS)
-					: results.filter((result) => matchesScope(result, scope));
-			return filtered.slice(0, MAX_SUGGESTIONS);
-		})
+		.then((data: { results?: BrowseResult[] }) =>
+			(data.results ?? []).slice(0, MAX_SUGGESTIONS),
+		)
 		.catch(() => []);
 
 	suggestionCache.set(cacheKey, request);
@@ -231,7 +155,7 @@ function insertShortcutHint(input: HTMLInputElement): void {
 		"beforeend",
 		`<br>Type to search &nbsp;·&nbsp;
 		^1/2/3 top genre &nbsp;·&nbsp; ^D top descriptor &nbsp;·&nbsp; +Shift = exclude<br>
-		^\` toggle exclude mode &nbsp;·&nbsp; Prefix: +g −g &nbsp;+i −i &nbsp;+gi −gi &nbsp;+d −d`,
+		^\` toggle exclude mode`,
 	);
 }
 
@@ -261,37 +185,6 @@ function bindSuggestionClicks(
 			onSelect(Number.parseInt(element.dataset.ebrIdx ?? "0", 10));
 		});
 	}
-}
-
-function renderPrefixMode(
-	container: HTMLElement,
-	command: PrefixCommand,
-): void {
-	if (!command.query) {
-		container.innerHTML = `<div class="ui_browser_list_item ui_browser_list_item_category">
-			<div class="ui_browser_list_item_category_title">${escapeHtml(command.prefix)} …</div>
-			<div class="ui_browser_list_item_category_description">${escapeHtml(command.label)} — type to search</div>
-		</div>`;
-		return;
-	}
-
-	if (!suggestions.length) {
-		container.innerHTML = `<div class="ui_browser_list_item ui_browser_list_item_category">
-			<div class="ui_browser_list_item_category_title">No matches</div>
-			<div class="ui_browser_list_item_category_description">${escapeHtml(command.label)}</div>
-		</div>`;
-		return;
-	}
-
-	container.innerHTML = suggestions
-		.map((result, index) =>
-			suggestionRow(index, result.display_name ?? result.name ?? ""),
-		)
-		.join("");
-	bindSuggestionClicks(container, (index) => {
-		applyItem(command.filterType, suggestions[index]);
-		resetInput();
-	});
 }
 
 function freeModeHeader(): string {
@@ -327,39 +220,23 @@ function render(): void {
 	showList();
 	const container = getContainer();
 	if (!container) return;
-
-	if (currentCommand) {
-		renderPrefixMode(container, currentCommand);
-	} else {
-		renderFreeMode(container);
-	}
+	renderFreeMode(container);
 }
 
 function resetInput(): void {
 	const input = document.getElementById(INPUT_ID) as HTMLInputElement | null;
 	if (input) input.value = "";
-	currentCommand = null;
 	suggestions = [];
 	activeIndex = 0;
 	excludeMode = false;
 	hideList();
 }
 
-function leavePrefixMode(): void {
-	currentCommand = null;
-	suggestions = [];
-	activeIndex = 0;
-}
-
-function scheduleSearch(
-	query: string,
-	scope: Scope | "all",
-	stillValid: () => boolean,
-): void {
+function scheduleSearch(query: string, stillValid: () => boolean): void {
 	if (debounceTimer) clearTimeout(debounceTimer);
 	render();
 	debounceTimer = setTimeout(() => {
-		void fetchSuggestions(query, scope).then((results) => {
+		void fetchSuggestions(query).then((results) => {
 			if (!stillValid()) return;
 			suggestions = results;
 			activeIndex = 0;
@@ -368,27 +245,8 @@ function scheduleSearch(
 	}, DEBOUNCE_MS);
 }
 
-function handlePrefixInput(command: PrefixCommand): void {
-	currentCommand = command;
-	activeIndex = 0;
-	showList();
-	if (!command.query) {
-		suggestions = [];
-		render();
-		return;
-	}
-	scheduleSearch(
-		command.query,
-		command.scope,
-		() =>
-			currentCommand?.prefix === command.prefix &&
-			currentCommand?.query === command.query,
-	);
-}
-
-function handleFreeInput(input: HTMLInputElement): void {
-	if (currentCommand !== null) leavePrefixMode();
-
+function onInput(event: Event): void {
+	const input = event.target as HTMLInputElement;
 	const query = input.value.trim();
 	if (!query) {
 		suggestions = [];
@@ -397,18 +255,7 @@ function handleFreeInput(input: HTMLInputElement): void {
 	}
 
 	showList();
-	scheduleSearch(query, "all", () => input.value.trim() === query);
-}
-
-function onInput(event: Event): void {
-	const input = event.target as HTMLInputElement;
-	const command = parsePrefixCommand(input.value);
-
-	if (command) {
-		handlePrefixInput(command);
-	} else {
-		handleFreeInput(input);
-	}
+	scheduleSearch(query, () => input.value.trim() === query);
 }
 
 function updateChart(): void {
@@ -463,11 +310,6 @@ function handleGenreShortcut(event: KeyboardEvent): boolean {
 
 function handleCtrlEnter(event: KeyboardEvent): boolean {
 	if (event.key !== "Enter" || !event.ctrlKey) return false;
-
-	if (currentCommand && suggestions.length) {
-		applyItem(currentCommand.filterType, suggestions[activeIndex]);
-		resetInput();
-	}
 	updateChart();
 	return true;
 }
@@ -478,14 +320,6 @@ function handleTabCycle(event: KeyboardEvent): boolean {
 		(activeIndex + (event.shiftKey ? -1 : 1) + suggestions.length) %
 		suggestions.length;
 	render();
-	return true;
-}
-
-function handlePlainEnter(event: KeyboardEvent): boolean {
-	if (event.key !== "Enter" || !currentCommand || !suggestions.length)
-		return false;
-	applyItem(currentCommand.filterType, suggestions[activeIndex]);
-	resetInput();
 	return true;
 }
 
@@ -501,7 +335,6 @@ const KEY_HANDLERS = [
 	handleGenreShortcut,
 	handleCtrlEnter,
 	handleTabCycle,
-	handlePlainEnter,
 	handleEscape,
 ];
 
@@ -545,7 +378,7 @@ function patchRYMChartRemoval(): void {
 function observeContainerOverwrites(container: HTMLElement): void {
 	new MutationObserver(() => {
 		if (!container.querySelector('[id^="ui_browser_list_item__"]')) return;
-		if (currentCommand !== null || suggestions.length) {
+		if (suggestions.length) {
 			render();
 		} else {
 			hideList();
@@ -556,7 +389,7 @@ function observeContainerOverwrites(container: HTMLElement): void {
 function suppressNativeKeyUp(input: HTMLInputElement): void {
 	const originalKeyUp = input.onkeyup;
 	input.onkeyup = function (this: GlobalEventHandlers, event: KeyboardEvent) {
-		if (input.value.trim() || currentCommand !== null) return;
+		if (input.value.trim()) return;
 		originalKeyUp?.call(this, event);
 	};
 }
@@ -565,7 +398,7 @@ function suppressNativeBlur(input: HTMLInputElement): void {
 	const originalBlur = input.onblur;
 	input.onblur = function (this: GlobalEventHandlers, event: FocusEvent) {
 		hideList();
-		if (currentCommand !== null || suggestions.length) return;
+		if (suggestions.length) return;
 		originalBlur?.call(this, event);
 	};
 }
