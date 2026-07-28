@@ -1,6 +1,4 @@
-import { waitForElement } from "~/shared/utils/dom";
-
-import type { RYMChartApi } from "./types";
+import { runScript, waitForElement } from "~/shared/utils/dom";
 
 type FilterType =
 	| "genre_include"
@@ -76,6 +74,9 @@ const DEBOUNCE_MS = 180;
 const MAX_SUGGESTIONS = 12;
 const RYMCHART_PATCH_ATTEMPTS = 20;
 const RYMCHART_PATCH_INTERVAL_MS = 200;
+const SHORTCUT_SECTION_SELECTOR = ".page_chart_query_free_section_new";
+const SHORTCUT_LABEL_SELECTOR = ".page_chart_query_free_section_label";
+const SHORTCUT_HINT_ID = "ebr-chart-shortcut-hint";
 
 let suggestions: BrowseResult[] = [];
 let activeIndex = 0;
@@ -177,16 +178,19 @@ function applyItem(filterType: FilterType, item: BrowseResult): void {
 	const id = itemId(item);
 	if (!name || id == null) return;
 
-	const chart = window.RYMchart;
-	if (!chart) return;
-
-	const originalCreateChart = chart.onClickCreateChart;
-	chart.onClickCreateChart = () => {};
-	try {
-		chart.addBrowserItem(filterType, id, name);
-	} finally {
-		chart.onClickCreateChart = originalCreateChart;
-	}
+	runScript(`
+		(function () {
+			var chart = window.RYMchart;
+			if (!chart) return;
+			var originalCreateChart = chart.onClickCreateChart;
+			chart.onClickCreateChart = function () {};
+			try {
+				chart.addBrowserItem(${JSON.stringify(filterType)}, ${id}, ${JSON.stringify(name)});
+			} finally {
+				chart.onClickCreateChart = originalCreateChart;
+			}
+		})();
+	`);
 }
 
 function escapeHtml(value: string): string {
@@ -214,19 +218,24 @@ function hideList(): void {
 	if (list) list.style.display = "none";
 }
 
-function renderHint(): void {
-	const container = getContainer();
-	if (!container) return;
+function findShortcutLabel(input: HTMLInputElement): HTMLElement | null {
+	const section = input.closest<HTMLElement>(SHORTCUT_SECTION_SELECTOR);
+	return section?.querySelector<HTMLElement>(SHORTCUT_LABEL_SELECTOR) ?? null;
+}
 
-	container.innerHTML = `
-		<div class="ui_browser_list_item ui_browser_list_item_category">
-			<div class="ui_browser_list_item_category_title">Chart filter shortcuts</div>
-			<div class="ui_browser_list_item_category_description">
-				Type to search &nbsp;·&nbsp;
-				^1/2/3 top genre &nbsp;·&nbsp; ^D top descriptor &nbsp;·&nbsp; +Shift = exclude<br>
-				^\` toggle exclude mode &nbsp;·&nbsp; Prefix: +g −g &nbsp;+i −i &nbsp;+gi −gi &nbsp;+d −d
-			</div>
-		</div>`;
+function insertShortcutHint(input: HTMLInputElement): void {
+	if (document.getElementById(SHORTCUT_HINT_ID)) return;
+
+	const label = findShortcutLabel(input);
+	if (!label) return;
+
+	const hint = document.createElement("div");
+	hint.id = SHORTCUT_HINT_ID;
+	hint.className = "ebr-shortcut-hint";
+	hint.innerHTML = `Type to search &nbsp;·&nbsp;
+		^1/2/3 top genre &nbsp;·&nbsp; ^D top descriptor &nbsp;·&nbsp; +Shift = exclude<br>
+		^\` toggle exclude mode &nbsp;·&nbsp; Prefix: +g −g &nbsp;+i −i &nbsp;+gi −gi &nbsp;+d −d`;
+	label.append(hint);
 }
 
 function suggestionRow(
@@ -336,7 +345,7 @@ function resetInput(): void {
 	suggestions = [];
 	activeIndex = 0;
 	excludeMode = false;
-	renderHint();
+	hideList();
 }
 
 function leavePrefixMode(): void {
@@ -386,7 +395,7 @@ function handleFreeInput(input: HTMLInputElement): void {
 	const query = input.value.trim();
 	if (!query) {
 		suggestions = [];
-		renderHint();
+		hideList();
 		return;
 	}
 
@@ -406,8 +415,11 @@ function onInput(event: Event): void {
 }
 
 function updateChart(): void {
-	const chart = window.RYMchart;
-	chart?.onClickCreateChart();
+	runScript(`
+		if (window.RYMchart && typeof window.RYMchart.onClickCreateChart === "function") {
+			window.RYMchart.onClickCreateChart();
+		}
+	`);
 }
 
 function handleToggleExcludeMode(event: KeyboardEvent): boolean {
@@ -505,32 +517,32 @@ function onKeyDown(event: KeyboardEvent): void {
 	}
 }
 
-function suppressChartReloadOnRemove(chart: RYMChartApi): void {
-	const original = chart.removeBrowserItem.bind(chart);
-	chart.removeBrowserItem = (...args: unknown[]) => {
-		const originalCreateChart = chart.onClickCreateChart;
-		chart.onClickCreateChart = () => {};
-		try {
-			return original(...args);
-		} finally {
-			chart.onClickCreateChart = originalCreateChart;
-		}
-	};
-}
-
 function patchRYMChartRemoval(): void {
-	let attempts = 0;
-	const interval = setInterval(() => {
-		attempts += 1;
-		if (attempts > RYMCHART_PATCH_ATTEMPTS) {
-			clearInterval(interval);
-			return;
-		}
-		const chart = window.RYMchart;
-		if (!chart) return;
-		clearInterval(interval);
-		suppressChartReloadOnRemove(chart);
-	}, RYMCHART_PATCH_INTERVAL_MS);
+	runScript(`
+		(function () {
+			var attempts = 0;
+			var interval = setInterval(function () {
+				attempts += 1;
+				if (attempts > ${RYMCHART_PATCH_ATTEMPTS}) {
+					clearInterval(interval);
+					return;
+				}
+				var chart = window.RYMchart;
+				if (!chart || typeof chart.removeBrowserItem !== "function") return;
+				clearInterval(interval);
+				var original = chart.removeBrowserItem.bind(chart);
+				chart.removeBrowserItem = function () {
+					var originalCreateChart = chart.onClickCreateChart;
+					chart.onClickCreateChart = function () {};
+					try {
+						return original.apply(chart, arguments);
+					} finally {
+						chart.onClickCreateChart = originalCreateChart;
+					}
+				};
+			}, ${RYMCHART_PATCH_INTERVAL_MS});
+		})();
+	`);
 }
 
 function observeContainerOverwrites(container: HTMLElement): void {
@@ -539,7 +551,7 @@ function observeContainerOverwrites(container: HTMLElement): void {
 		if (currentCommand !== null || suggestions.length) {
 			render();
 		} else {
-			renderHint();
+			hideList();
 		}
 	}).observe(container, { childList: true, subtree: true });
 }
@@ -563,16 +575,17 @@ function suppressNativeBlur(input: HTMLInputElement): void {
 
 function overrideNativeFocus(input: HTMLInputElement): void {
 	input.onfocus = () => {
-		showList();
-		if (suggestions.length) {
-			render();
-		} else {
-			renderHint();
+		if (!suggestions.length) {
+			hideList();
+			return;
 		}
+		showList();
+		render();
 	};
 }
 
 function mount(input: HTMLInputElement): void {
+	insertShortcutHint(input);
 	suppressNativeKeyUp(input);
 	overrideNativeFocus(input);
 	suppressNativeBlur(input);
