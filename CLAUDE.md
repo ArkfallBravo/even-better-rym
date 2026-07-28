@@ -36,6 +36,42 @@ V2 (Safari) uses a persistent-page background (`background.scripts` + `persisten
 
 Safari-specific native settings persistence: content scripts/popup talk to the background script via `browser.runtime.sendMessage` (see `src/shared/utils/messaging.ts`), and the background script (`src/modules/background/index.ts`) proxies feature-toggle settings through `browser.runtime.sendNativeMessage` to `SafariWebExtensionHandler.swift` (`EvenBetterRYM/Shared (Extension)/`), which persists them via native `UserDefaults` rather than `storage.local` — this was a deliberate change (see `native-settings.ts`) so settings survive Safari's "clear web history" action, which wipes extension storage but not native UserDefaults.
 
+## Debugging: reaching the extension's own pages in Safari
+
+To open any extension-internal page directly (background page, or the
+`import-check` debug page below) in the macOS Safari app: Safari > Develop
+menu > select the extension ("EvenBetterRYM for Safari") > pick the
+background page to open its Web Inspector. In that inspector's Console, run
+`browser.runtime.getURL("path/to/file.html")` to get the full
+`safari-web-extension://<uuid>/...` URL, then paste that into a normal
+Safari tab. The UUID is unique per install and isn't discoverable any other
+way from the UI.
+
+Remember `dist/` regenerating (`npm run build:safari`) is **not** picked up
+by a running Safari session until the `EvenBetterRYM (macOS)` target is
+rebuilt/relaunched in Xcode — this trips people up because the file/URL
+looks like it should just work after a plain `npm run build:safari`.
+
+### `src/modules/import-check/` debug page
+
+An extension-internal page (wired in via `additionalInputs.html` in
+`vite.config.ts`, the same mechanism `@samrum/vite-plugin-web-extension`
+uses for the popup) that calls each resolvable service's `resolve()`
+directly from a textarea of service-name → URL pairs, without navigating to
+rateyourmusic.com or anywhere else. It exists because of a specific problem
+hit while debugging a Beatport import failure that only reproduced in the
+macOS Safari app (see `plan.md`): driving the real "Import" form with
+Selenium/`safaridriver` (kept under `e2e/`, per explicit user choice, even
+though unused) triggers Cloudflare's bot challenge on navigation, since
+Safari's remote-automation mode sets `navigator.webdriver` and Cloudflare
+detects it — this happens on the RYM page itself, not just on
+Cloudflare-fronted target sites, making full-page automation a dead end here.
+Calling `resolve()` directly from a page that never navigates anywhere
+sidesteps that entirely. The default URLs baked into `app.tsx` (a specific
+"The World of Monnom Black" various-artists release, one URL per service)
+came from `e2e/urls.json` (gitignored, personal test data) — baking them
+into `app.tsx` means they're tracked in git now, unlike the gitignored copy.
+
 ## App Store privacy policy
 
 The Safari app's App Store Connect listing needs a Privacy Policy URL. This is hosted as a static page on a dedicated `gh-pages` branch (root `index.html`, orphan branch — no shared history with `main`), published via GitHub Pages at `https://arkfallbravo.github.io/even-better-rym/`. Kept on its own branch rather than in `main`'s `docs/` folder (which holds internal architecture notes like `codebase.md`/`plan.md`, not public content) so `main`'s tree/history stays free of unrelated public-facing HTML. To update the policy text, edit `index.html` on the `gh-pages` branch directly and push — it is not part of the Vite build or `dist/`.

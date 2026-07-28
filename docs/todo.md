@@ -1,5 +1,12 @@
 # Todo
 
+- Fix `src/modules/background/index.ts`'s `setTabIcon`: uses
+  `browser.action.setIcon`/`.setTitle`, which is `undefined` under the
+  Safari build's Manifest V2 (should be `browser.browserAction` for V2).
+  Causes an unhandled `TypeError` in the background console on every
+  rateyourmusic.com navigation. Confirmed unrelated to the CORS
+  investigation above — separate real bug.
+
 - Look into whether a browser-automation MCP connector (e.g. Playwright or
   Chrome DevTools MCP) is worth setting up so Claude Code can drive/inspect
   a live browser (run console commands, read DOM state) itself instead of

@@ -15,6 +15,7 @@ const hostsArray = [
 	"https://discogs.com/*",
 	"https://*.discogs.com/*",
 	"https://melon.com/*",
+	"https://*.melon.com/*",
 	"https://qobuz.com/*",
 	"https://*.qobuz.com/*",
 	"https://soundcloud.com/*",
