@@ -83,6 +83,15 @@
   than content being unreachable, but worth a quick manual check next time
   the built-in display is used.
 
+- Popup scroll fix cherry-picked to `main` and shipped (2026-07-28): commit
+  `747289e5` was cherry-picked onto `main` as `5d776223` (docs commit
+  `9523a9aa` was intentionally left off `main` — it documents
+  `chart-searchbar`-branch-specific session tradeoffs, not something `main`
+  needs). Pushing hit the now-removed "Reckon comprehension" ruleset (see
+  `CLAUDE.md`'s "GitHub repo notes"); once that was deleted, `main` was
+  pushed directly and the user submitted the resulting build to the App
+  Store the same day.
+
 - `chart-searchbar` branch: committed (`0e831ab3`) a set of reference files
   the user is using as source material for this branch's work —
   `charts_source.html` / `apple_music_source.html` (saved RYM page-source

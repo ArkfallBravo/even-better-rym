@@ -40,6 +40,12 @@ Safari-specific native settings persistence: content scripts/popup talk to the b
 
 The Safari app's App Store Connect listing needs a Privacy Policy URL. This is hosted as a static page on a dedicated `gh-pages` branch (root `index.html`, orphan branch — no shared history with `main`), published via GitHub Pages at `https://arkfallbravo.github.io/even-better-rym/`. Kept on its own branch rather than in `main`'s `docs/` folder (which holds internal architecture notes like `codebase.md`/`plan.md`, not public content) so `main`'s tree/history stays free of unrelated public-facing HTML. To update the policy text, edit `index.html` on the `gh-pages` branch directly and push — it is not part of the Vite build or `dist/`.
 
+## GitHub repo notes
+
+`ArkfallBravo/even-better-rym` is itself a fork (of `kknq`'s repo). When opening a PR via the GitHub web UI, it defaults the **base repository** dropdown to the upstream fork parent (`kknq/...`), not `ArkfallBravo/even-better-rym` — if the PR is meant to land in this repo's own `main`, both the base repository and base branch dropdowns need to be set explicitly, or the PR silently proposes merging into the wrong repo entirely.
+
+There was previously a branch ruleset on `main` named "Reckon comprehension (managed)" (a third-party GitHub App requiring a status check before merge/push) — it was deleted via `gh api -X DELETE repos/ArkfallBravo/even-better-rym/rulesets/<id>` on 2026-07-28 because it blocked direct pushes to `main` and the user didn't want it. `main` currently has no required-status-check ruleset; if one reappears unexpectedly, check `gh api repos/ArkfallBravo/even-better-rym/rulesets` before assuming it needs a PR workflow to satisfy it.
+
 ## Architecture
 
 ### Feature module pattern
