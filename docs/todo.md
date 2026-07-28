@@ -66,6 +66,11 @@
   candidate given this is a Safari extension already tied to a native macOS/
   iOS app wrapper.
 
+- Track-artist autofill should only auto-select an exact match; when
+  multiple candidate matches are found for a track artist, it should not
+  silently pick one — display a warning to the user instead so they can
+  resolve it manually.
+
 - Separate, unrelated error surfaced in the extension background page's
   console while debugging the above (not yet investigated, not yet
   triaged/prioritized by the user): `[settings] failed to hydrate from

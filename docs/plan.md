@@ -172,15 +172,21 @@
   fallback**, or failures will look like regressions that aren't real.
 
   Qobuz's failure (`Could not get release data for URL
-  safari-web-extension://.../import-check/index.html`) is an unrelated
+  safari-web-extension://.../import-check/index.html`) was an unrelated
   pre-existing bug, not part of this investigation: `document_.URL` on a
   `DOMParser`-created document doesn't retain the fetched page's URL in
-  WebKit (it reflects the parsing document's own URL instead), which is
-  just misleading error text — the real issue is that
-  `src/shared/services/qobuz/resolve.ts:38-45` expects a second
-  `application/ld+json` script tag on the fetched page and it's missing,
-  likely related to the `usUrl` locale-rewrite at `resolve.ts:77`. Not yet
-  investigated further.
+  WebKit (it reflects the parsing document's own URL instead), which was
+  just misleading error text — the real issue was that
+  `src/shared/services/qobuz/resolve.ts`'s URL rewrite only *replaced* an
+  existing `xx-xx` locale segment, never *inserted* one. Real Qobuz URLs
+  (e.g. `open.qobuz.com/album/<id>`, the share-link format) have no locale
+  segment at all, so the rewrite was a no-op and the request landed on
+  `www.qobuz.com/album/<id>` with no locale — confirmed via curl this
+  404s, while `www.qobuz.com/us-en/album/<id>` 200s and has the expected
+  `application/ld+json` tags. **Resolved (2026-07-28):** `resolve.ts` now
+  strips any existing subdomain/locale and always rebuilds the URL as
+  `www.qobuz.com/us-en/<path>`. Confirmed fixed via `import-check` in
+  Safari.
 
   Also tried a Selenium/`safaridriver`-based e2e test (`e2e/`) that drives
   the actual "Import" form end-to-end first, but abandoned as the primary
