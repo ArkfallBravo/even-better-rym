@@ -68,6 +68,21 @@
   Console.app/`pluginkit -m` output on why Safari registers the DerivedData
   copy specifically, rather than guessing further.
 
+- Popup settings window scroll fix (2026-07-28, commit `747289e5`): the
+  feature-toggle list stopped scrolling on an external monitor (worked fine
+  on the built-in display). Root cause took a few rounds of live Web
+  Inspector diagnostics to pin down — see `CLAUDE.md`'s "Popup sizing"
+  section for the durable technical explanation (Safari's popup
+  measure-then-clamp model, why `height: 100%` doesn't work, why
+  `flexShrink: 0` on the cards was needed). The `maxHeight: 600` value is a
+  hardcoded guess based on what this specific external monitor clamped to —
+  not verified against the built-in display or other monitors post-fix, so
+  it's plausible (not confirmed) that the built-in display's popup now
+  scrolls unnecessarily where before it fit everything without scrolling.
+  Not treated as a blocking issue since scrolling working is strictly better
+  than content being unreachable, but worth a quick manual check next time
+  the built-in display is used.
+
 - `chart-searchbar` branch: committed (`0e831ab3`) a set of reference files
   the user is using as source material for this branch's work —
   `charts_source.html` / `apple_music_source.html` (saved RYM page-source
