@@ -21,6 +21,9 @@ export default defineConfig(({ mode }) => {
 					Number(env.MANIFEST_VERSION) || 3,
 					env.EXTENSION_DISPLAY_NAME || undefined,
 				),
+				additionalInputs: {
+					html: ["src/modules/import-check/index.html"],
+				},
 			}),
 		],
 		resolve: {
