@@ -23,6 +23,19 @@
 - Tracklisting import should convert square brackets `[]` in track titles to
   parentheses `()`, to match RYM's expected formatting convention.
 
+- Pull-credits import is currently unreliable and should be disabled/hidden
+  for now until one of the below is implemented.
+
+- Credits and track-artist matching need a real disambiguation strategy
+  instead of the current guesswork. Two candidate approaches: (1) an
+  extensive conditional/heuristic system that cross-references the imported
+  release's genres against RYM's genre hierarchy to narrow which candidate
+  artist is plausible, or (2) hand the artist hint + context to an AI model,
+  preferably on-device to avoid per-call monetary cost — Apple's on-device
+  AI (Apple Intelligence / Foundation Models framework) would be a strong
+  candidate given this is a Safari extension already tied to a native macOS/
+  iOS app wrapper.
+
 - Separate, unrelated error surfaced in the extension background page's
   console while debugging the above (not yet investigated, not yet
   triaged/prioritized by the user): `[settings] failed to hydrate from
