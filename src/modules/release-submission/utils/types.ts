@@ -13,6 +13,5 @@ export type ReleaseOptions = {
 		tracks: boolean;
 		label: boolean;
 		countries: boolean;
-		credits: boolean;
 	};
 };

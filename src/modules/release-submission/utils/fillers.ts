@@ -70,9 +70,6 @@ async function fillExtraFields(
 	if (data.countries != null && options.fillFields.countries) {
 		fillCountries(data.countries);
 	}
-	if (data.tracks != null && options.fillFields.credits) {
-		await fillCredits(data.tracks);
-	}
 }
 
 async function fillArtists(artists: string[]) {
@@ -255,43 +252,6 @@ async function fillTracks(tracks: Track[], capitalization: CapitalizationType) {
 	forceQuerySelector<HTMLTextAreaElement>(document)("#track_advanced").value =
 		tracksString;
 	await runScript(`document.querySelector('#goSimpleBtn').click()`);
-}
-
-async function fillCredits(tracks: Track[]): Promise<void> {
-	const artistTracks = new Map<string, string[]>();
-	for (const track of tracks) {
-		if (!track.artists || !track.position) continue;
-		for (const artist of track.artists) {
-			if (!artistTracks.has(artist)) artistTracks.set(artist, []);
-			artistTracks.get(artist)!.push(track.position);
-		}
-	}
-	for (const [artist, positions] of artistTracks) {
-		await fillCredit(artist, "performer", positions.join(", "));
-	}
-}
-
-async function fillCredit(
-	artist: string,
-	role: string,
-	tracks: string,
-): Promise<void> {
-	forceQuerySelector<HTMLInputElement>(document)("#credit_searchterm").value =
-		artist;
-	forceQuerySelector<HTMLInputElement>(document)(
-		"#section_credits .gosearch input[type=button]",
-	).click();
-	const topResult = await waitForResult(
-		forceQuerySelector<HTMLIFrameElement>(document)("#creditlist"),
-	);
-	if (!topResult) return;
-	topResult.click();
-	forceQuerySelector<HTMLInputElement>(document)(
-		"#creditsx li:last-child .credits_roles input",
-	).value = role;
-	forceQuerySelector<HTMLInputElement>(document)(
-		"#creditsx li:last-child .credits_tracks input",
-	).value = tracks;
 }
 
 function fillSource(url: string) {
