@@ -23,8 +23,14 @@
 - Tracklisting import should convert square brackets `[]` in track titles to
   parentheses `()`, to match RYM's expected formatting convention.
 
-- Pull-credits import is currently unreliable and should be disabled/hidden
-  for now until one of the below is implemented.
+- **Done (2026-07-31)**: pull-credits auto-import was disabled — removed the
+  "Credits" checkbox/option and the `fillCredits`/`fillCredit` functions from
+  `src/modules/release-submission/utils/fillers.ts` and
+  `use-cases/import-controls.tsx`. The unrelated, upstream (kknq-authored)
+  manual "+ artist"/"+ featuring"/"+ remixer" credits UI
+  (`use-cases/credits-controls.tsx`) was deliberately left untouched — it's
+  user-supervised one credit at a time, not an automatic bulk pull, and
+  predates this fork.
 
 - Credits and track-artist matching need a real disambiguation strategy
   instead of the current guesswork. Two candidate approaches: (1) an
