@@ -123,7 +123,6 @@ const sharedManifest = {
 		},
 		{
 			js: ["src/modules/chart-prefix-commands/main.ts"],
-			css: ["src/modules/chart-prefix-commands/chart-prefix-commands.css"],
 			matches: ["*://*.rateyourmusic.com/charts/*"],
 			run_at: "document_start",
 		},

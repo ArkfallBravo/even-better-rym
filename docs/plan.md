@@ -68,6 +68,58 @@
   Console.app/`pluginkit -m` output on why Safari registers the DerivedData
   copy specifically, rather than guessing further.
 
+- macOS app target build-into-`/Applications`, third attempt — succeeded
+  (2026-08-05): unlike the two reverted attempts above (which tried to copy
+  the built product out of DerivedData with a Run Script `ditto`/`mv`), this
+  attempt used Xcode's own install-relocation settings instead —
+  `DEPLOYMENT_LOCATION = YES` plus `DSTROOT` pointed at a symlink
+  (`~/.xcode-dstroot-root` → `/`, kept outside `/tmp` and outside the
+  iCloud-synced repo path) and `INSTALL_PATH = /Applications`, scoped to
+  just the `EvenBetterRYM (macOS)` target. Hit the same
+  `ENABLE_USER_SCRIPT_SANDBOXING` sandboxing wall as attempt 1 (this time
+  blocking the pre-build symlink self-heal script, `ln(...) deny(1)
+  file-write-unlink`), fixed the same way: `ENABLE_USER_SCRIPT_SANDBOXING =
+  NO` on just this target. User rebuilt in Xcode and confirmed it worked.
+  Full settings/reasoning documented in `CLAUDE.md`'s "Building the macOS
+  app straight into `/Applications`" section; `docs/todo.md`'s entry marked
+  Done. Not yet re-diagnosed *why* this approach succeeds where the
+  Run-Script-copy approach's Safari-extension-registration problem (root
+  cause never identified) didn't — plausibly because this way there's only
+  ever one on-disk `.app` produced per build location, rather than a
+  DerivedData copy and a separately-produced `/Applications` copy existing
+  side by side, but that's a guess, not confirmed. Known tradeoff:
+  `DEPLOYMENT_LOCATION = YES` still produces both a DerivedData copy and a
+  `/Applications` copy with the same bundle ID after every build (Xcode's
+  behavior, not something this setup avoids) — worth revisiting if Safari
+  extension registration confusion resurfaces.
+
+- Open question (2026-08-05, still unresolved — decision pending): the user
+  said "Commit" right after confirming the `/Applications` build fix worked.
+  That fix lives entirely in `EvenBetterRYM/project.pbxproj`, which per
+  `CLAUDE.md` is **not tracked in git** — so there was nothing from that work
+  to commit; asked the user to clarify whether "commit" meant the unrelated
+  pending changes visible in `git status` (`CLAUDE.md` modified,
+  `docs/.preserve-checkpoint.md`/`docs/memories.md` untracked, both
+  predating this conversation) instead.
+
+  The user then asked directly whether committing the Xcode project itself
+  would be "sanitary." Checked and recommended **against** committing it
+  as-is: `ArkfallBravo/even-better-rym` is a **public** repo (confirmed via
+  `gh repo view --json visibility`), and `project.pbxproj` currently has
+  `DEVELOPMENT_TEAM = 7C45KQPPCV` (the real Apple Developer Team ID) baked
+  in, which would become permanently public. Also found
+  `EvenBetterRYM.xcodeproj/xcuserdata/lillyanasimson.xcuserdatad` (personal
+  Xcode editor state, present in two places under the project) sitting
+  right there ready to get swept in by a naive `git add`, on top of
+  `EvenBetterRYM/` already being deliberately gitignored (`.gitignore:12` —
+  not an oversight). Offered a sanitized path instead (strip/placeholder the
+  team ID, add an explicit `xcuserdata/` ignore, `git add -f` just the
+  wanted files) but has not implemented it — full reasoning now lives in
+  `CLAUDE.md`'s "Building the macOS app straight into `/Applications`"
+  section under "Not committed to git". **Still waiting on the user's
+  decision**: sanitize-and-commit `project.pbxproj`, or leave it fully
+  untracked with the writeup in `CLAUDE.md` as the only durable record.
+
 - Popup settings window scroll fix (2026-07-28, commit `747289e5`): the
   feature-toggle list stopped scrolling on an external monitor (worked fine
   on the built-in display). Root cause took a few rounds of live Web
@@ -340,3 +392,109 @@
   shortcuts select the right parent-level genre/descriptor against RYM's
   live dropdown, and clicking "Browse sub-genre" / typing normally in the
   native widget is untouched. Committed.
+
+- `chart-prefix-commands` new toggle shortcuts (started 2026-08-05,
+  **implemented, build-verified, awaiting the user's manual in-browser test
+  before commit**): follow-on to the redesign above. Added keyboard
+  shortcuts covering the chart-builder's per-category checkboxes (see the
+  `page_chart_query_free_section_*` discovery documented in `CLAUDE.md`'s
+  Feature module pattern section), confirmed against a second read of the
+  cached `charts_source.html` (both the `_include` and `_exclude` sides
+  each have their own `_sub_items`/`_all` checkbox ids and
+  `onClickBrowserItemSub`/`onClickBrowserItemAll` handlers, keyed by the
+  full 8-way `FilterType`, not just the `_include` type):
+
+  - Ctrl+Z/X/C/S → toggle "Include sub-genres" for genres / influences /
+    either / descriptors (`onClickBrowserItemSub` on the `_include`
+    `FilterType`).
+  - Ctrl+Shift+Z/X/C/S → same, but the `_exclude` side ("Exclude
+    sub-genres").
+  - Ctrl+Q/W/E/A → toggle "Must contain all" for genres / influences /
+    either / descriptors (`onClickBrowserItemAll` on the `_include` type).
+  - Ctrl+Shift+Q/W/E/A → same, `_exclude` side ("Only exclude items
+    containing all").
+
+  **Resolved open question**: the user chose, via `AskUserQuestion`, to
+  **remove the sticky "exclude mode" toggle entirely** (was Ctrl+\`,
+  module-level `excludeMode` variable) rather than have it either apply
+  only to the original Ctrl+1/2/3/D shortcuts or extend to the new
+  toggle shortcuts too — every shortcut (old and new) now determines
+  exclude purely from literal `event.shiftKey`. This simplified `app.ts`:
+  removed `excludeMode`, `updateExcludeBadge`, the `[EXCL]` badge span and
+  its `.ebr-exclude-badge` CSS rule (the rule's only consumer), and
+  `resetInput` no longer resets/updates any mode state.
+
+  `app.ts` rewrite:
+  - Added `Category = "genre" | "sec_genre" | "genre_either" | "descriptor"`
+    and `filterTypeFor(category, exclude)`, replacing the ad hoc
+    per-key-count `genreFilterTypeFor`.
+  - Added `toggleCheckbox(filterType, kind: "sub" | "all")`: builds the
+    `page_chart_query_free_section_<filterType>_<sub_items|all>` id, flips
+    `checkbox.checked`, then calls the matching `RYMchart.onClickBrowserItem*`
+    — one self-contained injected script per action, mirroring the existing
+    `applyItem`/`updateChart` pattern. Does **not** suppress
+    `onClickCreateChart` around the call (unlike `applyItem`/
+    `removeBrowserItem`'s patch) — that suppression was established through
+    actual investigation of `addBrowserItem`'s side effects, not verified
+    for the checkbox handlers, so it wasn't speculatively added; worth
+    checking during manual test whether toggling a checkbox unexpectedly
+    triggers a live chart refresh.
+  - Replaced `handleGenreShortcut`/`handleDescriptorShortcut` with a single
+    `handleApplyShortcut` driven by an `APPLY_KEY_CATEGORY` lookup map
+    (`1`/`2`/`3`/`d` → `Category`) plus `APPLY_SCOPE` (`Category` → the
+    existing narrower `genre`/`descriptor` native-browse `Scope`). Added
+    `handleSubToggleShortcut`/`handleAllToggleShortcut` driven by
+    `SUB_TOGGLE_KEY_CATEGORY` (`z`/`x`/`c`/`s`) and
+    `ALL_TOGGLE_KEY_CATEGORY` (`q`/`w`/`e`/`a`). All four handlers key off
+    `event.key.toLowerCase()` (safe for letters and digits since Shift
+    doesn't change `event.key`'s letter/digit, only case/symbol — matches
+    the existing Ctrl+D handler's approach) plus `event.shiftKey`.
+  - `insertShortcutHint` now renders the user's 24 supplied lines verbatim
+    (`HINT_LINES` array, `<br>`-joined) in place of the old abbreviated
+    `^1/2/3 top genre · ^D top descriptor · +Shift = exclude` block —
+    normalized the pasted text's inconsistent straight/curly quotes to
+    plain `"` throughout for consistency with the rest of the array.
+  - `src/manifest.ts`'s `chart-prefix-commands` content-script entry no
+    longer references `chart-prefix-commands.css` (deleted — its only rule
+    was the now-removed `.ebr-exclude-badge`).
+
+  Verified: `tsc --noEmit`, `eslint src/modules/chart-prefix-commands/
+  src/manifest.ts`, `biome check` on the same all clean, `npm run
+  build:safari` succeeds end-to-end. **Not yet manually tested in the
+  Safari-wrapped app or committed** — per this project's manual-testing
+  rule, needs the user to rebuild in Xcode and confirm all 24 shortcuts
+  (and the checkbox-toggle chart-refresh question above) behave correctly
+  before this gets committed.
+
+- `EvenBetterRYM/` private git repo (2026-08-05): prompted directly by the
+  DSTROOT symlink incident above — two risky `project.pbxproj` build-system
+  edits in one session, with only a manual `.bak` copy as a safety net
+  (no real diff/revert/blame available for the mistake that broke the
+  build). Discussed making this a **second, private** repo rather than
+  tracking `EvenBetterRYM/` in the public `even-better-rym` repo, since the
+  `DEVELOPMENT_TEAM` exposure concern documented in `CLAUDE.md` (real Apple
+  Developer Team ID, would become permanently public) only applies to the
+  public repo — a private one sidesteps it entirely. Set up: `git init`
+  inside `EvenBetterRYM/`, its own `.gitignore` (`xcuserdata/`, `.claude/`,
+  `.DS_Store`, `*.bak.*`), initial commit `1fd1c23`. No GitHub remote
+  created yet — local-only for now.
+
+  Considered automating "keep the two repos in sync": since main-repo
+  commits don't actually touch any file the Xcode repo tracks (they're
+  disjoint file sets, coupled only by `dist/`-path references at build
+  time, and `dist/` itself is gitignored/untracked in both), the only real
+  automation candidate was "auto-commit whatever's sitting in
+  `EvenBetterRYM/` whenever the main repo is committed to, so Xcode-side
+  changes never get forgotten." Rejected auto-commit (and auto-push) as too
+  risky — generic/no-review commit messages, possible half-finished or
+  broken state getting committed silently — in favor of a **reminder-only**
+  git hook: `.husky/post-commit` in the main repo (untracked, personal-only)
+  prints a warning after each main-repo commit if `EvenBetterRYM/` has
+  uncommitted changes, but never commits or pushes anything itself. Full
+  reasoning and setup details are in `CLAUDE.md`'s "Building the macOS app
+  straight into `/Applications`" section.
+
+  Also surfaced as an explicit standing instruction (saved to memory,
+  `feedback-commit-means-both-repos`): a bare "commit" from the user means
+  commit in **both** repos when both have relevant uncommitted work, not
+  just whichever one the conversation was most recently focused on.

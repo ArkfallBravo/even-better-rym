@@ -1,5 +1,7 @@
 import { runScript, waitForElement } from "~/shared/utils/dom";
 
+type Category = "genre" | "sec_genre" | "genre_either" | "descriptor";
+
 type FilterType =
 	| "genre_include"
 	| "genre_exclude"
@@ -9,6 +11,8 @@ type FilterType =
 	| "genre_either_exclude"
 	| "descriptor_include"
 	| "descriptor_exclude";
+
+type CheckboxKind = "sub" | "all";
 
 type Scope = "genre" | "descriptor";
 
@@ -33,11 +37,68 @@ const RYMCHART_PATCH_INTERVAL_MS = 200;
 const SHORTCUT_SECTION_SELECTOR = ".page_chart_query_free_section_new";
 const SHORTCUT_LABEL_SELECTOR = ".page_chart_query_free_section_label";
 
-let excludeMode = false;
+const APPLY_KEY_CATEGORY: Record<string, Category> = {
+	"1": "genre",
+	"2": "sec_genre",
+	"3": "genre_either",
+	d: "descriptor",
+};
+
+const SUB_TOGGLE_KEY_CATEGORY: Record<string, Category> = {
+	z: "genre",
+	x: "sec_genre",
+	c: "genre_either",
+	s: "descriptor",
+};
+
+const ALL_TOGGLE_KEY_CATEGORY: Record<string, Category> = {
+	q: "genre",
+	w: "sec_genre",
+	e: "genre_either",
+	a: "descriptor",
+};
+
+const APPLY_SCOPE: Record<Category, Scope> = {
+	genre: "genre",
+	sec_genre: "genre",
+	genre_either: "genre",
+	descriptor: "descriptor",
+};
+
+const HINT_LINES = [
+	'control + 1 — include first genre result as "genre"',
+	'control + 2 — include first genre result as "influence"',
+	'control + 3 — include first genre result as "either"',
+	'control + d — include first descriptor result as "descriptor"',
+	'control + shift + 1 — exclude first genre result as "genre"',
+	'control + shift + 2 — exclude first genre result as "influence"',
+	'control + shift + 3 — exclude first genre result as "either"',
+	'control + shift + d — exclude first descriptor result as "descriptor"',
+	'control + z — toggle "Include sub-genres" for "genres"',
+	'control + x — toggle "Include sub-genres" for "influences"',
+	'control + c — toggle "Include sub-genres" for "either"',
+	'control + s — toggle "Include sub-genres" for "descriptors"',
+	'control + shift + z — toggle "Exclude sub-genres" for "genres"',
+	'control + shift + x — toggle "Exclude sub-genres" for "influences"',
+	'control + shift + c — toggle "Exclude sub-genres" for "either"',
+	'control + shift + s — toggle "Exclude sub-genres" for "descriptors"',
+	'control + q — toggle "Must contain all" for "genres"',
+	'control + w — toggle "Must contain all" for "influences"',
+	'control + e — toggle "Must contain all" for "either"',
+	'control + a — toggle "Must contain all" for "descriptors"',
+	'control + shift + q — toggle "Only exclude items containing all" for "genres"',
+	'control + shift + w — toggle "Only exclude items containing all" for "influences"',
+	'control + shift + e — toggle "Only exclude items containing all" for "either"',
+	'control + shift + a — toggle "Only exclude items containing all" for "descriptors"',
+];
 
 export async function main(): Promise<void> {
 	const input = await waitForElement<HTMLInputElement>(`#${INPUT_ID}`);
 	mount(input);
+}
+
+function filterTypeFor(category: Category, exclude: boolean): FilterType {
+	return `${category}_${exclude ? "exclude" : "include"}` as FilterType;
 }
 
 function itemId(item: BrowseResult): number | null {
@@ -61,6 +122,25 @@ function applyItem(filterType: FilterType, item: BrowseResult): void {
 				chart.addBrowserItem(${JSON.stringify(filterType)}, ${id}, ${JSON.stringify(name)});
 			} finally {
 				chart.onClickCreateChart = originalCreateChart;
+			}
+		})();
+	`);
+}
+
+function toggleCheckbox(filterType: FilterType, kind: CheckboxKind): void {
+	const suffix = kind === "sub" ? "sub_items" : "all";
+	const handlerName =
+		kind === "sub" ? "onClickBrowserItemSub" : "onClickBrowserItemAll";
+	const id = `page_chart_query_free_section_${filterType}_${suffix}`;
+
+	runScript(`
+		(function () {
+			var checkbox = document.getElementById(${JSON.stringify(id)});
+			if (!checkbox) return;
+			checkbox.checked = !checkbox.checked;
+			var chart = window.RYMchart;
+			if (chart && typeof chart.${handlerName} === "function") {
+				chart.${handlerName}(${JSON.stringify(filterType)});
 			}
 		})();
 	`);
@@ -132,16 +212,6 @@ async function applyNativeMatch(
 	resetInput(input);
 }
 
-function genreFilterTypeFor(
-	shortcutKey: 1 | 2 | 3,
-	exclude: boolean,
-): FilterType {
-	if (shortcutKey === 1) return exclude ? "genre_exclude" : "genre_include";
-	if (shortcutKey === 2)
-		return exclude ? "sec_genre_exclude" : "sec_genre_include";
-	return exclude ? "genre_either_exclude" : "genre_either_include";
-}
-
 function findShortcutLabel(input: HTMLInputElement): HTMLElement | null {
 	const section = input.closest<HTMLElement>(SHORTCUT_SECTION_SELECTOR);
 	return section?.querySelector<HTMLElement>(SHORTCUT_LABEL_SELECTOR) ?? null;
@@ -152,23 +222,11 @@ function insertShortcutHint(input: HTMLInputElement): void {
 	if (!label || label.dataset.ebrHint) return;
 
 	label.dataset.ebrHint = "1";
-	label.insertAdjacentHTML(
-		"beforeend",
-		`<br>^1/2/3 top genre &nbsp;·&nbsp; ^D top descriptor &nbsp;·&nbsp; +Shift = exclude<span class="ebr-exclude-badge"></span><br>
-		^\` toggle exclude mode`,
-	);
-}
-
-function updateExcludeBadge(input: HTMLInputElement): void {
-	const badge =
-		findShortcutLabel(input)?.querySelector<HTMLElement>(".ebr-exclude-badge");
-	if (badge) badge.textContent = excludeMode ? " [EXCL]" : "";
+	label.insertAdjacentHTML("beforeend", `<br>${HINT_LINES.join("<br>")}`);
 }
 
 function resetInput(input: HTMLInputElement): void {
 	input.value = "";
-	excludeMode = false;
-	updateExcludeBadge(input);
 }
 
 function updateChart(): void {
@@ -179,41 +237,34 @@ function updateChart(): void {
 	`);
 }
 
-function handleToggleExcludeMode(
+function handleApplyShortcut(
 	event: KeyboardEvent,
 	input: HTMLInputElement,
 ): boolean {
-	if (event.key !== "`" || !event.ctrlKey) return false;
-	excludeMode = !excludeMode;
-	updateExcludeBadge(input);
+	if (!event.ctrlKey) return false;
+	const category = APPLY_KEY_CATEGORY[event.key.toLowerCase()];
+	if (!category) return false;
+
+	const filterType = filterTypeFor(category, event.shiftKey);
+	void applyNativeMatch(APPLY_SCOPE[category], filterType, input);
 	return true;
 }
 
-function handleDescriptorShortcut(
-	event: KeyboardEvent,
-	input: HTMLInputElement,
-): boolean {
-	if (!event.ctrlKey || event.key.toLowerCase() !== "d") return false;
+function handleSubToggleShortcut(event: KeyboardEvent): boolean {
+	if (!event.ctrlKey) return false;
+	const category = SUB_TOGGLE_KEY_CATEGORY[event.key.toLowerCase()];
+	if (!category) return false;
 
-	const filterType =
-		event.shiftKey || excludeMode ? "descriptor_exclude" : "descriptor_include";
-	void applyNativeMatch("descriptor", filterType, input);
+	toggleCheckbox(filterTypeFor(category, event.shiftKey), "sub");
 	return true;
 }
 
-function handleGenreShortcut(
-	event: KeyboardEvent,
-	input: HTMLInputElement,
-): boolean {
-	const digitMatch = /^Digit([123])$/.exec(event.code ?? "");
-	if (!event.ctrlKey || !digitMatch) return false;
+function handleAllToggleShortcut(event: KeyboardEvent): boolean {
+	if (!event.ctrlKey) return false;
+	const category = ALL_TOGGLE_KEY_CATEGORY[event.key.toLowerCase()];
+	if (!category) return false;
 
-	const shortcutKey = Number.parseInt(digitMatch[1], 10) as 1 | 2 | 3;
-	const filterType = genreFilterTypeFor(
-		shortcutKey,
-		event.shiftKey || excludeMode,
-	);
-	void applyNativeMatch("genre", filterType, input);
+	toggleCheckbox(filterTypeFor(category, event.shiftKey), "all");
 	return true;
 }
 
@@ -224,9 +275,9 @@ function handleCtrlEnter(event: KeyboardEvent): boolean {
 }
 
 const KEY_HANDLERS = [
-	handleToggleExcludeMode,
-	handleDescriptorShortcut,
-	handleGenreShortcut,
+	handleApplyShortcut,
+	handleSubToggleShortcut,
+	handleAllToggleShortcut,
 	handleCtrlEnter,
 ];
 
