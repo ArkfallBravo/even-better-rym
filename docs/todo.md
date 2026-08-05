@@ -71,6 +71,12 @@
   silently pick one — display a warning to the user instead so they can
   resolve it manually.
 
+- **Done (2026-08-05)**: `chart-prefix-commands` redesign to stop its custom
+  suggestion overlay from fighting RYM's own native chart-builder dropdown —
+  see the `chart-prefix-commands` redesign entry in `docs/plan.md` for the
+  full before/after. Manually tested and confirmed working by the user in
+  the Safari-wrapped app.
+
 - Separate, unrelated error surfaced in the extension background page's
   console while debugging the above (not yet investigated, not yet
   triaged/prioritized by the user): `[settings] failed to hydrate from

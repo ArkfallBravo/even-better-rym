@@ -20,74 +20,24 @@ type BrowseResult = {
 	assoc_id?: number;
 };
 
-const CONTAINER_ID = "ui_browser_list_contents_page_charts_settings";
-const LIST_ID = "ui_browser_list_page_charts_settings";
+type NativeQueryResult = {
+	subBrowseActive: boolean;
+	item: BrowseResult | null;
+};
+
 const INPUT_ID = "ui_browser_input_page_charts_settings";
-const BROWSE_ENDPOINT = "/api/1/browse/music/";
-const DEBOUNCE_MS = 180;
-const MAX_SUGGESTIONS = 12;
+const BROWSER_ID = "page_charts_settings";
+const NATIVE_QUERY_EVENT = "EbrChartBrowserFirstMatchEvent";
 const RYMCHART_PATCH_ATTEMPTS = 20;
 const RYMCHART_PATCH_INTERVAL_MS = 200;
 const SHORTCUT_SECTION_SELECTOR = ".page_chart_query_free_section_new";
 const SHORTCUT_LABEL_SELECTOR = ".page_chart_query_free_section_label";
 
-let suggestions: BrowseResult[] = [];
-let activeIndex = 0;
 let excludeMode = false;
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-const suggestionCache = new Map<string, Promise<BrowseResult[]>>();
 
 export async function main(): Promise<void> {
 	const input = await waitForElement<HTMLInputElement>(`#${INPUT_ID}`);
 	mount(input);
-}
-
-function resultComponent(result: BrowseResult): string {
-	return result.component ?? (result.path ?? "").split("/")[0];
-}
-
-function fetchSuggestions(query: string): Promise<BrowseResult[]> {
-	const cacheKey = query.toLowerCase().trim();
-	const cached = suggestionCache.get(cacheKey);
-	if (cached) return cached;
-
-	const url = new URL(BROWSE_ENDPOINT, globalThis.location.origin);
-	url.searchParams.set("q", query);
-	url.searchParams.set("component", "");
-
-	const request = fetch(url.toString(), { credentials: "include" })
-		.then((response) => response.json())
-		.then((data: { results?: BrowseResult[] }) =>
-			(data.results ?? []).slice(0, MAX_SUGGESTIONS),
-		)
-		.catch(() => []);
-
-	suggestionCache.set(cacheKey, request);
-	return request;
-}
-
-function filterTypeFor(
-	scope: Scope,
-	shortcutKey: 1 | 2 | 3,
-	exclude: boolean,
-): FilterType | null {
-	if (scope === "genre") {
-		if (shortcutKey === 1) return exclude ? "genre_exclude" : "genre_include";
-		if (shortcutKey === 2)
-			return exclude ? "sec_genre_exclude" : "sec_genre_include";
-		if (shortcutKey === 3)
-			return exclude ? "genre_either_exclude" : "genre_either_include";
-	}
-	if (scope === "descriptor" && shortcutKey === 1) {
-		return exclude ? "descriptor_exclude" : "descriptor_include";
-	}
-	return null;
-}
-
-function findFirstOfType(scope: Scope): BrowseResult | null {
-	return (
-		suggestions.find((result) => resultComponent(result) === scope) ?? null
-	);
 }
 
 function itemId(item: BrowseResult): number | null {
@@ -116,29 +66,80 @@ function applyItem(filterType: FilterType, item: BrowseResult): void {
 	`);
 }
 
-function escapeHtml(value: string): string {
-	const entities: Record<string, string> = {
-		"&": "&amp;",
-		"<": "&lt;",
-		">": "&gt;",
-		'"': "&quot;",
-		"'": "&#39;",
-	};
-	return value.replace(/[&<>"']/g, (character) => entities[character]);
+/**
+ * Reads RYM's own native browse-widget state via an injected script rather
+ * than a separate fetch, so shortcuts always match what RYM's own dropdown
+ * would show. Deliberately reads RYMbrowser.resultCache (keyed by the exact
+ * {q, component} that produced it) rather than currentResultSet ("last
+ * rendered", which can be stale relative to the just-typed query if a
+ * shortcut is pressed before RYM's own debounced search round-trip lands) —
+ * a missing cache entry for the current input value means no match yet,
+ * not a wrong one.
+ */
+function queryNativeBrowser(scope: Scope): Promise<NativeQueryResult> {
+	const promise = new Promise<NativeQueryResult>((resolve) => {
+		const listener = (e: Event) => {
+			document.removeEventListener(NATIVE_QUERY_EVENT, listener);
+			resolve((e as CustomEvent).detail as NativeQueryResult);
+		};
+		document.addEventListener(NATIVE_QUERY_EVENT, listener);
+	});
+
+	runScript(`
+		(function () {
+			var browser = window.RYMbrowser;
+			var id = ${JSON.stringify(BROWSER_ID)};
+			var path = (browser && browser.path && browser.path[id]) || [];
+			var subBrowseActive = path.length > 0;
+			var item = null;
+			if (!subBrowseActive && browser && browser.resultCache) {
+				var input = document.getElementById(${JSON.stringify(INPUT_ID)});
+				var root = document.getElementById("ui_browser_" + id);
+				var query = input ? input.value.trim() : "";
+				var component = root ? root.dataset.component || "" : "";
+				var cacheKey = JSON.stringify({ q: query, component: component });
+				var resultSet = browser.resultCache[cacheKey];
+				var results = (resultSet && resultSet.results) || [];
+				for (var i = 0; i < results.length; i++) {
+					var result = results[i];
+					var resultComponent = result.component || (result.path || "").split("/")[0];
+					if (resultComponent === ${JSON.stringify(scope)}) {
+						item = result;
+						break;
+					}
+				}
+			}
+			document.dispatchEvent(
+				new CustomEvent(${JSON.stringify(NATIVE_QUERY_EVENT)}, {
+					detail: { subBrowseActive: subBrowseActive, item: item },
+				}),
+			);
+		})();
+	`);
+
+	return promise;
 }
 
-function getContainer(): HTMLElement | null {
-	return document.getElementById(CONTAINER_ID);
+async function applyNativeMatch(
+	scope: Scope,
+	filterType: FilterType,
+	input: HTMLInputElement,
+): Promise<void> {
+	const { subBrowseActive, item } = await queryNativeBrowser(scope);
+	if (subBrowseActive || !item) return;
+
+	applyItem(filterType, item);
+	resetInput(input);
 }
 
-function showList(): void {
-	const list = document.getElementById(LIST_ID);
-	if (list) list.style.display = "block";
-}
-
-function hideList(): void {
-	const list = document.getElementById(LIST_ID);
-	if (list) list.style.display = "none";
+function genreFilterTypeFor(
+	shortcutKey: 1 | 2 | 3,
+	exclude: boolean,
+): FilterType {
+	if (shortcutKey === 1) return exclude ? "genre_exclude" : "genre_include";
+	if (shortcutKey === 2)
+		return exclude ? "sec_genre_exclude" : "sec_genre_include";
+	return exclude ? "genre_either_exclude" : "genre_either_include";
 }
 
 function findShortcutLabel(input: HTMLInputElement): HTMLElement | null {
@@ -153,109 +154,21 @@ function insertShortcutHint(input: HTMLInputElement): void {
 	label.dataset.ebrHint = "1";
 	label.insertAdjacentHTML(
 		"beforeend",
-		`<br>Type to search &nbsp;·&nbsp;
-		^1/2/3 top genre &nbsp;·&nbsp; ^D top descriptor &nbsp;·&nbsp; +Shift = exclude<br>
+		`<br>^1/2/3 top genre &nbsp;·&nbsp; ^D top descriptor &nbsp;·&nbsp; +Shift = exclude<span class="ebr-exclude-badge"></span><br>
 		^\` toggle exclude mode`,
 	);
 }
 
-function suggestionRow(
-	index: number,
-	label: string,
-	typeLabel?: string,
-): string {
-	const activeClass = index === activeIndex ? " ebr-active" : "";
-	const typeBadge = typeLabel
-		? `<span class="ebr-type-badge">${typeLabel}</span>`
-		: "";
-	return `<div class="ui_browser_list_item ui_browser_list_item_category${activeClass}" data-ebr-idx="${index}">
-		<div class="ui_browser_list_item_category_title">${escapeHtml(label)}${typeBadge}</div>
-	</div>`;
+function updateExcludeBadge(input: HTMLInputElement): void {
+	const badge =
+		findShortcutLabel(input)?.querySelector<HTMLElement>(".ebr-exclude-badge");
+	if (badge) badge.textContent = excludeMode ? " [EXCL]" : "";
 }
 
-function bindSuggestionClicks(
-	container: HTMLElement,
-	onSelect: (index: number) => void,
-): void {
-	for (const element of container.querySelectorAll<HTMLElement>(
-		"[data-ebr-idx]",
-	)) {
-		element.addEventListener("mousedown", (event) => {
-			event.preventDefault();
-			onSelect(Number.parseInt(element.dataset.ebrIdx ?? "0", 10));
-		});
-	}
-}
-
-function freeModeHeader(): string {
-	const exclusionBadge = excludeMode
-		? ' <span class="ebr-exclude-badge">[EXCL]</span>'
-		: "";
-	return `<div class="ui_browser_list_item ui_browser_list_item_category">
-		<div class="ui_browser_list_item_category_title">^1/2/3 top genre &nbsp;·&nbsp; ^D top descriptor &nbsp;·&nbsp; +Shift = exclude${exclusionBadge}</div>
-		<div class="ui_browser_list_item_category_description">Tab to cycle &nbsp;·&nbsp; ^\` toggle exclude mode</div>
-	</div>`;
-}
-
-function renderFreeMode(container: HTMLElement): void {
-	if (!suggestions.length) return;
-
-	const rows = suggestions
-		.map((result, index) =>
-			suggestionRow(
-				index,
-				result.display_name ?? result.name ?? "",
-				result.component === "descriptor" ? "d" : "g",
-			),
-		)
-		.join("");
-	container.innerHTML = freeModeHeader() + rows;
-	bindSuggestionClicks(container, (index) => {
-		activeIndex = index;
-		render();
-	});
-}
-
-function render(): void {
-	showList();
-	const container = getContainer();
-	if (!container) return;
-	renderFreeMode(container);
-}
-
-function resetInput(): void {
-	const input = document.getElementById(INPUT_ID) as HTMLInputElement | null;
-	if (input) input.value = "";
-	suggestions = [];
-	activeIndex = 0;
+function resetInput(input: HTMLInputElement): void {
+	input.value = "";
 	excludeMode = false;
-	hideList();
-}
-
-function scheduleSearch(query: string, stillValid: () => boolean): void {
-	if (debounceTimer) clearTimeout(debounceTimer);
-	render();
-	debounceTimer = setTimeout(() => {
-		void fetchSuggestions(query).then((results) => {
-			if (!stillValid()) return;
-			suggestions = results;
-			activeIndex = 0;
-			render();
-		});
-	}, DEBOUNCE_MS);
-}
-
-function onInput(event: Event): void {
-	const input = event.target as HTMLInputElement;
-	const query = input.value.trim();
-	if (!query) {
-		suggestions = [];
-		hideList();
-		return;
-	}
-
-	showList();
-	scheduleSearch(query, () => input.value.trim() === query);
+	updateExcludeBadge(input);
 }
 
 function updateChart(): void {
@@ -266,45 +179,41 @@ function updateChart(): void {
 	`);
 }
 
-function handleToggleExcludeMode(event: KeyboardEvent): boolean {
+function handleToggleExcludeMode(
+	event: KeyboardEvent,
+	input: HTMLInputElement,
+): boolean {
 	if (event.key !== "`" || !event.ctrlKey) return false;
 	excludeMode = !excludeMode;
-	render();
+	updateExcludeBadge(input);
 	return true;
 }
 
-function handleDescriptorShortcut(event: KeyboardEvent): boolean {
+function handleDescriptorShortcut(
+	event: KeyboardEvent,
+	input: HTMLInputElement,
+): boolean {
 	if (!event.ctrlKey || event.key.toLowerCase() !== "d") return false;
-	if (!suggestions.length) return true;
-
-	const item = findFirstOfType("descriptor");
-	if (!item) return true;
 
 	const filterType =
 		event.shiftKey || excludeMode ? "descriptor_exclude" : "descriptor_include";
-	applyItem(filterType, item);
-	resetInput();
+	void applyNativeMatch("descriptor", filterType, input);
 	return true;
 }
 
-function handleGenreShortcut(event: KeyboardEvent): boolean {
+function handleGenreShortcut(
+	event: KeyboardEvent,
+	input: HTMLInputElement,
+): boolean {
 	const digitMatch = /^Digit([123])$/.exec(event.code ?? "");
 	if (!event.ctrlKey || !digitMatch) return false;
-	if (!suggestions.length) return true;
-
-	const item = findFirstOfType("genre");
-	if (!item) return true;
 
 	const shortcutKey = Number.parseInt(digitMatch[1], 10) as 1 | 2 | 3;
-	const filterType = filterTypeFor(
-		"genre",
+	const filterType = genreFilterTypeFor(
 		shortcutKey,
 		event.shiftKey || excludeMode,
 	);
-	if (!filterType) return true;
-
-	applyItem(filterType, item);
-	resetInput();
+	void applyNativeMatch("genre", filterType, input);
 	return true;
 }
 
@@ -314,33 +223,17 @@ function handleCtrlEnter(event: KeyboardEvent): boolean {
 	return true;
 }
 
-function handleTabCycle(event: KeyboardEvent): boolean {
-	if (event.key !== "Tab" || !suggestions.length) return false;
-	activeIndex =
-		(activeIndex + (event.shiftKey ? -1 : 1) + suggestions.length) %
-		suggestions.length;
-	render();
-	return true;
-}
-
-function handleEscape(event: KeyboardEvent): boolean {
-	if (event.key !== "Escape") return false;
-	resetInput();
-	return true;
-}
-
 const KEY_HANDLERS = [
 	handleToggleExcludeMode,
 	handleDescriptorShortcut,
 	handleGenreShortcut,
 	handleCtrlEnter,
-	handleTabCycle,
-	handleEscape,
 ];
 
 function onKeyDown(event: KeyboardEvent): void {
+	const input = event.target as HTMLInputElement;
 	for (const handler of KEY_HANDLERS) {
-		if (!handler(event)) continue;
+		if (!handler(event, input)) continue;
 		event.preventDefault();
 		event.stopPropagation();
 		return;
@@ -375,52 +268,9 @@ function patchRYMChartRemoval(): void {
 	`);
 }
 
-function observeContainerOverwrites(container: HTMLElement): void {
-	new MutationObserver(() => {
-		if (!container.querySelector('[id^="ui_browser_list_item__"]')) return;
-		if (suggestions.length) {
-			render();
-		} else {
-			hideList();
-		}
-	}).observe(container, { childList: true, subtree: true });
-}
-
-function suppressNativeKeyUp(input: HTMLInputElement): void {
-	const originalKeyUp = input.onkeyup;
-	input.onkeyup = function (this: GlobalEventHandlers, event: KeyboardEvent) {
-		if (input.value.trim()) return;
-		originalKeyUp?.call(this, event);
-	};
-}
-
-function suppressNativeBlur(input: HTMLInputElement): void {
-	const originalBlur = input.onblur;
-	input.onblur = function (this: GlobalEventHandlers, event: FocusEvent) {
-		hideList();
-		if (suggestions.length) return;
-		originalBlur?.call(this, event);
-	};
-}
-
-function overrideNativeFocus(input: HTMLInputElement): void {
-	input.onfocus = () => {
-		if (!suggestions.length) {
-			hideList();
-			return;
-		}
-		showList();
-		render();
-	};
-}
-
 function mount(input: HTMLInputElement): void {
 	insertShortcutHint(input);
-	suppressNativeKeyUp(input);
-	overrideNativeFocus(input);
-	suppressNativeBlur(input);
 
-	input.addEventListener("input", onInput);
 	input.addEventListener("keydown", onKeyDown, true);
 
 	document.addEventListener(
@@ -440,7 +290,4 @@ function mount(input: HTMLInputElement): void {
 	);
 
 	patchRYMChartRemoval();
-
-	const container = getContainer();
-	if (container) observeContainerOverwrites(container);
 }
