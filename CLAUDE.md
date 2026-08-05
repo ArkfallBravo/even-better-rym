@@ -82,6 +82,8 @@ The Safari app's App Store Connect listing needs a Privacy Policy URL. This is h
 
 There was previously a branch ruleset on `main` named "Reckon comprehension (managed)" (a third-party GitHub App requiring a status check before merge/push) — it was deleted via `gh api -X DELETE repos/ArkfallBravo/even-better-rym/rulesets/<id>` on 2026-07-28 because it blocked direct pushes to `main` and the user didn't want it. `main` currently has no required-status-check ruleset; if one reappears unexpectedly, check `gh api repos/ArkfallBravo/even-better-rym/rulesets` before assuming it needs a PR workflow to satisfy it.
 
+`chart-searchbar` diverged from `main` at `10b8f106` and has since kept its own independent `docs/plan.md`/`docs/todo.md` entries in parallel with `main`'s (e.g. both branches separately documented the same Beatport/Qobuz/Melon import-failure investigation from 2026-07-28, in different wording). Cherry-picking `main` fixes onto `chart-searchbar` (or vice versa) reliably conflicts in these two doc files even when the code changes apply cleanly — resolve by keeping both sides' unique content (append rather than pick one), except where one side's wording is simply an earlier/unresolved draft of what the other side already resolved (e.g. "not yet investigated" vs "**Resolved** ..." for the same issue) — keep the resolved version in that case. Always double check `git status`/`git rev-parse --abbrev-ref HEAD` before and after each cherry-pick in a multi-commit sequence — mid-sequence branch state can silently reset between tool calls.
+
 ## Architecture
 
 ### Feature module pattern
