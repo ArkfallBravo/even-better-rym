@@ -8,7 +8,10 @@
 			"!build",
 			"!coverage",
 			"!profiles",
-			"!postcss.config.cjs"
+			"!postcss.config.cjs",
+			"!apple_music_source.html",
+			"!charts_source.html",
+			"!\\[Safari\\] Settings erased on web history clear, fix inside! · Issue #1366 · uBlock-LLC:uBlock.html"
 		]
 	},
 	"linter": {
