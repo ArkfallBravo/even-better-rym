@@ -84,3 +84,22 @@
      `/Applications` copy, regardless of which one Xcode's Run action
      launched. Root cause not identified. User reverted all of it and is
      back to doing this manually in Xcode.
+
+- `npm run lint` currently fails on `main` for reasons unrelated to any
+  recent feature work (surfaced 2026-08-06 while bringing `chart-searchbar`
+  over): `src/modules/hide-votes/app.ts` has a pre-existing Biome error
+  (`lint/style/useTemplate`), and Biome has no `vcs.useIgnoreFile` config so
+  it also scans gitignored paths (`.claude/settings.local.json`, files under
+  the untracked `EvenBetterRYM/` dir) and flags issues there too. Either fix
+  the `hide-votes/app.ts` lint error, or add a `vcs` block to `biome.json` so
+  it respects `.gitignore` — whichever is preferred, since right now
+  `biome check` failing first in the `npm run lint` chain silently prevents
+  `tsc`/`eslint` from ever running as part of that command.
+
+- An old stash entry (debug `console.log` calls added to
+  `src/modules/stream-links/stream-link.tsx` and
+  `src/shared/services/applemusic/search.ts`, apparently from a prior
+  debugging session) is sitting on the stash stack — surfaced accidentally
+  2026-08-06 by an unrelated `git stash`/`git stash pop` and restored as
+  `stash@{0}` with a descriptive message rather than dropped. Needs the
+  user's call: turn it into a real commit, or drop it.

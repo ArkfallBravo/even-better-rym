@@ -1,5 +1,16 @@
 # Plan / open work
 
+- `chart-searchbar` → `main`: brought the `chart-shortcuts` feature
+  work over (done 2026-08-06, squashed as `f96852bd` — see `CLAUDE.md`'s
+  "GitHub repo notes" section for the cherry-pick/squash mechanics and the
+  lint-config fixes it surfaced). The user's ask was specifically
+  "cherry-pick the 17 commits then merge them in as one commit" after asking
+  why a plain `git merge` wasn't used — the reasoning: a full merge can't
+  selectively exclude the 3 commits that only look unmerged (they diverged
+  independently with equivalent code on `main` already), and resolving the
+  `docs/*.md` conflicts is much more tractable one commit at a time than as
+  one giant merge diff. Both `main` and `chart-searchbar` were pushed after.
+
 - macOS app target build-into-`/Applications`, third attempt — succeeded
   (2026-08-05): unlike the two reverted attempts above (which tried to copy
   the built product out of DerivedData with a Run Script `ditto`/`mv`), this
