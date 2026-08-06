@@ -36,6 +36,14 @@ const RYMCHART_PATCH_ATTEMPTS = 20;
 const RYMCHART_PATCH_INTERVAL_MS = 200;
 const SHORTCUT_SECTION_SELECTOR = ".page_chart_query_free_section_new";
 const SHORTCUT_LABEL_SELECTOR = ".page_chart_query_free_section_label";
+const HINT_TOGGLE_STYLE = `
+	.ebr-hint-toggle {
+		cursor: pointer;
+	}
+	.ebr-hint-toggle:hover {
+		text-decoration: underline;
+	}
+`;
 
 const APPLY_KEY_CATEGORY: Record<string, Category> = {
 	"1": "genre",
@@ -69,23 +77,23 @@ const HINT_LINES = [
 	'control + 1 — include first genre result as "genre"',
 	'control + 2 — include first genre result as "influence"',
 	'control + 3 — include first genre result as "either"',
-	'control + d — include first descriptor result as "descriptor"',
+	'control + d — include first descriptor result as "descriptor"\n',
 	'control + shift + 1 — exclude first genre result as "genre"',
 	'control + shift + 2 — exclude first genre result as "influence"',
 	'control + shift + 3 — exclude first genre result as "either"',
-	'control + shift + d — exclude first descriptor result as "descriptor"',
+	'control + shift + d — exclude first descriptor result as "descriptor"\n',
 	'control + z — toggle "Include sub-genres" for "genres"',
 	'control + x — toggle "Include sub-genres" for "influences"',
 	'control + c — toggle "Include sub-genres" for "either"',
-	'control + s — toggle "Include sub-genres" for "descriptors"',
+	'control + s — toggle "Include sub-genres" for "descriptors"\n',
 	'control + shift + z — toggle "Exclude sub-genres" for "genres"',
 	'control + shift + x — toggle "Exclude sub-genres" for "influences"',
 	'control + shift + c — toggle "Exclude sub-genres" for "either"',
-	'control + shift + s — toggle "Exclude sub-genres" for "descriptors"',
+	'control + shift + s — toggle "Exclude sub-genres" for "descriptors"\n',
 	'control + q — toggle "Must contain all" for "genres"',
 	'control + w — toggle "Must contain all" for "influences"',
 	'control + e — toggle "Must contain all" for "either"',
-	'control + a — toggle "Must contain all" for "descriptors"',
+	'control + a — toggle "Must contain all" for "descriptors"\n',
 	'control + shift + q — toggle "Only exclude items containing all" for "genres"',
 	'control + shift + w — toggle "Only exclude items containing all" for "influences"',
 	'control + shift + e — toggle "Only exclude items containing all" for "either"',
@@ -222,7 +230,29 @@ function insertShortcutHint(input: HTMLInputElement): void {
 	if (!label || label.dataset.ebrHint) return;
 
 	label.dataset.ebrHint = "1";
-	label.insertAdjacentHTML("beforeend", `<br>${HINT_LINES.join("<br>")}`);
+
+	const style = document.createElement("style");
+	style.textContent = HINT_TOGGLE_STYLE;
+	document.head.appendChild(style);
+
+	const hintLines = document.createElement("span");
+	hintLines.style.display = "none";
+	hintLines.innerHTML = `<br>${HINT_LINES.map((line) =>
+		line.replace(/\n/g, "<br>"),
+	).join("<br>")}`;
+
+	const toggle = document.createElement("span");
+	toggle.className = "ebr-hint-toggle";
+	toggle.textContent = "Show command hints";
+
+	toggle.addEventListener("click", (event) => {
+		event.stopPropagation();
+		const isHidden = hintLines.style.display === "none";
+		hintLines.style.display = isHidden ? "" : "none";
+		toggle.textContent = isHidden ? "Hide command hints" : "Show command hints";
+	});
+
+	label.append(document.createElement("br"), toggle, hintLines);
 }
 
 function resetInput(input: HTMLInputElement): void {
