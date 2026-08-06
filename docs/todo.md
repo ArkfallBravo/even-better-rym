@@ -1,5 +1,14 @@
 # Todo
 
+- **Done (2026-08-06)**: `chart-prefix-commands`'s advanced-query toggle
+  shortcuts (Ctrl+F/V/R, Ctrl+Shift+R/F/V), plus the follow-on redesign
+  making all `chart-prefix-commands` shortcuts fire at the document level
+  instead of only while the chart-builder search input has focus — see
+  `docs/plan.md`'s "advanced query" entry for 2026-08-06 for the full
+  history (initial R/F/V mapping → debugging why it only worked with the
+  input focused → page-wide redesign → final F/V/R remap). Manually tested
+  and confirmed working by the user, committed as `fb4d1e8f`.
+
 - Fix `src/modules/background/index.ts`'s `setTabIcon`: uses
   `browser.action.setIcon`/`.setTitle`, which is `undefined` under the
   Safari build's Manifest V2 (should be `browser.browserAction` for V2).
@@ -13,10 +22,16 @@
   relying on manually pasted console output during debugging sessions like
   the `chart-prefix-commands` one.
 
-- Set up the macOS app target (`EvenBetterRYM.xcodeproj`) to build directly
-  into `/Applications`. Attempted twice now (both reverted — see
-  `docs/plan.md` for the full account of the second attempt and why it was
-  undone):
+- **Done (2026-08-05)**: set up the macOS app target (`EvenBetterRYM.xcodeproj`)
+  to build directly into `/Applications`. Two earlier attempts (below) were
+  reverted; a third approach, using Xcode's own install-relocation settings
+  instead of copying the built product with a Run Script, is what finally
+  worked — confirmed by the user after a real rebuild. See
+  "Building the macOS app straight into `/Applications`" in this file's
+  Safari-wrapper section for the settings (`DEPLOYMENT_LOCATION`, `DSTROOT`
+  pointed at a symlink, `ENABLE_USER_SCRIPT_SANDBOXING = NO` on just this
+  target) and the known tradeoff (two `.app` copies with the same bundle ID
+  after each build).
   1. A "Copy to /Applications" Run Script build phase (`ditto` after
      "Embed Foundation Extensions"), blocked by Xcode's script sandboxing
      (`ENABLE_USER_SCRIPT_SANDBOXING = YES`, set at the project level) —
@@ -76,6 +91,20 @@
   see the `chart-prefix-commands` redesign entry in `docs/plan.md` for the
   full before/after. Manually tested and confirmed working by the user in
   the Safari-wrapped app.
+
+- `EvenBetterRYM/` now has its own private local-only git repo (see
+  `docs/plan.md`'s "`EvenBetterRYM/` private git repo" entry) — no GitHub
+  remote created yet. Optional follow-up if the user wants real off-machine
+  backup rather than just local history: create a private GitHub repo and
+  push. Not urgent since the local repo alone already solves the "no diff/
+  revert available" problem that prompted it.
+
+- The unrelated Xcode `/Applications`-build-location documentation added to
+  `CLAUDE.md`/`docs/plan.md`/`docs/todo.md` earlier in this session is
+  still uncommitted in the main repo (deliberately left out of the
+  `chart-prefix-commands` commit since it's a separate topic — see that
+  commit's scoping in `docs/plan.md`). Commit it (as its own commit) next
+  time these docs are touched, or whenever explicitly asked.
 
 - Separate, unrelated error surfaced in the extension background page's
   console while debugging the above (not yet investigated, not yet

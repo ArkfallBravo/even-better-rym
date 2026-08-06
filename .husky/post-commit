@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+# Personal, machine-local reminder — deliberately left untracked (not staged/
+# committed) since EvenBetterRYM/ only exists on this checkout, not for other
+# contributors of the public repo. Warns only; never commits or pushes
+# anything automatically.
+
+XCODE_DIR="$(git rev-parse --show-toplevel)/EvenBetterRYM"
+
+if [ -d "$XCODE_DIR/.git" ]; then
+  CHANGES=$(git -C "$XCODE_DIR" status --porcelain)
+  if [ -n "$CHANGES" ]; then
+    echo ""
+    echo "reminder: EvenBetterRYM/ has uncommitted changes in its own git repo:"
+    echo "$CHANGES" | sed 's/^/  /'
+    echo "  (cd EvenBetterRYM && git status) to review, then commit there separately."
+    echo ""
+  fi
+fi

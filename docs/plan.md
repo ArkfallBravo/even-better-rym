@@ -6,7 +6,10 @@
 - `feature/chart-prefix-commands` branch: ports the Tampermonkey userscript
   at `Userscripts/RYM Chart Prefix Commands.user.js` (sibling directory to
   this repo, outside git) into `src/modules/chart-prefix-commands/` as a
-  toggleable feature (`chartPrefixCommands` page key, gated on `/charts/*`).
+  toggleable feature (page key was `chartPrefixCommands`, renamed to
+  `chartShortcuts` on 2026-08-06 — see the popup title/description entry
+  below; module directory itself stays `chart-prefix-commands/`, gated on
+  `/charts/*`).
   Manually tested in the Safari-wrapped app and confirmed working (prefix
   commands, Ctrl+1/2/3/D shortcuts, exclude toggle, hint text placement) as
   of 2026-07-27, after fixing a content-script isolated-world bug where
@@ -15,14 +18,24 @@
   feature branches here aren't merged straight into `main`; the user merges
   the relevant changes into their own fork's main branch by hand once a
   branch is where they want it.
-- The chart-prefix-commands hint text is inserted as bare content directly
-  into RYM's own `.page_chart_query_free_section_label` div via
-  `label.insertAdjacentHTML("beforeend", ...)` — no wrapping `<span>`/`<div>`
-  — so it structurally matches the label's own bare text node (confirmed
-  against a DevTools screenshot of the target DOM shape) and inherits the
-  label's font/color for free. Idempotency guard is `label.dataset.ebrHint`
-  (an ID-based `document.getElementById` guard doesn't work once there's no
-  wrapping element with an ID).
+- The chart-prefix-commands shortcut cheatsheet (`HINT_LINES` in
+  `insertShortcutHint`, `app.ts`) is no longer always-visible bare content —
+  as of 2026-08-06 it's collapsed by default behind a "Show/Hide command
+  hints" `<span class="ebr-hint-toggle">` inserted into RYM's own
+  `.page_chart_query_free_section_label` div, toggling a sibling `<span>`
+  wrapping the actual `HINT_LINES` list. The toggle is a `<span>`, not an
+  `<a>` — RYM's global stylesheet colors `<a>` elements (blue), so the
+  toggle wouldn't inherit the label's own font/color as a link; a `<span>`
+  inherits both for free with no override needed. Hover-underline comes from
+  a scoped `.ebr-hint-toggle:hover { text-decoration: underline }` rule
+  injected via `document.createElement("style")` (same pattern as
+  `descriptor-links/app.ts`). The click handler calls
+  `event.stopPropagation()` since the parent label has its own `onclick`
+  that focuses the search input — without it, toggling the hint list also
+  steals focus. Idempotency guard is still `label.dataset.ebrHint` (an
+  ID-based `document.getElementById` guard doesn't work once there's no
+  wrapping element with an ID). Committed as `e4256f6c` on `chart-searchbar`,
+  manually tested and confirmed working by the user.
 - `docs/todo.md` has two open follow-ups from this branch's work: (1)
   whether a browser-automation MCP connector is worth setting up so future
   sessions can drive a live browser directly instead of relying on pasted
@@ -394,8 +407,8 @@
   native widget is untouched. Committed.
 
 - `chart-prefix-commands` new toggle shortcuts (started 2026-08-05,
-  **implemented, build-verified, awaiting the user's manual in-browser test
-  before commit**): follow-on to the redesign above. Added keyboard
+  **implemented, manually tested and confirmed working by the user, and
+  committed** as `fc0c2219`): follow-on to the redesign above. Added keyboard
   shortcuts covering the chart-builder's per-category checkboxes (see the
   `page_chart_query_free_section_*` discovery documented in `CLAUDE.md`'s
   Feature module pattern section), confirmed against a second read of the
@@ -460,11 +473,115 @@
 
   Verified: `tsc --noEmit`, `eslint src/modules/chart-prefix-commands/
   src/manifest.ts`, `biome check` on the same all clean, `npm run
-  build:safari` succeeds end-to-end. **Not yet manually tested in the
-  Safari-wrapped app or committed** — per this project's manual-testing
-  rule, needs the user to rebuild in Xcode and confirm all 24 shortcuts
-  (and the checkbox-toggle chart-refresh question above) behave correctly
-  before this gets committed.
+  build:safari` succeeds end-to-end. **Manually tested and confirmed
+  working by the user (2026-08-05)** in the Safari-wrapped app — including
+  the checkbox-toggle chart-refresh question above, which was not flagged
+  as a problem. Committed as `fc0c2219` (`src/manifest.ts`,
+  `src/modules/chart-prefix-commands/app.ts`,
+  `src/modules/chart-prefix-commands/chart-prefix-commands.css` deletion,
+  and this `docs/plan.md` entry — `CLAUDE.md` and `docs/todo.md`'s
+  pre-existing unrelated uncommitted changes were deliberately left out of
+  this commit, staged individually rather than via a blanket `git add`).
+
+- `chart-prefix-commands` Ctrl+Space shortcut + popup copy refresh
+  (2026-08-06, **implemented, manually tested and confirmed working by the
+  user, committed**): follow-on to the toggle-shortcuts work above.
+  - Added Ctrl+Space as a second trigger for "Update chart", alongside the
+    existing Ctrl+Enter. Renamed `handleCtrlEnter` to
+    `handleUpdateChartShortcut`, widened its key check to
+    `event.key === "Enter" || event.key === " "`, and made the same change
+    to the document-level fallback listener in `mount()` (the one that
+    fires when the chart-builder input itself doesn't have focus). Added
+    the corresponding `HINT_LINES` entries. Committed as `a65be72b`.
+  - Updated the popup's title/description for this feature (`pageLabels`/
+    `pageHints` in `src/shared/pages.ts`) to describe the full current
+    shortcut set (apply matches, sub-genre/must-contain-all toggles, update
+    chart) instead of the original `+g/-g`-era prefix-command copy.
+    Committed as `01f51a56`, then amended in place (still `01f51a56`) after
+    the user retitled it to "Custom Chart Shortcuts" and asked to rename
+    the `chartPrefixCommands` page key to `chartShortcuts` throughout —
+    updated `src/shared/pages.ts` (`PageKey`, `pages`, `pageLabels`,
+    `pageHints`) and the `runPage("chartShortcuts", ...)` call in
+    `src/modules/chart-prefix-commands/main.ts`. The module's directory
+    name and manifest content-script path were deliberately left as
+    `chart-prefix-commands/` — the rename request was scoped to the page
+    key identifier, not the file layout.
+  - Verified: `tsc --noEmit` clean after each change.
+
+- `chart-prefix-commands` "advanced query" toggle shortcuts (2026-08-06,
+  **implemented, manually tested and confirmed working by the user,
+  committed as `fb4d1e8f`**): covers a different part of the chart-builder
+  settings form than the
+  existing genre/descriptor filter shortcuts — the "advanced" section's
+  rating-source and exclusion checkboxes. DOM ids/handlers were found by
+  grepping the cached `charts_source.html` (same source used for the
+  `page_chart_query_free_section_*` discovery in `CLAUDE.md`), not live-page
+  inspection:
+  - Ctrl+R/F/V → `page_chart_query_advanced_users_following` /
+    `_followers` / `_self`, via `RYMchart.onClickUsersFollowing()` /
+    `onClickUsersFollowers()` / `onClickUsersSelf()` — "Only include ratings
+    from users I'm following / who follow me / myself".
+  - Ctrl+Shift+R/F/V → `page_chart_query_advanced_exclude_label_ratings` /
+    `_catalog` / `_wishlist`, via `RYMchart.onClickExcludeCatRatings()` /
+    `onClickExcludeCatCatalog()` / `onClickExcludeCatWishlist()` — "Exclude
+    releases I've rated / cataloged / wishlisted".
+  - These handlers take no argument (unlike `onClickBrowserItemSub`/`All`,
+    which take a `FilterType`), so they needed a separate `toggleAdvanced`
+    helper rather than reusing the existing `toggleCheckbox` — same
+    checkbox-flip-then-call-handler shape, just without the filterType
+    param. Added `AdvancedToggle = { id, handler }`,
+    `ADVANCED_USER_TOGGLE`/`ADVANCED_EXCLUDE_TOGGLE` key tables, and
+    `handleAdvancedToggleShortcut` (picks the user vs. exclude table based
+    on `event.shiftKey`, same pattern as the other handlers) into
+    `KEY_HANDLERS`.
+  - Original key mapping was R/T/Y (non-shift) — the user asked to change
+    T→F and Y→V after reviewing it, since T/Y sit awkwardly for this
+    purpose; final mapping is R/F/V (and Shift+R/F/V for the exclude set).
+  - User asked to keep the blank-line grouping between `HINT_LINES` blocks
+    (one blank line between each shortcut category) for readability after
+    an earlier pass had stripped it while cleaning up stray space/tab
+    mixing — confirmed blank lines inside the array are pure formatting
+    with no effect on the built output, so they're back and will stay.
+  - Verified: `tsc --noEmit` and `biome check` clean.
+  - **Follow-on (2026-08-06, same day): user reported R/F/V "don't work at
+    all," which turned out not to be a code bug.** Initial hypothesis was
+    that Safari/Chrome on macOS intercept Ctrl+F and Ctrl+V in text inputs
+    as native Cocoa text-editing commands (move-cursor-forward, page-down)
+    before the page ever sees them — plausible for F/V but didn't explain
+    Ctrl+R, which has no such binding. Confirmed via a live console probe
+    (attach a temp `addEventListener('keydown', ..., true)` directly on
+    `ui_browser_input_page_charts_settings` in Safari's Web Inspector, then
+    press each combo) that the keydown events *did* arrive correctly with
+    the right `key`/`code`/`ctrlKey` — the browser wasn't eating them. The
+    real cause: `onKeyDown` was only ever attached to the search input
+    itself (`input.addEventListener("keydown", onKeyDown, true)`), so the
+    shortcuts only worked while that input had focus — which the user
+    hadn't realized, since they'd been testing without clicking into it
+    first. Confirmed by the user: shortcuts work fine once the input is
+    focused.
+  - **Resulting redesign, at the user's request: made every
+    `chart-prefix-commands` shortcut fire regardless of focus**, not just
+    while the search input is focused (previously only Ctrl+Space/Enter
+    had this via a separate document-level listener). Replaced the
+    input-scoped listener and the old Ctrl+Space/Enter-only document
+    listener with one consolidated `document.addEventListener("keydown",
+    ..., true)` in `mount()` that calls `onKeyDown(event, input)` — `input`
+    is now an explicit param (previously derived unsafely from
+    `event.target`, which broke once the listener moved off the input
+    itself). Added `isOtherEditableTarget(target, input)` to suppress
+    firing when focus is in a *different* text input/textarea/
+    contenteditable elsewhere on the page (e.g. the chart title field), so
+    the shortcuts don't steal keystrokes from normal typing there — the
+    RYM search input itself is exempted from this check so shortcuts still
+    work while typing a genre/descriptor query into it.
+  - **Final key remap, at the user's request** (a second remap beyond the
+    R/T/Y→R/F/V one above): `ADVANCED_USER_TOGGLE` changed from
+    R=following/F=followers/V=self to **F=following/V=followers/R=self**;
+    `ADVANCED_EXCLUDE_TOGGLE` (Shift+R/F/V = rated/cataloged/wishlisted)
+    was already correct and untouched.
+  - Verified: `tsc --noEmit`, `biome check`, `eslint` all clean. Manually
+    tested and confirmed working by the user (both focused-in-search-box
+    and focused-elsewhere cases). Committed as `fb4d1e8f`.
 
 - `EvenBetterRYM/` private git repo (2026-08-05): prompted directly by the
   DSTROOT symlink incident above — two risky `project.pbxproj` build-system
