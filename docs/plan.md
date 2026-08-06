@@ -165,9 +165,9 @@
   CORS/fetch failures above (different listener, doesn't block message
   handling) — it's a separate, real, pre-existing bug worth its own fix.
 
-- `feature/chart-prefix-commands` branch: ports the Tampermonkey userscript
+- `feature/chart-shortcuts` branch: ports the Tampermonkey userscript
   at `Userscripts/RYM Chart Prefix Commands.user.js` (sibling directory to
-  this repo, outside git) into `src/modules/chart-prefix-commands/` as a
+  this repo, outside git) into `src/modules/chart-shortcuts/` as a
   toggleable feature (`chartPrefixCommands` page key, gated on `/charts/*`).
   Manually tested in the Safari-wrapped app and confirmed working (prefix
   commands, Ctrl+1/2/3/D shortcuts, exclude toggle, hint text placement) as
@@ -177,7 +177,7 @@
   feature branches here aren't merged straight into `main`; the user merges
   the relevant changes into their own fork's main branch by hand once a
   branch is where they want it.
-- The chart-prefix-commands hint text is inserted as bare content directly
+- The chart-shortcuts hint text is inserted as bare content directly
   into RYM's own `.page_chart_query_free_section_label` div via
   `label.insertAdjacentHTML("beforeend", ...)` — no wrapping `<span>`/`<div>`
   — so it structurally matches the label's own bare text node (confirmed
@@ -267,7 +267,7 @@
   choice. No feature code for `chart-searchbar` itself has been written yet
   as of this commit.
 
-- `chart-prefix-commands` redesign (started 2026-08-05, **research done,
+- `chart-shortcuts` redesign (started 2026-08-05, **research done,
   plan drafted, but never actually presented back to the user for
   confirmation before the session moved on to an unrelated permission-prompt
   task — pick this up by recapping the plan and the open question below
@@ -382,18 +382,18 @@
     class="ebr-exclude-badge">` inside the static hint text inserted by
     `insertShortcutHint`, toggled via `updateExcludeBadge()` — matches the
     plan's intent to move it out of the (now-removed) dynamic overlay header.
-  - `chart-prefix-commands.css`: removed the now-dead `.ebr-active` and
+  - `chart-shortcuts.css`: removed the now-dead `.ebr-active` and
     `.ebr-type-badge` rules (overlay-only), kept `.ebr-exclude-badge`.
 
-  Verified: `tsc --noEmit`, `eslint src/modules/chart-prefix-commands/`,
-  `biome check src/modules/chart-prefix-commands/` all clean, and
+  Verified: `tsc --noEmit`, `eslint src/modules/chart-shortcuts/`,
+  `biome check src/modules/chart-shortcuts/` all clean, and
   `npm run build:safari` succeeds end-to-end. **Manually tested and
   confirmed working by the user (2026-08-05)** in the Safari-wrapped app —
   shortcuts select the right parent-level genre/descriptor against RYM's
   live dropdown, and clicking "Browse sub-genre" / typing normally in the
   native widget is untouched. Committed.
 
-- `chart-prefix-commands` new toggle shortcuts (started 2026-08-05,
+- `chart-shortcuts` new toggle shortcuts (started 2026-08-05,
   **implemented, build-verified, awaiting the user's manual in-browser test
   before commit**): follow-on to the redesign above. Added keyboard
   shortcuts covering the chart-builder's per-category checkboxes (see the
@@ -454,11 +454,11 @@
     `^1/2/3 top genre · ^D top descriptor · +Shift = exclude` block —
     normalized the pasted text's inconsistent straight/curly quotes to
     plain `"` throughout for consistency with the rest of the array.
-  - `src/manifest.ts`'s `chart-prefix-commands` content-script entry no
-    longer references `chart-prefix-commands.css` (deleted — its only rule
+  - `src/manifest.ts`'s `chart-shortcuts` content-script entry no
+    longer references `chart-shortcuts.css` (deleted — its only rule
     was the now-removed `.ebr-exclude-badge`).
 
-  Verified: `tsc --noEmit`, `eslint src/modules/chart-prefix-commands/
+  Verified: `tsc --noEmit`, `eslint src/modules/chart-shortcuts/
   src/manifest.ts`, `biome check` on the same all clean, `npm run
   build:safari` succeeds end-to-end. **Not yet manually tested in the
   Safari-wrapped app or committed** — per this project's manual-testing

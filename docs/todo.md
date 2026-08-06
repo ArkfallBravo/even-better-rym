@@ -42,9 +42,9 @@
   candidate given this is a Safari extension already tied to a native macOS/
   iOS app wrapper.
 
-- **Done (2026-08-05)**: `chart-prefix-commands` redesign to stop its custom
+- **Done (2026-08-05)**: `chart-shortcuts` redesign to stop its custom
   suggestion overlay from fighting RYM's own native chart-builder dropdown —
-  see the `chart-prefix-commands` redesign entry in `docs/plan.md` for the
+  see the `chart-shortcuts` redesign entry in `docs/plan.md` for the
   full before/after. Manually tested and confirmed working by the user in
   the Safari-wrapped app.
 
@@ -60,7 +60,7 @@
   Chrome DevTools MCP) is worth setting up so Claude Code can drive/inspect
   a live browser (run console commands, read DOM state) itself instead of
   relying on manually pasted console output during debugging sessions like
-  the `chart-prefix-commands` one.
+  the `chart-shortcuts` one.
 
 - Set up the macOS app target (`EvenBetterRYM.xcodeproj`) to build directly
   into `/Applications`. Attempted twice now (both reverted — see
