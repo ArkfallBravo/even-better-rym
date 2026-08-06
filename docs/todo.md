@@ -1,8 +1,8 @@
 # Todo
 
-- **Done (2026-08-06)**: `chart-prefix-commands`'s advanced-query toggle
+- **Done (2026-08-06)**: `chart-shortcuts`'s advanced-query toggle
   shortcuts (Ctrl+F/V/R, Ctrl+Shift+R/F/V), plus the follow-on redesign
-  making all `chart-prefix-commands` shortcuts fire at the document level
+  making all `chart-shortcuts` shortcuts fire at the document level
   instead of only while the chart-builder search input has focus — see
   `docs/plan.md`'s "advanced query" entry for 2026-08-06 for the full
   history (initial R/F/V mapping → debugging why it only worked with the
@@ -20,7 +20,7 @@
   Chrome DevTools MCP) is worth setting up so Claude Code can drive/inspect
   a live browser (run console commands, read DOM state) itself instead of
   relying on manually pasted console output during debugging sessions like
-  the `chart-prefix-commands` one.
+  the `chart-shortcuts` one.
 
 - **Done (2026-08-05)**: set up the macOS app target (`EvenBetterRYM.xcodeproj`)
   to build directly into `/Applications`. Two earlier attempts (below) were
@@ -86,9 +86,9 @@
   silently pick one — display a warning to the user instead so they can
   resolve it manually.
 
-- **Done (2026-08-05)**: `chart-prefix-commands` redesign to stop its custom
+- **Done (2026-08-05)**: `chart-shortcuts` redesign to stop its custom
   suggestion overlay from fighting RYM's own native chart-builder dropdown —
-  see the `chart-prefix-commands` redesign entry in `docs/plan.md` for the
+  see the `chart-shortcuts` redesign entry in `docs/plan.md` for the
   full before/after. Manually tested and confirmed working by the user in
   the Safari-wrapped app.
 
@@ -102,7 +102,7 @@
 - The unrelated Xcode `/Applications`-build-location documentation added to
   `CLAUDE.md`/`docs/plan.md`/`docs/todo.md` earlier in this session is
   still uncommitted in the main repo (deliberately left out of the
-  `chart-prefix-commands` commit since it's a separate topic — see that
+  `chart-shortcuts` commit since it's a separate topic — see that
   commit's scoping in `docs/plan.md`). Commit it (as its own commit) next
   time these docs are touched, or whenever explicitly asked.
 

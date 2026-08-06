@@ -3,12 +3,12 @@
 (Safari iOS manifest `persistent` flag fix landed in commit `3d803f30` — see
 `docs/codebase.md` for the reasoning if needed.)
 
-- `feature/chart-prefix-commands` branch: ports the Tampermonkey userscript
+- `feature/chart-shortcuts` branch: ports the Tampermonkey userscript
   at `Userscripts/RYM Chart Prefix Commands.user.js` (sibling directory to
-  this repo, outside git) into `src/modules/chart-prefix-commands/` as a
+  this repo, outside git) into `src/modules/chart-shortcuts/` as a
   toggleable feature (page key was `chartPrefixCommands`, renamed to
   `chartShortcuts` on 2026-08-06 — see the popup title/description entry
-  below; module directory itself stays `chart-prefix-commands/`, gated on
+  below; module directory itself stays `chart-shortcuts/`, gated on
   `/charts/*`).
   Manually tested in the Safari-wrapped app and confirmed working (prefix
   commands, Ctrl+1/2/3/D shortcuts, exclude toggle, hint text placement) as
@@ -18,7 +18,7 @@
   feature branches here aren't merged straight into `main`; the user merges
   the relevant changes into their own fork's main branch by hand once a
   branch is where they want it.
-- The chart-prefix-commands shortcut cheatsheet (`HINT_LINES` in
+- The chart-shortcuts shortcut cheatsheet (`HINT_LINES` in
   `insertShortcutHint`, `app.ts`) is no longer always-visible bare content —
   as of 2026-08-06 it's collapsed by default behind a "Show/Hide command
   hints" `<span class="ebr-hint-toggle">` inserted into RYM's own
@@ -280,7 +280,7 @@
   CORS/fetch failures above (different listener, doesn't block message
   handling) — it's a separate, real, pre-existing bug worth its own fix.
 
-- `chart-prefix-commands` redesign (started 2026-08-05, **research done,
+- `chart-shortcuts` redesign (started 2026-08-05, **research done,
   plan drafted, but never actually presented back to the user for
   confirmation before the session moved on to an unrelated permission-prompt
   task — pick this up by recapping the plan and the open question below
@@ -395,18 +395,18 @@
     class="ebr-exclude-badge">` inside the static hint text inserted by
     `insertShortcutHint`, toggled via `updateExcludeBadge()` — matches the
     plan's intent to move it out of the (now-removed) dynamic overlay header.
-  - `chart-prefix-commands.css`: removed the now-dead `.ebr-active` and
+  - `chart-shortcuts.css`: removed the now-dead `.ebr-active` and
     `.ebr-type-badge` rules (overlay-only), kept `.ebr-exclude-badge`.
 
-  Verified: `tsc --noEmit`, `eslint src/modules/chart-prefix-commands/`,
-  `biome check src/modules/chart-prefix-commands/` all clean, and
+  Verified: `tsc --noEmit`, `eslint src/modules/chart-shortcuts/`,
+  `biome check src/modules/chart-shortcuts/` all clean, and
   `npm run build:safari` succeeds end-to-end. **Manually tested and
   confirmed working by the user (2026-08-05)** in the Safari-wrapped app —
   shortcuts select the right parent-level genre/descriptor against RYM's
   live dropdown, and clicking "Browse sub-genre" / typing normally in the
   native widget is untouched. Committed.
 
-- `chart-prefix-commands` new toggle shortcuts (started 2026-08-05,
+- `chart-shortcuts` new toggle shortcuts (started 2026-08-05,
   **implemented, manually tested and confirmed working by the user, and
   committed** as `fc0c2219`): follow-on to the redesign above. Added keyboard
   shortcuts covering the chart-builder's per-category checkboxes (see the
@@ -467,23 +467,23 @@
     `^1/2/3 top genre · ^D top descriptor · +Shift = exclude` block —
     normalized the pasted text's inconsistent straight/curly quotes to
     plain `"` throughout for consistency with the rest of the array.
-  - `src/manifest.ts`'s `chart-prefix-commands` content-script entry no
-    longer references `chart-prefix-commands.css` (deleted — its only rule
+  - `src/manifest.ts`'s `chart-shortcuts` content-script entry no
+    longer references `chart-shortcuts.css` (deleted — its only rule
     was the now-removed `.ebr-exclude-badge`).
 
-  Verified: `tsc --noEmit`, `eslint src/modules/chart-prefix-commands/
+  Verified: `tsc --noEmit`, `eslint src/modules/chart-shortcuts/
   src/manifest.ts`, `biome check` on the same all clean, `npm run
   build:safari` succeeds end-to-end. **Manually tested and confirmed
   working by the user (2026-08-05)** in the Safari-wrapped app — including
   the checkbox-toggle chart-refresh question above, which was not flagged
   as a problem. Committed as `fc0c2219` (`src/manifest.ts`,
-  `src/modules/chart-prefix-commands/app.ts`,
-  `src/modules/chart-prefix-commands/chart-prefix-commands.css` deletion,
+  `src/modules/chart-shortcuts/app.ts`,
+  `src/modules/chart-shortcuts/chart-shortcuts.css` deletion,
   and this `docs/plan.md` entry — `CLAUDE.md` and `docs/todo.md`'s
   pre-existing unrelated uncommitted changes were deliberately left out of
   this commit, staged individually rather than via a blanket `git add`).
 
-- `chart-prefix-commands` Ctrl+Space shortcut + popup copy refresh
+- `chart-shortcuts` Ctrl+Space shortcut + popup copy refresh
   (2026-08-06, **implemented, manually tested and confirmed working by the
   user, committed**): follow-on to the toggle-shortcuts work above.
   - Added Ctrl+Space as a second trigger for "Update chart", alongside the
@@ -502,13 +502,13 @@
     the `chartPrefixCommands` page key to `chartShortcuts` throughout —
     updated `src/shared/pages.ts` (`PageKey`, `pages`, `pageLabels`,
     `pageHints`) and the `runPage("chartShortcuts", ...)` call in
-    `src/modules/chart-prefix-commands/main.ts`. The module's directory
+    `src/modules/chart-shortcuts/main.ts`. The module's directory
     name and manifest content-script path were deliberately left as
-    `chart-prefix-commands/` — the rename request was scoped to the page
+    `chart-shortcuts/` — the rename request was scoped to the page
     key identifier, not the file layout.
   - Verified: `tsc --noEmit` clean after each change.
 
-- `chart-prefix-commands` "advanced query" toggle shortcuts (2026-08-06,
+- `chart-shortcuts` "advanced query" toggle shortcuts (2026-08-06,
   **implemented, manually tested and confirmed working by the user,
   committed as `fb4d1e8f`**): covers a different part of the chart-builder
   settings form than the
@@ -560,7 +560,7 @@
     first. Confirmed by the user: shortcuts work fine once the input is
     focused.
   - **Resulting redesign, at the user's request: made every
-    `chart-prefix-commands` shortcut fire regardless of focus**, not just
+    `chart-shortcuts` shortcut fire regardless of focus**, not just
     while the search input is focused (previously only Ctrl+Space/Enter
     had this via a separate document-level listener). Replaced the
     input-scoped listener and the old Ctrl+Space/Enter-only document

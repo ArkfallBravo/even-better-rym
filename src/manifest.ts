@@ -122,7 +122,7 @@ const sharedManifest = {
 			run_at: "document_idle",
 		},
 		{
-			js: ["src/modules/chart-prefix-commands/main.ts"],
+			js: ["src/modules/chart-shortcuts/main.ts"],
 			matches: ["*://*.rateyourmusic.com/charts/*"],
 			run_at: "document_start",
 		},
