@@ -97,7 +97,9 @@ const HINT_LINES = [
 	'control + shift + q — toggle "Only exclude items containing all" for "genres"',
 	'control + shift + w — toggle "Only exclude items containing all" for "influences"',
 	'control + shift + e — toggle "Only exclude items containing all" for "either"',
-	'control + shift + a — toggle "Only exclude items containing all" for "descriptors"',
+	'control + shift + a — toggle "Only exclude items containing all" for "descriptors"\n',
+	'control + space — "Update chart"',
+	'control + enter — "Update chart"',
 ];
 
 export async function main(): Promise<void> {
@@ -298,8 +300,9 @@ function handleAllToggleShortcut(event: KeyboardEvent): boolean {
 	return true;
 }
 
-function handleCtrlEnter(event: KeyboardEvent): boolean {
-	if (event.key !== "Enter" || !event.ctrlKey) return false;
+function handleUpdateChartShortcut(event: KeyboardEvent): boolean {
+	if ((event.key !== "Enter" && event.key !== " ") || !event.ctrlKey)
+		return false;
 	updateChart();
 	return true;
 }
@@ -308,7 +311,7 @@ const KEY_HANDLERS = [
 	handleApplyShortcut,
 	handleSubToggleShortcut,
 	handleAllToggleShortcut,
-	handleCtrlEnter,
+	handleUpdateChartShortcut,
 ];
 
 function onKeyDown(event: KeyboardEvent): void {
@@ -358,7 +361,7 @@ function mount(input: HTMLInputElement): void {
 		"keydown",
 		(event) => {
 			if (
-				event.key !== "Enter" ||
+				(event.key !== "Enter" && event.key !== " ") ||
 				!event.ctrlKey ||
 				document.activeElement === input
 			)
