@@ -16,6 +16,11 @@ type CheckboxKind = "sub" | "all";
 
 type Scope = "genre" | "descriptor";
 
+type AdvancedToggle = {
+	id: string;
+	handler: string;
+};
+
 type BrowseResult = {
 	display_name?: string;
 	name?: string;
@@ -73,31 +78,75 @@ const APPLY_SCOPE: Record<Category, Scope> = {
 	descriptor: "descriptor",
 };
 
+const ADVANCED_USER_TOGGLE: Record<string, AdvancedToggle> = {
+	f: {
+		id: "page_chart_query_advanced_users_following",
+		handler: "onClickUsersFollowing",
+	},
+	v: {
+		id: "page_chart_query_advanced_users_followers",
+		handler: "onClickUsersFollowers",
+	},
+	r: {
+		id: "page_chart_query_advanced_users_self",
+		handler: "onClickUsersSelf",
+	},
+};
+
+const ADVANCED_EXCLUDE_TOGGLE: Record<string, AdvancedToggle> = {
+	r: {
+		id: "page_chart_query_advanced_exclude_label_ratings",
+		handler: "onClickExcludeCatRatings",
+	},
+	f: {
+		id: "page_chart_query_advanced_exclude_label_catalog",
+		handler: "onClickExcludeCatCatalog",
+	},
+	v: {
+		id: "page_chart_query_advanced_exclude_label_wishlist",
+		handler: "onClickExcludeCatWishlist",
+	},
+};
+
 const HINT_LINES = [
 	'control + 1 — include first genre result as "genre"',
 	'control + 2 — include first genre result as "influence"',
 	'control + 3 — include first genre result as "either"',
 	'control + d — include first descriptor result as "descriptor"\n',
+
 	'control + shift + 1 — exclude first genre result as "genre"',
 	'control + shift + 2 — exclude first genre result as "influence"',
 	'control + shift + 3 — exclude first genre result as "either"',
 	'control + shift + d — exclude first descriptor result as "descriptor"\n',
+
 	'control + z — toggle "Include sub-genres" for "genres"',
 	'control + x — toggle "Include sub-genres" for "influences"',
 	'control + c — toggle "Include sub-genres" for "either"',
 	'control + s — toggle "Include sub-genres" for "descriptors"\n',
+
 	'control + shift + z — toggle "Exclude sub-genres" for "genres"',
 	'control + shift + x — toggle "Exclude sub-genres" for "influences"',
 	'control + shift + c — toggle "Exclude sub-genres" for "either"',
 	'control + shift + s — toggle "Exclude sub-genres" for "descriptors"\n',
+
 	'control + q — toggle "Must contain all" for "genres"',
 	'control + w — toggle "Must contain all" for "influences"',
 	'control + e — toggle "Must contain all" for "either"',
 	'control + a — toggle "Must contain all" for "descriptors"\n',
+
 	'control + shift + q — toggle "Only exclude items containing all" for "genres"',
 	'control + shift + w — toggle "Only exclude items containing all" for "influences"',
 	'control + shift + e — toggle "Only exclude items containing all" for "either"',
 	'control + shift + a — toggle "Only exclude items containing all" for "descriptors"\n',
+
+	'control + r — toggle "Only include ratings from myself"',
+	'control + f — toggle "Only include ratings from users I\'m following"',
+	'control + v — toggle "Only include ratings from users who follow me"\n',
+
+	'control + shift + r — toggle "Exclude releases I\'ve rated"',
+	'control + shift + f — toggle "Exclude releases I\'ve cataloged"',
+	'control + shift + v — toggle "Exclude releases I\'ve wishlisted"\n',
+
 	'control + space — "Update chart"',
 	'control + enter — "Update chart"',
 ];
@@ -151,6 +200,20 @@ function toggleCheckbox(filterType: FilterType, kind: CheckboxKind): void {
 			var chart = window.RYMchart;
 			if (chart && typeof chart.${handlerName} === "function") {
 				chart.${handlerName}(${JSON.stringify(filterType)});
+			}
+		})();
+	`);
+}
+
+function toggleAdvanced(toggle: AdvancedToggle): void {
+	runScript(`
+		(function () {
+			var checkbox = document.getElementById(${JSON.stringify(toggle.id)});
+			if (!checkbox) return;
+			checkbox.checked = !checkbox.checked;
+			var chart = window.RYMchart;
+			if (chart && typeof chart.${toggle.handler} === "function") {
+				chart.${toggle.handler}();
 			}
 		})();
 	`);
@@ -245,13 +308,15 @@ function insertShortcutHint(input: HTMLInputElement): void {
 
 	const toggle = document.createElement("span");
 	toggle.className = "ebr-hint-toggle";
-	toggle.textContent = "Show command hints";
+	toggle.textContent = "Show shortcut hints";
 
 	toggle.addEventListener("click", (event) => {
 		event.stopPropagation();
 		const isHidden = hintLines.style.display === "none";
 		hintLines.style.display = isHidden ? "" : "none";
-		toggle.textContent = isHidden ? "Hide command hints" : "Show command hints";
+		toggle.textContent = isHidden
+			? "Hide shortcut hints"
+			: "Show shortcut hints";
 	});
 
 	label.append(document.createElement("br"), toggle, hintLines);
@@ -300,6 +365,16 @@ function handleAllToggleShortcut(event: KeyboardEvent): boolean {
 	return true;
 }
 
+function handleAdvancedToggleShortcut(event: KeyboardEvent): boolean {
+	if (!event.ctrlKey) return false;
+	const table = event.shiftKey ? ADVANCED_EXCLUDE_TOGGLE : ADVANCED_USER_TOGGLE;
+	const toggle = table[event.key.toLowerCase()];
+	if (!toggle) return false;
+
+	toggleAdvanced(toggle);
+	return true;
+}
+
 function handleUpdateChartShortcut(event: KeyboardEvent): boolean {
 	if ((event.key !== "Enter" && event.key !== " ") || !event.ctrlKey)
 		return false;
@@ -311,17 +386,29 @@ const KEY_HANDLERS = [
 	handleApplyShortcut,
 	handleSubToggleShortcut,
 	handleAllToggleShortcut,
+	handleAdvancedToggleShortcut,
 	handleUpdateChartShortcut,
 ];
 
-function onKeyDown(event: KeyboardEvent): void {
-	const input = event.target as HTMLInputElement;
+function onKeyDown(event: KeyboardEvent, input: HTMLInputElement): void {
 	for (const handler of KEY_HANDLERS) {
 		if (!handler(event, input)) continue;
 		event.preventDefault();
 		event.stopPropagation();
 		return;
 	}
+}
+
+function isOtherEditableTarget(
+	target: EventTarget | null,
+	input: HTMLInputElement,
+): boolean {
+	if (!(target instanceof HTMLElement) || target === input) return false;
+	return (
+		target.tagName === "INPUT" ||
+		target.tagName === "TEXTAREA" ||
+		target.isContentEditable
+	);
 }
 
 function patchRYMChartRemoval(): void {
@@ -355,20 +442,11 @@ function patchRYMChartRemoval(): void {
 function mount(input: HTMLInputElement): void {
 	insertShortcutHint(input);
 
-	input.addEventListener("keydown", onKeyDown, true);
-
 	document.addEventListener(
 		"keydown",
 		(event) => {
-			if (
-				(event.key !== "Enter" && event.key !== " ") ||
-				!event.ctrlKey ||
-				document.activeElement === input
-			)
-				return;
-			event.preventDefault();
-			event.stopPropagation();
-			updateChart();
+			if (isOtherEditableTarget(event.target, input)) return;
+			onKeyDown(event, input);
 		},
 		true,
 	);
