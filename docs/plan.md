@@ -1,5 +1,40 @@
 # Plan / open work
 
+- App Store v1.1 submission prep (started 2026-08-14): tagged the exact
+  commit that was on `main` when the v1.0 build was submitted for review
+  (`app-store-v1.0-submission` on `5d776223`, pushed to origin — see
+  `CLAUDE.md`'s "App Store Connect metadata" section), then diffed forward
+  from there to find what actually needs to go in the next version's
+  description/release-notes updates rather than guessing. Found one real new
+  feature (`chart-shortcuts`), two import bug fixes (Melon host permission,
+  Qobuz locale rewrite), one reliability fix (Tidal autofind matching), and
+  one regression worth calling out rather than glossing over: `5ed78c70`
+  disabled the Release Submission Helper's auto-import "Credits" checkbox
+  (it accepted the first search result with no disambiguation) — the old App
+  Store description's claim that Import auto-fills credits is no longer
+  true and was corrected.
+
+  Drafted `app-store-description.txt` (also fixed several copy/paste
+  corruption artifacts in the user's originally-pasted description text by
+  cross-referencing `src/shared/pages.ts`'s canonical popup hint strings,
+  rather than guessing at the missing words) and `whats-new.txt`, both saved
+  to `app store submission stuff/` (see `CLAUDE.md`). Neither has been
+  explicitly confirmed as final/approved by the user yet.
+
+  Regenerating `mac_release_page_2560x1600.png` to match the other App Store
+  screenshots took several wrong turns (centered crop, then a
+  reverse-engineered horizontal-shift transform, then a tight content-bbox
+  crop) before the user supplied their own actual `sips` two-command
+  pipeline, which turned out to reproduce the reference file byte-for-byte —
+  see `CLAUDE.md`'s "Producing a `*_2560x1600.png` macOS screenshot" section
+  for the exact commands. The uneven black margin around the window in the
+  output (61/49/20/162 px) is expected, not a defect, once produced that way.
+
+  **Still open**: whether to commit the `screenshots/` → `app store
+  submission stuff/` migration — `git status` currently shows all six files
+  under the previously-tracked `screenshots/` as deleted, uncommitted (see
+  `CLAUDE.md` and the corresponding `docs/todo.md` entry).
+
 - Autofind-link triage (started 2026-08-14, debug tooling **done and
   committed**; the actual autofind failures are still untriaged — see below):
   the user reported
@@ -50,10 +85,66 @@
   config.
 
   **Committed** to `main` as `6b301cae` (the debug-page/panel/gating work).
-  **The original bug — some autofind links not finding matches — has not
-  been diagnosed yet**; this session only built and fixed the tool to
-  triage it. Next step is actually running the new search panel against a
-  release with known-failing autofind links and reading the results.
+
+  **Tidal autofind — diagnosed and fixed (2026-08-14, commit `eeda6525`):**
+  running the search panel against "Violent Magic Orchestra – Death Rave"
+  reproduced a consistent `Tidal: FAIL — HTTP 400: {"errors":[{"code":
+  "INVALID_RESOURCE_ID","detail":"Invalid resource ID","source":{"pointer":
+  "data/id"}}]}`. Root cause confirmed by testing directly against Tidal's
+  live `v2/searchResults` API with the project's own `.env` credentials
+  (read-only diagnostic calls): `src/shared/services/tidal/search.ts` was
+  putting the search query in the URL **path** as a resource ID
+  (`GET /v2/searchResults/{query}`) — every possible value there is
+  rejected (confirmed by testing a single letter `a` through full
+  multi-word queries, all `INVALID_RESOURCE_ID`), and omitting the ID
+  entirely returns `"At least one filter is required"`. The working shape,
+  confirmed live: `GET /v2/searchResults?filter[query]={query}&countryCode=
+  US&include=albums` — the query belongs in a `filter[query]` query
+  parameter, not the path. This also exposed a second bug: the response's
+  `data` field is an **array** of result objects (JSON:API collection
+  shape), not a single object, so `relationships.albums` lives at
+  `data.data[0].relationships`, not `data.data.relationships` — the old
+  parsing code assumed the latter and would have silently returned
+  "not found" even if the URL had been correct.
+
+  Confirmed via `git log --follow` that every commit touching this file is
+  authored by `kknq` (upstream) — this is a pre-existing bug in the
+  original codebase, not something introduced by this fork. Per the user's
+  explicit "fix it, it's a real bug regardless," fixed anyway (see
+  `feedback_upstream_kknq_code` memory — this doesn't change that
+  standing rule, since the user gave explicit ask here rather than it
+  being touched unprompted).
+
+  Fixed in `search.ts`: request now hits `v2/searchResults` with
+  `filter[query]` added to `urlParameters` (raw, unencoded — the existing
+  `fetch()` wrapper's `URLSearchParams.append` already handles encoding);
+  `TidalSearchResponse`'s `data` retyped as `TidalSearchResult[]`; parsing
+  reads `data?.data?.[0]?.relationships?.albums?.data`. Verified with
+  `tsc --noEmit`, `biome check`, `eslint`, and `npm run build:safari` —
+  all clean. **Manually tested and confirmed working by the user** in the
+  Safari-wrapped app. Committed as `eeda6525`.
+
+  **Open question, not resolved — flagged rather than guessed at:** the
+  user recalled Tidal autofind sometimes succeeding (a bold, filled
+  "found"-style icon, confirmed via `stream-link-icon.tsx` to render at
+  `opacity: 0.8` vs. the faint `opacity: 0.15` shared by "not-found" and
+  "failed" states — so this wasn't a visual misread of a dim icon) even
+  when RYM's page had no pre-existing Tidal link (which would otherwise
+  skip `search()` entirely via the `_tag: "exists"` path in
+  `stream-link.tsx`). Live testing shows the current API unconditionally
+  rejects any free-text path-based ID, and the accepted ID shape
+  (`1FBqsKJyGruHdyqg1t3A3MQgQGotdVdRZ`-style, opaque/server-generated)
+  reads like a route that has always validated a real ID — suggesting
+  Tidal's API contract may have changed since `kknq` wrote this in
+  2026-03-14, but this could **not** be confirmed: Tidal's docs site
+  (`developer.tidal.com`) is a client-rendered SPA that returns an empty
+  shell to both `curl` and `WebFetch`, and no changelog/deprecation notice
+  turned up via web search. Left as an explicitly unverified hypothesis,
+  not a finding. Separately, but with a real code-level explanation:
+  inconsistent *failure* text across attempts (sometimes `HTTP 400`,
+  sometimes no error code shown) is explained by two real, still-unfixed
+  issues surfaced during this diagnosis — see the `docs/todo.md` entries
+  added for both.
 
 - `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"
   (2026-08-14, open — not yet resolved): while wrapping up the autofind-link

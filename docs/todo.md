@@ -1,11 +1,47 @@
 # Todo
 
-- Diagnose the actual autofind-link failures the user reported (2026-08-14):
-  the debug tooling to triage this (`import-check`'s new search panel) is
-  built, fixed, and committed — the underlying bug itself hasn't been looked
-  at yet. Run the search panel against a release with known-failing autofind
-  links and read the results. See `docs/plan.md`'s "Autofind-link triage"
-  entry.
+- Decide whether to commit the `screenshots/` → `app store submission
+  stuff/` migration (2026-08-14): `git status` shows all six files
+  previously tracked under `screenshots/` as deleted in the working tree,
+  uncommitted, while `app store submission stuff/` (untracked) now holds the
+  App Store screenshots plus the draft description/release-notes text. See
+  `CLAUDE.md`'s "App Store Connect metadata" section.
+
+- **Done (2026-08-14)**: Tidal autofind failure diagnosed and fixed — the
+  `v2/searchResults` search request was using a broken path-based-ID URL
+  shape that Tidal's live API unconditionally rejects; fixed to use
+  `filter[query]`, plus a response-parsing bug (`data` is an array, not a
+  single object) that would have masked even a correct URL. Committed as
+  `eeda6525`, user-confirmed working. See `docs/plan.md`'s "Autofind-link
+  triage" entry for the full diagnosis, including an open question (why the
+  user recalled it sometimes succeeding) that was investigated but left
+  unresolved rather than guessed at.
+
+- Bandcamp and Qobuz showed "NOT FOUND" (not an error) in the same
+  search-panel run that surfaced the Tidal bug above, for the same
+  "Violent Magic Orchestra – Death Rave" test pair — not yet checked
+  whether that's a real bug (like Tidal was) or a legitimate no-match for
+  that specific release. Worth a quick check before assuming autofind is
+  otherwise healthy.
+
+- `fetch.ts`'s direct-fetch path has a real bug found while diagnosing the
+  Tidal issue above (not yet fixed, affects every service that calls
+  `fetch()`, not just Tidal): on a non-2xx response, `if (response.ok)
+  return ...` doesn't return, and no exception is thrown, so execution
+  falls through to *also* fire a second request via the background-script
+  fallback — meaning every failing API call silently double-fires. This
+  isn't just wasteful; it's also a likely reason failure error text was
+  inconsistent across attempts (which of the two requests' errors surfaces,
+  or whether a rate limit gets hit on the second call, can vary run to
+  run). Fix: return/throw immediately on a non-ok direct-fetch response
+  instead of falling through.
+
+- Tidal's `requestToken()` (`src/shared/services/tidal/auth.ts`) fetches a
+  fresh OAuth token on every single search call, with no caching —
+  combined with the `fetch.ts` double-fire bug above, this makes Tidal
+  autofind more exposed to rate-limiting than it needs to be (Tidal's own
+  developer community has reported 429s as early as the 3rd request in a
+  burst). Worth caching the token for its `expires_in` duration.
 
 - Decide whether to apply Xcode's "Update to recommended settings" prompt on
   `EvenBetterRYM.xcodeproj` (2026-08-14) — a checkpoint commit (`a8b383c` in
