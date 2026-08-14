@@ -1,0 +1,44 @@
+Attempt to Add Streaming Links on Release Pages
+Injects a row of streaming service icons below the release art. Icons at full opacity link to a media link already submitted on RYM; icons in a "found" style link to a match found automatically but not yet submitted; faded icons mean nothing was found. Replaces the original RYM media link container.
+
+Release Submission Helper
+Adds a "Step 0: Import" panel to the release submission form. Paste a URL from any supported service to auto-fill title, artist, tracklist, date, label, and catalog number, with optional cover art download. Also adds quick-fill controls for unknown performers, release/publish dates, label and catalog number, clearing tracklist lengths, and copying "Filed Under" artists into credits.
+
+Cover Art Submission Helper
+Adds a "Download Cover Art" panel to the cover art upload page. Paste a URL from any supported service to download the highest-resolution art directly and pre-fill the source URL field.
+
+Descriptor Links on Release Pages
+Turns each descriptor tag into a clickable link to the RYM top charts filtered by that descriptor.
+
+Film Genre Navigation Enhancements
+On film chart pages, genre links point to the corresponding film genre page. On film genre pages, a button opens the top chart filtered by that genre.
+
+Track Time Conversion on Release Pages
+Reformats tracklist runtimes over an hour from MM:SS to H:MM:SS.
+
+Media Links Submission Helper
+Adds a service selector and "Convert" button to the media link submission form, fetching the correct embed code for the pasted URL automatically.
+
+Music/Film Collection Filters
+Adds one-click filter buttons above your collection, grouped by Status, Rating, and Type.
+
+User Page Enhancements
+Adds inline Edit buttons to your "favorite artists" and "other comments" sections, with Save, Preview, and Cancel, all without leaving the page.
+
+Enhancements for Genre and Descriptor Vote History
+Adds a searchable dropdown to filter vote history by genre or descriptor, plus a fix so pagination preserves your current view settings.
+
+Filtering in "Media Link You Know" List
+Adds filters and search to the page used for reporting releases missing stream links.
+
+Artist Timeline
+On artist pages with a "Members" section, adds a button opening a Gantt-style chart of each member's active period(s), color-coded by role.
+
+Artist Page Map and Location Markers
+Adds an inline world map to artist pages, plotting concert locations pulled from the show list.
+
+Search Bar Shortcuts
+Search queries matching RYM's markup shortcut format (e.g. [Artist67], [Album42], [Genre]) redirect straight to that entity's page instead of running a search.
+
+Chart Shortcuts
+On chart-builder pages, adds keyboard shortcuts for building genre/descriptor filters without touching the mouse: apply the top genre or descriptor match as an include/exclude filter, toggle "include sub-genres," "must contain all," and rating-source options, and update the chart -- all via Ctrl-key combinations. A "Show shortcut hints" toggle lists every combo inline.

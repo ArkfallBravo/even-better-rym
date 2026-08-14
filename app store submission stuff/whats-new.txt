@@ -1,0 +1,9 @@
+New: Chart Shortcuts. On chart-builder pages, apply genre/descriptor matches, toggle sub-genre and "must contain all" options, and update the chart entirely from the keyboard. A "Show shortcut hints" link lists every combination.
+
+Fixed: Melon release imports failing due to a blocked host permission.
+
+Fixed: Qobuz release imports failing for certain locale URLs.
+
+Improved: Tidal auto-find matching for streaming links, now querying by title/artist instead of a path-based ID.
+
+Removed: the auto-import "Credits" option in the Release Submission Helper, which could add incorrect credits with no way to catch a wrong match. Credits can still be added manually, including copying "Filed Under" artists.
