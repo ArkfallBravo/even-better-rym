@@ -1,5 +1,38 @@
 # Plan / open work
 
+- Autofind-link triage (started 2026-08-14, in progress): the user reported
+  some of the stream-links "autofind" icons aren't finding matches. Extended
+  `src/modules/import-check/` with a second panel (`search-panel.tsx`) that
+  runs a single artist/title pair against all 8 `SEARCHABLES` services'
+  `search()` directly — see `CLAUDE.md`'s "`src/modules/import-check/` debug
+  page" section for the full design (shared `check-runner.ts` runner,
+  caching caveat, `.env` key dependency for Spotify/Tidal/YouTube).
+  Build/lint/typecheck all verified clean; **not yet manually tested** —
+  needs an Xcode rebuild + re-granting "Allow on Every Website" in Safari
+  (extension UUID changes per rebuild, resetting that grant per the
+  Beatport/Melon/LiveMixtapes investigation below) before results are
+  trustworthy. Not committed yet, pending that manual confirmation.
+
+  Follow-on (same day): the user also asked to auto-print the debug page's
+  `safari-web-extension://` URL to the background console (so it doesn't
+  need to be typed by hand each rebuild) and to gate all of this debug
+  tooling so it can't ship. Added a `VITE_DEBUG_TOOLS` build-time flag —
+  `vite.config.ts` only includes the `import-check` page's
+  `additionalInputs.html` entry when it's `"true"`, and
+  `background/index.ts` only logs the URL under the same
+  `import.meta.env.VITE_DEBUG_TOOLS` check — plus a `build:safari:debug` npm
+  script that sets it inline (mirrors `build:safari`'s existing
+  `MANIFEST_VERSION`/`EXTENSION_DISPLAY_NAME` pattern). Chose a build-time
+  env flag over Vite's own `DEV`/`PROD` mode specifically because
+  `build:safari` runs in production mode — gating on `import.meta.env.DEV`
+  would have silently dropped the debug page from the exact build this
+  project's Safari workflow uses. Verified both ways by actually building
+  and inspecting `dist/`: a plain `build:safari` has no `import-check` files
+  and no trace of the log string in the background bundle (dead-code
+  eliminated, not just unlinked); `build:safari:debug` has both. Full
+  writeup in `CLAUDE.md`'s "`src/modules/import-check/` debug page" section.
+  `dist/` was left rebuilt via the plain (non-debug) script afterward.
+
 - `chart-searchbar` → `main`: brought the `chart-shortcuts` feature
   work over (done 2026-08-06, squashed as `f96852bd` — see `CLAUDE.md`'s
   "GitHub repo notes" section for the cherry-pick/squash mechanics and the

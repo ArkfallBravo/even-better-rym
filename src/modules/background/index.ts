@@ -23,6 +23,13 @@ import { download } from "./download";
 import { backgroundFetch } from "./fetch";
 import { script } from "./script";
 
+if (import.meta.env.VITE_DEBUG_TOOLS === "true") {
+	console.log(
+		"[debug tools] import-check page:",
+		browser.runtime.getURL("src/modules/import-check/index.html"),
+	);
+}
+
 const setStorageFromMessage = async (
 	message: StorageSetRequest,
 ): Promise<StorageSetResponse> => {

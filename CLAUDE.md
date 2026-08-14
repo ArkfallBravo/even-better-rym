@@ -56,23 +56,69 @@ looks like it should just work after a plain `npm run build:safari`.
 
 An extension-internal page (wired in via `additionalInputs.html` in
 `vite.config.ts`, the same mechanism `@samrum/vite-plugin-web-extension`
-uses for the popup) that calls each resolvable service's `resolve()`
-directly from a textarea of service-name → URL pairs, without navigating to
-rateyourmusic.com or anywhere else. It exists because of a specific problem
-hit while debugging a Beatport import failure that only reproduced in the
-macOS Safari app (see `plan.md`): driving the real "Import" form with
-Selenium/`safaridriver` (kept under `e2e/`, per explicit user choice, even
-though unused) triggers Cloudflare's bot challenge on navigation, since
-Safari's remote-automation mode sets `navigator.webdriver` and Cloudflare
-detects it — this happens on the RYM page itself, not just on
+uses for the popup) that calls services' `resolve()`/`search()` directly,
+without navigating to rateyourmusic.com or anywhere else. It exists because
+of a specific problem hit while debugging a Beatport import failure that
+only reproduced in the macOS Safari app (see `plan.md`): driving the real
+"Import" form with Selenium/`safaridriver` (kept under `e2e/`, per explicit
+user choice, even though unused) triggers Cloudflare's bot challenge on
+navigation, since Safari's remote-automation mode sets `navigator.webdriver`
+and Cloudflare detects it — this happens on the RYM page itself, not just on
 Cloudflare-fronted target sites, making full-page automation a dead end here.
-Calling `resolve()` directly from a page that never navigates anywhere
-sidesteps that entirely. The default URLs baked into `app.tsx` (a specific
-"The World of Monnom Black" various-artists release, one URL per service)
-came from `e2e/urls.json` (gitignored, personal test data) — baking them
-into `app.tsx` means they're tracked in git now, unlike the gitignored copy.
+Calling a service function directly from a page that never navigates
+anywhere sidesteps that entirely.
 
-## App Store privacy policy
+`app.tsx` renders two independent panels, each in its own file:
+- `import-panel.tsx` — the original resolve check: one URL per `RESOLVABLES`
+  service, entered as a textarea of service-name → URL pairs. The default
+  URLs (a specific "The World of Monnom Black" various-artists release, one
+  URL per service) came from `e2e/urls.json` (gitignored, personal test
+  data) — baking them into this file means they're tracked in git now,
+  unlike the gitignored copy.
+- `search-panel.tsx` — the autofind check, added to triage "autofind link"
+  failures (the stream-links module's `service.search()` icons): a single
+  artist/title pair run against every `SEARCHABLES` service (the ones with a
+  `search()`, currently 8 — Apple Music, Bandcamp, SoundCloud, Spotify,
+  YouTube, Deezer, Qobuz, Tidal), rendering each match's URL as a clickable
+  link (not just PASS/FAIL) so a confidently-wrong match is visible, not
+  just a thrown error.
+
+Both panels share `check-runner.ts`'s `runChecks()` — the same
+parallel-run/`OneShot`-per-key pattern the resolve panel originally had
+inline, generalized so the search panel didn't reimplement it. Note for
+interpreting search-panel results: every `SEARCHABLES.search()` is
+`withCache`-wrapped (`src/shared/utils/cache.ts`), and a **successful**
+match is cached in `browser.storage.local` for 1 hour keyed by the exact
+`{artist, title}` pair — failures and not-found results are never cached, so
+a currently-broken finder always re-hits the network, but re-running the
+same pair right after fixing something can still show the old cached URL.
+Also: Spotify/Tidal/YouTube's finders need `.env`'s
+`VITE_SPOTIFY_ID`/`SECRET`, `VITE_TIDAL_ID`/`SECRET`, `VITE_YOUTUBE_KEY`
+respectively — a missing key fails that finder for a reason unrelated to the
+finder's own logic, worth ruling out before treating a fail as a real bug.
+
+**Gated behind `VITE_DEBUG_TOOLS` so it doesn't ship**: `npm run build:safari`
+(and plain `npm run build`) never include this page — `vite.config.ts` only
+adds the `additionalInputs.html` entry when `env.VITE_DEBUG_TOOLS === "true"`,
+so with the flag unset the page is absent from `dist/` entirely, not just
+unlinked. `npm run build:safari:debug` sets the flag inline (same pattern as
+`MANIFEST_VERSION`/`EXTENSION_DISPLAY_NAME` in `build:safari`) to produce a
+build that includes it. The background script also logs the debug page's
+`browser.runtime.getURL(...)` to its own console on startup, gated on the
+same `import.meta.env.VITE_DEBUG_TOOLS` check, so you don't have to type the
+`browser.runtime.getURL("src/modules/import-check/index.html")` one-liner by
+hand each time — open the background page's Web Inspector (see above) and
+the URL is already printed. The path has to be the on-disk `dist/` path
+(`src/modules/import-check/index.html`, matching the
+`additionalInputs.html` entry and the resulting `web_accessible_resources`
+entry in the built `manifest.json`) rather than a shorter `import-check/...`
+path — using the shorter form once produced Safari's "Safari Can't Find the
+File" / `NSURLErrorDomain -1100`, since it pointed at a resource that
+doesn't exist in the bundle. Because the check is a compile-time-constant comparison,
+Vite dead-code-eliminates both the console.log call and the import-check
+module from a plain `build`/`build:safari` — confirmed by grepping the
+built `dist/assets/` for the log string and for `import-check` files after
+each build variant, not just by reading the source.
 
 The Safari app's App Store Connect listing needs a Privacy Policy URL. This is hosted as a static page on a dedicated `gh-pages` branch (root `index.html`, orphan branch — no shared history with `main`), published via GitHub Pages at `https://arkfallbravo.github.io/even-better-rym/`. Kept on its own branch rather than in `main`'s `docs/` folder (which holds internal architecture notes like `codebase.md`/`plan.md`, not public content) so `main`'s tree/history stays free of unrelated public-facing HTML. To update the policy text, edit `index.html` on the `gh-pages` branch directly and push — it is not part of the Vite build or `dist/`.
 

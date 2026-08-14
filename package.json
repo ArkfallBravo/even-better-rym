@@ -8,6 +8,7 @@
 	"scripts": {
 		"build": "vite build",
 		"build:safari": "MANIFEST_VERSION=2 EXTENSION_DISPLAY_NAME=\"EvenBetterRYM for Safari\" vite build",
+		"build:safari:debug": "MANIFEST_VERSION=2 EXTENSION_DISPLAY_NAME=\"EvenBetterRYM for Safari\" VITE_DEBUG_TOOLS=true vite build",
 		"watch": "vite build --watch --mode development --minify false",
 		"dev": "vite",
 		"serve:firefox": "web-ext run --start-url \"https://rateyourmusic.com/release/album/swans/filth/\"  --source-dir ./dist/",

@@ -9,6 +9,7 @@ import { getManifest } from "./src/manifest";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
+	const debugToolsEnabled = env.VITE_DEBUG_TOOLS === "true";
 
 	return {
 		build: {
@@ -21,9 +22,9 @@ export default defineConfig(({ mode }) => {
 					Number(env.MANIFEST_VERSION) || 3,
 					env.EXTENSION_DISPLAY_NAME || undefined,
 				),
-				additionalInputs: {
-					html: ["src/modules/import-check/index.html"],
-				},
+				additionalInputs: debugToolsEnabled
+					? { html: ["src/modules/import-check/index.html"] }
+					: undefined,
 			}),
 		],
 		resolve: {
