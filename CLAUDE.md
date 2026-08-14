@@ -45,7 +45,13 @@ background page to open its Web Inspector. In that inspector's Console, run
 `browser.runtime.getURL("path/to/file.html")` to get the full
 `safari-web-extension://<uuid>/...` URL, then paste that into a normal
 Safari tab. The UUID is unique per install and isn't discoverable any other
-way from the UI.
+way from the UI. Checked (2026-08-14) whether this UUID can be made stable
+across rebuilds so it wouldn't need re-fetching each time — no supported way
+found; it's assigned by macOS's own extension registration system
+(`pluginkit`/Launch Services), not by anything in the extension's manifest
+or bundle config, and Apple doesn't document the assignment behavior. Not
+worth re-investigating without new evidence; the background-script
+auto-console-log below is the actual mitigation.
 
 Remember `dist/` regenerating (`npm run build:safari`) is **not** picked up
 by a running Safari session until the `EvenBetterRYM (macOS)` target is

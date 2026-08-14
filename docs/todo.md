@@ -1,5 +1,25 @@
 # Todo
 
+- Diagnose the actual autofind-link failures the user reported (2026-08-14):
+  the debug tooling to triage this (`import-check`'s new search panel) is
+  built, fixed, and committed — the underlying bug itself hasn't been looked
+  at yet. Run the search panel against a release with known-failing autofind
+  links and read the results. See `docs/plan.md`'s "Autofind-link triage"
+  entry.
+
+- Decide whether to apply Xcode's "Update to recommended settings" prompt on
+  `EvenBetterRYM.xcodeproj` (2026-08-14) — a checkpoint commit (`a8b383c` in
+  the private `EvenBetterRYM/` repo) was made first specifically so this is
+  revertible either way. See `docs/plan.md`'s "`EvenBetterRYM/` checkpoint
+  commit" entry.
+
+- Clean up the stray `EvenBetterRYM (macOS) copy-Info.plist` file and the
+  `GENERATE_INFOPLIST_FILE`/`INFOPLIST_FILE` conflict on the macOS app
+  target that likely produced it (2026-08-14, private `EvenBetterRYM/`
+  repo) — see `docs/plan.md` for the diagnosis. Not urgent since the file
+  is inert (not wired into any build phase), but the underlying settings
+  conflict should get resolved.
+
 - Fix `src/modules/background/index.ts`'s `setTabIcon`: uses
   `browser.action.setIcon`/`.setTitle`, which is `undefined` under the
   Safari build's Manifest V2 (should be `browser.browserAction` for V2).

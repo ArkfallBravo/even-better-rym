@@ -1,6 +1,8 @@
 # Plan / open work
 
-- Autofind-link triage (started 2026-08-14, in progress): the user reported
+- Autofind-link triage (started 2026-08-14, debug tooling **done and
+  committed**; the actual autofind failures are still untriaged — see below):
+  the user reported
   some of the stream-links "autofind" icons aren't finding matches. Extended
   `src/modules/import-check/` with a second panel (`search-panel.tsx`) that
   runs a single artist/title pair against all 8 `SEARCHABLES` services'
@@ -32,6 +34,51 @@
   eliminated, not just unlinked); `build:safari:debug` has both. Full
   writeup in `CLAUDE.md`'s "`src/modules/import-check/` debug page" section.
   `dist/` was left rebuilt via the plain (non-debug) script afterward.
+
+  Bug found testing the above (same day): the console.log hardcoded
+  `browser.runtime.getURL("import-check/index.html")`, missing the
+  `src/modules/` prefix the real on-disk `dist/` path (and the built
+  manifest's `web_accessible_resources` entry) actually needs — navigating
+  to the printed URL produced Safari's "Safari Can't Find the File" /
+  `NSURLErrorDomain -1100`. Fixed to
+  `browser.runtime.getURL("src/modules/import-check/index.html")`; confirmed
+  by the user after an Xcode rebuild that the corrected URL opens the page.
+  Also researched (see `CLAUDE.md`'s "Debugging: reaching the extension's
+  own pages in Safari" section) whether the `safari-web-extension://<uuid>`
+  itself could be made stable across rebuilds — no supported way found, it's
+  assigned by macOS's own extension registration system, not app-side
+  config.
+
+  **Committed** to `main` as `6b301cae` (the debug-page/panel/gating work).
+  **The original bug — some autofind links not finding matches — has not
+  been diagnosed yet**; this session only built and fixed the tool to
+  triage it. Next step is actually running the new search panel against a
+  release with known-failing autofind links and reading the results.
+
+- `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"
+  (2026-08-14, open — not yet resolved): while wrapping up the autofind-link
+  triage session above, Xcode prompted to "Update to recommended settings"
+  on the `EvenBetterRYM.xcodeproj` project, which the user flagged as
+  potentially irreversible. Rather than risk that change being unreviewable
+  afterward, committed the private `EvenBetterRYM/` repo's pre-existing
+  uncommitted state as-is (`a8b383c`) first, explicitly as a revertible
+  checkpoint — the user's own reasoning: "if we commit, we can always revert
+  the change later." That commit includes two things unrelated to today's
+  session, accumulated since the repo's last commit (`1fd1c238`,
+  2026-08-05): build-number bumps (`CURRENT_PROJECT_VERSION` 1→9,
+  `MARKETING_VERSION` 1.0→1.1) from App Store submissions, and a stray file,
+  `EvenBetterRYM (macOS) copy-Info.plist` (just
+  `SFSafariWebExtensionConverterVersion: 26.4.1` boilerplate, not wired into
+  any build phase). Diagnosis of that stray file: the macOS app target's
+  build settings have both `GENERATE_INFOPLIST_FILE = YES` and an explicit
+  `INFOPLIST_FILE = "macOS (App)/Info.plist"` set simultaneously — a
+  conflicting combination that plausibly causes Xcode to write its
+  auto-generated plist under a "copy" name instead of overwriting the
+  explicit one, which then got dragged into the project navigator as an
+  inert, unattached file reference. **Still open**: whether to actually
+  apply "Update to recommended settings" (not done yet, just made safely
+  revertible), and whether to clean up the stray copy-Info.plist / the
+  `GENERATE_INFOPLIST_FILE`/`INFOPLIST_FILE` conflict that likely caused it.
 
 - `chart-searchbar` → `main`: brought the `chart-shortcuts` feature
   work over (done 2026-08-06, squashed as `f96852bd` — see `CLAUDE.md`'s
@@ -68,6 +115,32 @@
   `/Applications` copy with the same bundle ID after every build (Xcode's
   behavior, not something this setup avoids) — worth revisiting if Safari
   extension registration confusion resurfaces.
+
+- DSTROOT symlink Clean error, fixed (2026-08-14): running "Clean Build
+  Folder" in Xcode started failing with `Could not delete
+  ~/.xcode-dstroot-root because it was not created by the build system`.
+  Root cause: the symlink was created manually (`ln -s`) before any build
+  ever ran, so it was never stamped with the
+  `com.apple.xcode.CreatedByBuildSystem` xattr that authorizes Xcode to
+  clean it — Xcode's build system has no separate "leave this alone but
+  don't error" state, only "owned/cleanable" vs. "unowned/protected". Fixed
+  in two parts: (1) `xattr -s -w com.apple.xcode.CreatedByBuildSystem true
+  ~/.xcode-dstroot-root` — note the `-s` flag is required for a symlink;
+  the plain `xattr -w` from Xcode's own error message follows the link and
+  tries to write to `/` itself, which fails with `Operation not permitted`.
+  (2) The existing pre-build "Verify DSTROOT symlink" phase
+  (`project.pbxproj`, previously check-only — see the `feature/chart-
+  shortcuts` era note above for its original sandboxing history) was
+  rewritten to actually self-heal: recreates the symlink with `ln -sfn /
+  ...` if missing/wrong, then **re-applies the xattr every run**, since a
+  freshly recreated symlink is a new filesystem object that loses any
+  previously-set xattr — without the re-stamp, the very next Clean would
+  hit the same error again. Still exits 1 with a clear message if
+  recreation itself fails (e.g. a permissions problem), rather than
+  silently building against a broken DSTROOT. Renamed the phase to
+  "Verify/recreate DSTROOT symlink" to match. Validated with `plutil -lint`
+  after editing, then **rebuilt in Xcode and confirmed by the user
+  (2026-08-14) that Clean now works.**
 
 - Open question (2026-08-05, still unresolved — decision pending): the user
   said "Commit" right after confirming the `/Applications` build fix worked.
