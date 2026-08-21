@@ -20,7 +20,10 @@ function stripShowDateFromText(item: HTMLElement): string {
 	if (!rawText) return "";
 	if (!dateText) return rawText;
 
-	return rawText.replace(dateText, "").replace(/^[\s:\-–—]+/, "").trim();
+	return rawText
+		.replace(dateText, "")
+		.replace(/^[\s:\-–—]+/, "")
+		.trim();
 }
 
 function getShowDateSpan(item: HTMLElement): HTMLElement | null {

@@ -28,6 +28,8 @@ const hostsArray = [
 	"https://www.googleapis.com/*",
 	"https://*.livemixtapes.com/*",
 	"https://livemixtapes.com/*",
+	"https://*.metal-archives.com/*",
+	"https://metal-archives.com/*",
 ];
 
 const sharedManifest = {
@@ -113,7 +115,10 @@ const sharedManifest = {
 		},
 		{
 			js: ["src/modules/hide-votes/main.ts"],
-			matches: ["*://*.rateyourmusic.com/rgenre/*", "*://*.rateyourmusic.com/rdescriptor/*"],
+			matches: [
+				"*://*.rateyourmusic.com/rgenre/*",
+				"*://*.rateyourmusic.com/rdescriptor/*",
+			],
 			run_at: "document_idle",
 		},
 	],

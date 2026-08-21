@@ -87,8 +87,7 @@ export const pageHints: Record<PageKey, string> = {
 		"On film genre pages, adds a button to open the top chart filtered by that genre.",
 	timeline:
 		"On artist pages, adds an inline timeline visualizing member activity and discography.",
-	map:
-		"On artist pages, adds an interactive map showing concert locations.",
+	map: "On artist pages, adds an interactive map showing concert locations.",
 	hideVotes:
 		"On genre and descriptor pages, adds toggle buttons to hide user votes.",
 };
