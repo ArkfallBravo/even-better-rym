@@ -94,20 +94,48 @@ export type SettingsSetResponse = {
 	type: "settingsSet";
 };
 
+export type KeybindingsGetRequest = {
+	id: string;
+	type: "keybindingsGet";
+};
+
+export type KeybindingsGetResponse = {
+	id: string;
+	type: "keybindingsGet";
+	data: string | null;
+};
+
+export type KeybindingsSetRequest = {
+	id: string;
+	type: "keybindingsSet";
+	data: {
+		value: string;
+	};
+};
+
+export type KeybindingsSetResponse = {
+	id: string;
+	type: "keybindingsSet";
+};
+
 export type BackgroundRequest =
 	| FetchRequest
 	| DownloadRequest
 	| ScriptRequest
 	| StorageSetRequest
 	| SettingsGetAllRequest
-	| SettingsSetRequest;
+	| SettingsSetRequest
+	| KeybindingsGetRequest
+	| KeybindingsSetRequest;
 export type BackgroundResponse =
 	| FetchResponse
 	| DownloadResponse
 	| ScriptResponse
 	| StorageSetResponse
 	| SettingsGetAllResponse
-	| SettingsSetResponse;
+	| SettingsSetResponse
+	| KeybindingsGetResponse
+	| KeybindingsSetResponse;
 
 export const isBackgroundRequest = (o: unknown): o is BackgroundRequest =>
 	typeof o === "object" && o !== null && "id" in o && "type" in o;

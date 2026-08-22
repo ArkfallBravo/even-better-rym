@@ -132,6 +132,22 @@ Intercepts the main RYM search bar. If your search query matches the RYM markup 
 
 ---
 
+### Chart Shortcuts
+
+On the chart-builder page (`/charts/`), adds keyboard shortcuts to the genre/descriptor search field so you can build a chart query without touching the mouse - e.g. type a genre, then press a shortcut to include or exclude it, toggle its sub-genres, or require all selected terms to match. A "Show shortcut hints" toggle next to the search field lists every current shortcut and what it does.
+
+Every shortcut is fully customizable:
+
+- In the extension popup, click **Customize mappings** next to the Chart Shortcuts toggle to open the shortcut editor.
+- Click the **+** next to any action to record a new key combo - just press the keys you want. Shortcuts must include Ctrl, Alt, or Cmd, so they don't interfere with typing in the search field.
+- Click **×** on an existing combo to remove it. An action can have more than one combo bound to it.
+- If a combo is already used by another action, the editor tells you which one, rather than silently overwriting it.
+- **Reset all to defaults** restores every shortcut to its original binding.
+- Rebinding takes effect immediately on any chart page you already have open - no refresh needed.
+- Your custom shortcuts persist across browser restarts, and on the Safari app, survive using Safari's "Clear History" (which normally wipes extension data).
+
+---
+
 ## Development
 
 ### Prerequisites
