@@ -126,24 +126,16 @@ const getSettingsSetResponse = async (
 
 const getKeybindingsGetResponse = async (
 	message: KeybindingsGetRequest,
-): Promise<KeybindingsGetResponse> => {
-	let value: string | null = null;
-	try {
-		value = await nativeGetKeybindings();
-	} catch (error) {
-		console.error("[keybindings] failed to read from native side", error);
-	}
-	return { id: message.id, type: "keybindingsGet", data: value };
-};
+): Promise<KeybindingsGetResponse> => ({
+	id: message.id,
+	type: "keybindingsGet",
+	data: await nativeGetKeybindings(),
+});
 
 const getKeybindingsSetResponse = async (
 	message: KeybindingsSetRequest,
 ): Promise<KeybindingsSetResponse> => {
-	try {
-		await nativeSetKeybindings(message.data.value);
-	} catch (error) {
-		console.error("[keybindings] failed to mirror to native side", error);
-	}
+	await nativeSetKeybindings(message.data.value);
 	return { id: message.id, type: "keybindingsSet" };
 };
 
@@ -154,48 +146,52 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	// a rejected native call means sendResponse is never called and the
 	// caller's await hangs forever rather than failing (this bit
 	// settingsSet on any build without a native host, i.e. non-Safari).
-	if (isBackgroundRequest(message) && message.type === "storageSet") {
+	if (isBackgroundRequest(message)) {
 		const respond = sendResponse as (response: BackgroundResponse) => void;
-		void setStorageFromMessage(message)
-			.then(respond)
-			.catch(() => respond({ id: message.id, type: "storageSet" }));
-		return true;
-	}
+		const respondFrom = <R extends BackgroundResponse>(
+			promise: Promise<R>,
+			fallback: R,
+		): true => {
+			void promise.then(respond).catch(() => respond(fallback));
+			return true;
+		};
 
-	if (isBackgroundRequest(message) && message.type === "settingsGetAll") {
-		const respond = sendResponse as (response: BackgroundResponse) => void;
-		void getSettingsGetAllResponse(message)
-			.then(respond)
-			.catch(() =>
-				respond({ id: message.id, type: "settingsGetAll", data: {} }),
-			);
-		return true;
-	}
+		if (message.type === "storageSet") {
+			return respondFrom(setStorageFromMessage(message), {
+				id: message.id,
+				type: "storageSet",
+			});
+		}
 
-	if (isBackgroundRequest(message) && message.type === "settingsSet") {
-		const respond = sendResponse as (response: BackgroundResponse) => void;
-		void getSettingsSetResponse(message)
-			.then(respond)
-			.catch(() => respond({ id: message.id, type: "settingsSet" }));
-		return true;
-	}
+		if (message.type === "settingsGetAll") {
+			return respondFrom(getSettingsGetAllResponse(message), {
+				id: message.id,
+				type: "settingsGetAll",
+				data: {},
+			});
+		}
 
-	if (isBackgroundRequest(message) && message.type === "keybindingsGet") {
-		const respond = sendResponse as (response: BackgroundResponse) => void;
-		void getKeybindingsGetResponse(message)
-			.then(respond)
-			.catch(() =>
-				respond({ id: message.id, type: "keybindingsGet", data: null }),
-			);
-		return true;
-	}
+		if (message.type === "settingsSet") {
+			return respondFrom(getSettingsSetResponse(message), {
+				id: message.id,
+				type: "settingsSet",
+			});
+		}
 
-	if (isBackgroundRequest(message) && message.type === "keybindingsSet") {
-		const respond = sendResponse as (response: BackgroundResponse) => void;
-		void getKeybindingsSetResponse(message)
-			.then(respond)
-			.catch(() => respond({ id: message.id, type: "keybindingsSet" }));
-		return true;
+		if (message.type === "keybindingsGet") {
+			return respondFrom(getKeybindingsGetResponse(message), {
+				id: message.id,
+				type: "keybindingsGet",
+				data: null,
+			});
+		}
+
+		if (message.type === "keybindingsSet") {
+			return respondFrom(getKeybindingsSetResponse(message), {
+				id: message.id,
+				type: "keybindingsSet",
+			});
+		}
 	}
 
 	const tabId = sender.tab?.id;

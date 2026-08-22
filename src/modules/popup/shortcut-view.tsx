@@ -1,10 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 
-import type {
-	ChartShortcutAction,
-	ChartShortcutActionId,
-	ChartShortcutGroup,
-} from "~/shared/chart-shortcuts/actions";
+import type { ChartShortcutActionId } from "~/shared/chart-shortcuts/actions";
 import {
 	CHART_SHORTCUT_ACTIONS,
 	CHART_SHORTCUT_GROUP_LABELS,
@@ -19,21 +15,12 @@ import {
 	getChartShortcutBindings,
 	setChartShortcutBindings,
 } from "~/shared/chart-shortcuts/settings";
+import { groupBy } from "~/shared/utils/array";
 
 import { ShortcutRecorder } from "./shortcut-recorder";
 import { styles } from "./styles";
 
-function buildGroups(): [ChartShortcutGroup, ChartShortcutAction[]][] {
-	const map = new Map<ChartShortcutGroup, ChartShortcutAction[]>();
-	for (const action of CHART_SHORTCUT_ACTIONS) {
-		const actions = map.get(action.group) ?? [];
-		actions.push(action);
-		map.set(action.group, actions);
-	}
-	return [...map.entries()];
-}
-
-const groups = buildGroups();
+const groups = groupBy(CHART_SHORTCUT_ACTIONS, (action) => action.group);
 
 function labelFor(actionId: ChartShortcutActionId): string {
 	return (

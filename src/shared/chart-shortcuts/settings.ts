@@ -63,7 +63,10 @@ export async function getChartShortcutBindings(): Promise<ChartShortcutBindings>
 
 		if (response.data != null) {
 			const overrides = JSON.parse(response.data) as BindingOverrides;
-			await writeLocalOverrides(overrides);
+			const current = await readLocalOverrides();
+			if (JSON.stringify(overrides) !== JSON.stringify(current)) {
+				await writeLocalOverrides(overrides);
+			}
 			return mergeOverrides(overrides);
 		}
 	} catch {

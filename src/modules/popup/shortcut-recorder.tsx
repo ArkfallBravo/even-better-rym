@@ -1,4 +1,3 @@
-import type { CSSProperties } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import {
@@ -7,7 +6,7 @@ import {
 	isModifierOnlyCode,
 } from "~/shared/chart-shortcuts/binding";
 
-import { styles as popupStyles } from "./styles";
+import { styles } from "./styles";
 
 const NEEDS_MODIFIER_MESSAGE = "Shortcuts need Ctrl, Alt, or Cmd";
 
@@ -75,31 +74,7 @@ export function ShortcutRecorder({ onCapture }: ShortcutRecorderProps) {
 					setError(null);
 				}}
 			/>
-			{error && <div style={popupStyles.comboError}>{error}</div>}
+			{error && <div style={styles.comboError}>{error}</div>}
 		</>
 	);
 }
-
-const styles = {
-	addButton: {
-		width: 22,
-		height: 22,
-		borderRadius: 4,
-		border: "1px solid #d0d0d0",
-		background: "#fff",
-		cursor: "pointer",
-		fontSize: 13,
-		lineHeight: 1,
-		color: "#4286c4",
-	} satisfies CSSProperties,
-
-	recorderInput: {
-		width: 170,
-		fontSize: 11,
-		padding: "3px 6px",
-		border: "1px solid #4286c4",
-		borderRadius: 4,
-		outline: "none",
-		background: "#fff",
-	} satisfies CSSProperties,
-};

@@ -4,6 +4,7 @@ import browser from "webextension-polyfill";
 import { getPageEnabled, setPageEnabled } from "~/shared/page-settings";
 import type { PageKey } from "~/shared/pages";
 import { pageGroupLabels, pageHints, pageLabels, pages } from "~/shared/pages";
+import { groupBy } from "~/shared/utils/array";
 
 import { ShortcutView } from "./shortcut-view";
 import { styles } from "./styles";
@@ -11,17 +12,7 @@ import { styles } from "./styles";
 type FeatureState = Record<PageKey, boolean>;
 type View = "features" | "chartShortcuts";
 
-function buildGroups(): [string, PageKey[]][] {
-	const map = new Map<string, PageKey[]>();
-	for (const key of Object.keys(pages) as PageKey[]) {
-		const path = pages[key];
-		if (!map.has(path)) map.set(path, []);
-		map.get(path)!.push(key);
-	}
-	return [...map.entries()];
-}
-
-const groups = buildGroups();
+const groups = groupBy(Object.keys(pages) as PageKey[], (key) => pages[key]);
 
 export function App() {
 	const [view, setView] = useState<View>("features");
@@ -88,7 +79,7 @@ export function App() {
 						groups.map(([path, keys]) => {
 							const isGroup = keys.length > 1;
 							return (
-								<div key={path} style={isGroup ? styles.card : styles.cardFlat}>
+								<div key={path} style={styles.card}>
 									{isGroup && (
 										<div style={styles.groupHeader}>
 											{pageGroupLabels[path] ?? path}

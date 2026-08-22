@@ -136,8 +136,10 @@ const ACTION_EFFECTS: Record<
 let comboToAction = new Map<string, ChartShortcutActionId>();
 
 export async function main(): Promise<void> {
-	const input = await waitForElement<HTMLInputElement>(`#${INPUT_ID}`);
-	const bindings = await getChartShortcutBindings();
+	const [input, bindings] = await Promise.all([
+		waitForElement<HTMLInputElement>(`#${INPUT_ID}`),
+		getChartShortcutBindings(),
+	]);
 	mount(input, bindings);
 }
 

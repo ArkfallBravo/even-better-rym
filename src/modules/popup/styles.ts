@@ -59,14 +59,6 @@ export const styles = {
 		boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
 	} satisfies CSSProperties,
 
-	cardFlat: {
-		background: "#fff",
-		borderRadius: 8,
-		overflow: "hidden",
-		flexShrink: 0,
-		boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
-	} satisfies CSSProperties,
-
 	groupHeader: {
 		padding: "7px 12px 6px",
 		fontSize: 10,
@@ -218,5 +210,27 @@ export const styles = {
 		background: "#fff",
 		color: "#c0392b",
 		cursor: "pointer",
+	} satisfies CSSProperties,
+
+	addButton: {
+		width: 22,
+		height: 22,
+		borderRadius: 4,
+		border: "1px solid #d0d0d0",
+		background: "#fff",
+		cursor: "pointer",
+		fontSize: 13,
+		lineHeight: 1,
+		color: "#4286c4",
+	} satisfies CSSProperties,
+
+	recorderInput: {
+		width: 170,
+		fontSize: 11,
+		padding: "3px 6px",
+		border: "1px solid #4286c4",
+		borderRadius: 4,
+		outline: "none",
+		background: "#fff",
 	} satisfies CSSProperties,
 };
