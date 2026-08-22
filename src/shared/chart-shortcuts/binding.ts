@@ -54,12 +54,10 @@ export const isMacPlatform =
 	/Mac|iPod|iPhone|iPad/.test(navigator.platform ?? "");
 
 function modifierLabels(mac: boolean): Record<string, string> {
-	return {
-		ctrl: mac ? "Control" : "Ctrl",
-		alt: mac ? "Option" : "Alt",
-		shift: "Shift",
-		meta: "Command",
-	};
+	if (mac) {
+		return { ctrl: "⌃", alt: "⌥", shift: "⇧", meta: "⌘" };
+	}
+	return { ctrl: "Ctrl", alt: "Alt", shift: "Shift", meta: "Command" };
 }
 
 // mac defaults to real platform detection; tests override it so results
@@ -72,8 +70,9 @@ export function formatCombo(
 	const code = parts[parts.length - 1];
 	const modifiers = parts.slice(0, -1);
 	const labels = modifierLabels(mac);
+	const separator = mac ? " " : " + ";
 	return [...modifiers.map((m) => labels[m] ?? m), codeToLabel(code)].join(
-		" + ",
+		separator,
 	);
 }
 

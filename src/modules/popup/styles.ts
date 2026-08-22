@@ -168,7 +168,8 @@ export const styles = {
 		alignItems: "center",
 		gap: 4,
 		fontSize: 11,
-		fontFamily: "ui-monospace, SFMono-Regular, monospace",
+		fontFamily:
+			'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 		background: "#f0f6fc",
 		color: "#2a2a2a",
 		border: "1px solid #d8eaf7",

@@ -78,8 +78,8 @@ describe("formatCombo", () => {
 		expect(formatCombo("ctrl+alt+KeyA", false)).toBe("Ctrl + Alt + A");
 	});
 
-	test("formats ctrl and alt as Control/Option on Mac", () => {
-		expect(formatCombo("ctrl+alt+KeyA", true)).toBe("Control + Option + A");
+	test("formats modifiers as glyphs, space-separated, on Mac", () => {
+		expect(formatCombo("ctrl+alt+shift+meta+KeyA", true)).toBe("⌃ ⌥ ⇧ ⌘ A");
 	});
 });
 
