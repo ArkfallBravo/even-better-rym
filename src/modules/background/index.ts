@@ -8,6 +8,7 @@ import type {
 	KeybindingsGetResponse,
 	KeybindingsSetRequest,
 	KeybindingsSetResponse,
+	KeybindingsUpdatedMessage,
 	SettingsGetAllRequest,
 	SettingsGetAllResponse,
 	SettingsSetRequest,
@@ -132,9 +133,35 @@ const getKeybindingsGetResponse = async (
 	data: await nativeGetKeybindings(),
 });
 
+// Matches this content script's own manifest.ts content_scripts registration.
+const CHART_SHORTCUTS_MATCH_PATTERN = "*://*.rateyourmusic.com/charts/*";
+
+// browser.storage.onChanged doesn't reliably reach a content script's
+// context from a popup write on Safari, so an already-open chart page needs
+// to be told about a binding change explicitly instead.
+const broadcastKeybindingsChanged = async (value: string): Promise<void> => {
+	const tabs = await browser.tabs.query({ url: CHART_SHORTCUTS_MATCH_PATTERN });
+	await Promise.all(
+		tabs
+			.map((tab) => tab.id)
+			.filter((id): id is number => id !== undefined)
+			.map((id) =>
+				browser.tabs
+					.sendMessage(id, {
+						type: "keybindingsUpdated",
+						data: { value },
+					} satisfies KeybindingsUpdatedMessage)
+					.catch(() => {
+						// No content script listening in this tab (e.g. mid-navigation) - fine to drop.
+					}),
+			),
+	);
+};
+
 const getKeybindingsSetResponse = async (
 	message: KeybindingsSetRequest,
 ): Promise<KeybindingsSetResponse> => {
+	await broadcastKeybindingsChanged(message.data.value);
 	await nativeSetKeybindings(message.data.value);
 	return { id: message.id, type: "keybindingsSet" };
 };

@@ -6,7 +6,10 @@ import type {
 	KeybindingsSetRequest,
 	KeybindingsSetResponse,
 } from "~/shared/utils/messaging";
-import { sendBackgroundMessage } from "~/shared/utils/messaging";
+import {
+	isKeybindingsUpdatedMessage,
+	sendBackgroundMessage,
+} from "~/shared/utils/messaging";
 import * as storage from "~/shared/utils/storage";
 
 import type { ChartShortcutActionId } from "./actions";
@@ -95,10 +98,9 @@ export async function setChartShortcutBindings(
 export function subscribeToChartShortcutBindings(
 	onChange: (bindings: ChartShortcutBindings) => void,
 ): void {
-	browser.storage.onChanged.addListener((changes, areaName) => {
-		if (areaName !== "local") return;
-		const change = changes[BINDINGS_STORAGE_KEY];
-		if (!change) return;
-		onChange(mergeOverrides((change.newValue as BindingOverrides) ?? {}));
+	browser.runtime.onMessage.addListener((message) => {
+		if (!isKeybindingsUpdatedMessage(message)) return;
+		const overrides = JSON.parse(message.data.value) as BindingOverrides;
+		onChange(mergeOverrides(overrides));
 	});
 }
