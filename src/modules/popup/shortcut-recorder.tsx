@@ -7,6 +7,8 @@ import {
 	isModifierOnlyCode,
 } from "~/shared/chart-shortcuts/binding";
 
+import { styles as popupStyles } from "./styles";
+
 const NEEDS_MODIFIER_MESSAGE = "Shortcuts need Ctrl, Alt, or Cmd";
 
 type ShortcutRecorderProps = Readonly<{
@@ -40,12 +42,12 @@ export function ShortcutRecorder({ onCapture }: ShortcutRecorderProps) {
 	}
 
 	return (
-		<span style={styles.recorderWrap}>
+		<>
 			<input
 				ref={inputRef}
 				readOnly
-				value={error ?? "Press keys… (Esc to cancel)"}
-				style={{ ...styles.recorderInput, color: error ? "#c0392b" : "#666" }}
+				value="Press keys… (Esc to cancel)"
+				style={styles.recorderInput}
 				onBlur={() => setRecording(false)}
 				onKeyDown={(event) => {
 					event.preventDefault();
@@ -73,7 +75,8 @@ export function ShortcutRecorder({ onCapture }: ShortcutRecorderProps) {
 					setError(null);
 				}}
 			/>
-		</span>
+			{error && <div style={popupStyles.comboError}>{error}</div>}
+		</>
 	);
 }
 
@@ -88,10 +91,6 @@ const styles = {
 		fontSize: 13,
 		lineHeight: 1,
 		color: "#4286c4",
-	} satisfies CSSProperties,
-
-	recorderWrap: {
-		display: "inline-block",
 	} satisfies CSSProperties,
 
 	recorderInput: {

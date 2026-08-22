@@ -195,8 +195,13 @@ export const styles = {
 	} satisfies CSSProperties,
 
 	comboError: {
+		// flexBasis 100% forces this onto its own line within comboRow's
+		// flex-wrap layout, so long messages wrap within the popup's width
+		// instead of being clipped by a sibling chip's fixed width.
+		flexBasis: "100%",
 		fontSize: 11,
 		color: "#c0392b",
+		wordBreak: "break-word",
 	} satisfies CSSProperties,
 
 	resetRow: {
