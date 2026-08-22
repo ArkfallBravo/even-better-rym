@@ -1,6 +1,15 @@
+import type {
+	ChartShortcutActionId,
+	ChartShortcutGroup,
+} from "~/shared/chart-shortcuts/actions";
+import { CHART_SHORTCUT_ACTIONS } from "~/shared/chart-shortcuts/actions";
+import type { ChartShortcutBindings } from "~/shared/chart-shortcuts/binding";
+import { comboFromEvent, formatCombo } from "~/shared/chart-shortcuts/binding";
+import {
+	getChartShortcutBindings,
+	subscribeToChartShortcutBindings,
+} from "~/shared/chart-shortcuts/settings";
 import { runScript, waitForElement } from "~/shared/utils/dom";
-
-type Category = "genre" | "sec_genre" | "genre_either" | "descriptor";
 
 type FilterType =
 	| "genre_include"
@@ -50,114 +59,88 @@ const HINT_TOGGLE_STYLE = `
 	}
 `;
 
-const APPLY_KEY_CATEGORY: Record<string, Category> = {
-	"1": "genre",
-	"2": "sec_genre",
-	"3": "genre_either",
-	d: "descriptor",
+const ACTION_EFFECTS: Record<
+	ChartShortcutActionId,
+	(input: HTMLInputElement) => void
+> = {
+	includeGenre: (input) =>
+		void applyNativeMatch("genre", "genre_include", input),
+	includeInfluence: (input) =>
+		void applyNativeMatch("genre", "sec_genre_include", input),
+	includeEither: (input) =>
+		void applyNativeMatch("genre", "genre_either_include", input),
+	includeDescriptor: (input) =>
+		void applyNativeMatch("descriptor", "descriptor_include", input),
+	excludeGenre: (input) =>
+		void applyNativeMatch("genre", "genre_exclude", input),
+	excludeInfluence: (input) =>
+		void applyNativeMatch("genre", "sec_genre_exclude", input),
+	excludeEither: (input) =>
+		void applyNativeMatch("genre", "genre_either_exclude", input),
+	excludeDescriptor: (input) =>
+		void applyNativeMatch("descriptor", "descriptor_exclude", input),
+
+	toggleSubGenreInclude: () => toggleCheckbox("genre_include", "sub"),
+	toggleSubInfluenceInclude: () => toggleCheckbox("sec_genre_include", "sub"),
+	toggleSubEitherInclude: () => toggleCheckbox("genre_either_include", "sub"),
+	toggleSubDescriptorInclude: () => toggleCheckbox("descriptor_include", "sub"),
+	toggleSubGenreExclude: () => toggleCheckbox("genre_exclude", "sub"),
+	toggleSubInfluenceExclude: () => toggleCheckbox("sec_genre_exclude", "sub"),
+	toggleSubEitherExclude: () => toggleCheckbox("genre_either_exclude", "sub"),
+	toggleSubDescriptorExclude: () => toggleCheckbox("descriptor_exclude", "sub"),
+
+	toggleAllGenreInclude: () => toggleCheckbox("genre_include", "all"),
+	toggleAllInfluenceInclude: () => toggleCheckbox("sec_genre_include", "all"),
+	toggleAllEitherInclude: () => toggleCheckbox("genre_either_include", "all"),
+	toggleAllDescriptorInclude: () => toggleCheckbox("descriptor_include", "all"),
+	toggleAllGenreExclude: () => toggleCheckbox("genre_exclude", "all"),
+	toggleAllInfluenceExclude: () => toggleCheckbox("sec_genre_exclude", "all"),
+	toggleAllEitherExclude: () => toggleCheckbox("genre_either_exclude", "all"),
+	toggleAllDescriptorExclude: () => toggleCheckbox("descriptor_exclude", "all"),
+
+	onlyRatingsSelf: () =>
+		toggleAdvanced({
+			id: "page_chart_query_advanced_users_self",
+			handler: "onClickUsersSelf",
+		}),
+	onlyRatingsFollowing: () =>
+		toggleAdvanced({
+			id: "page_chart_query_advanced_users_following",
+			handler: "onClickUsersFollowing",
+		}),
+	onlyRatingsFollowers: () =>
+		toggleAdvanced({
+			id: "page_chart_query_advanced_users_followers",
+			handler: "onClickUsersFollowers",
+		}),
+
+	excludeRated: () =>
+		toggleAdvanced({
+			id: "page_chart_query_advanced_exclude_label_ratings",
+			handler: "onClickExcludeCatRatings",
+		}),
+	excludeCataloged: () =>
+		toggleAdvanced({
+			id: "page_chart_query_advanced_exclude_label_catalog",
+			handler: "onClickExcludeCatCatalog",
+		}),
+	excludeWishlisted: () =>
+		toggleAdvanced({
+			id: "page_chart_query_advanced_exclude_label_wishlist",
+			handler: "onClickExcludeCatWishlist",
+		}),
+
+	updateChart: () => updateChart(),
 };
 
-const SUB_TOGGLE_KEY_CATEGORY: Record<string, Category> = {
-	z: "genre",
-	x: "sec_genre",
-	c: "genre_either",
-	s: "descriptor",
-};
-
-const ALL_TOGGLE_KEY_CATEGORY: Record<string, Category> = {
-	q: "genre",
-	w: "sec_genre",
-	e: "genre_either",
-	a: "descriptor",
-};
-
-const APPLY_SCOPE: Record<Category, Scope> = {
-	genre: "genre",
-	sec_genre: "genre",
-	genre_either: "genre",
-	descriptor: "descriptor",
-};
-
-const ADVANCED_USER_TOGGLE: Record<string, AdvancedToggle> = {
-	f: {
-		id: "page_chart_query_advanced_users_following",
-		handler: "onClickUsersFollowing",
-	},
-	v: {
-		id: "page_chart_query_advanced_users_followers",
-		handler: "onClickUsersFollowers",
-	},
-	r: {
-		id: "page_chart_query_advanced_users_self",
-		handler: "onClickUsersSelf",
-	},
-};
-
-const ADVANCED_EXCLUDE_TOGGLE: Record<string, AdvancedToggle> = {
-	r: {
-		id: "page_chart_query_advanced_exclude_label_ratings",
-		handler: "onClickExcludeCatRatings",
-	},
-	f: {
-		id: "page_chart_query_advanced_exclude_label_catalog",
-		handler: "onClickExcludeCatCatalog",
-	},
-	v: {
-		id: "page_chart_query_advanced_exclude_label_wishlist",
-		handler: "onClickExcludeCatWishlist",
-	},
-};
-
-const HINT_LINES = [
-	'control + 1 — include first genre result as "genre"',
-	'control + 2 — include first genre result as "influence"',
-	'control + 3 — include first genre result as "either"',
-	'control + d — include first descriptor result as "descriptor"\n',
-
-	'control + shift + 1 — exclude first genre result as "genre"',
-	'control + shift + 2 — exclude first genre result as "influence"',
-	'control + shift + 3 — exclude first genre result as "either"',
-	'control + shift + d — exclude first descriptor result as "descriptor"\n',
-
-	'control + z — toggle "Include sub-genres" for "genres"',
-	'control + x — toggle "Include sub-genres" for "influences"',
-	'control + c — toggle "Include sub-genres" for "either"',
-	'control + s — toggle "Include sub-genres" for "descriptors"\n',
-
-	'control + shift + z — toggle "Exclude sub-genres" for "genres"',
-	'control + shift + x — toggle "Exclude sub-genres" for "influences"',
-	'control + shift + c — toggle "Exclude sub-genres" for "either"',
-	'control + shift + s — toggle "Exclude sub-genres" for "descriptors"\n',
-
-	'control + q — toggle "Must contain all" for "genres"',
-	'control + w — toggle "Must contain all" for "influences"',
-	'control + e — toggle "Must contain all" for "either"',
-	'control + a — toggle "Must contain all" for "descriptors"\n',
-
-	'control + shift + q — toggle "Only exclude items containing all" for "genres"',
-	'control + shift + w — toggle "Only exclude items containing all" for "influences"',
-	'control + shift + e — toggle "Only exclude items containing all" for "either"',
-	'control + shift + a — toggle "Only exclude items containing all" for "descriptors"\n',
-
-	'control + r — toggle "Only include ratings from myself"',
-	'control + f — toggle "Only include ratings from users I\'m following"',
-	'control + v — toggle "Only include ratings from users who follow me"\n',
-
-	'control + shift + r — toggle "Exclude releases I\'ve rated"',
-	'control + shift + f — toggle "Exclude releases I\'ve cataloged"',
-	'control + shift + v — toggle "Exclude releases I\'ve wishlisted"\n',
-
-	'control + space — "Update chart"',
-	'control + enter — "Update chart"',
-];
+let comboToAction = new Map<string, ChartShortcutActionId>();
 
 export async function main(): Promise<void> {
-	const input = await waitForElement<HTMLInputElement>(`#${INPUT_ID}`);
-	mount(input);
-}
-
-function filterTypeFor(category: Category, exclude: boolean): FilterType {
-	return `${category}_${exclude ? "exclude" : "include"}` as FilterType;
+	const [input, bindings] = await Promise.all([
+		waitForElement<HTMLInputElement>(`#${INPUT_ID}`),
+		getChartShortcutBindings(),
+	]);
+	mount(input, bindings);
 }
 
 function itemId(item: BrowseResult): number | null {
@@ -290,9 +273,30 @@ function findShortcutLabel(input: HTMLInputElement): HTMLElement | null {
 	return section?.querySelector<HTMLElement>(SHORTCUT_LABEL_SELECTOR) ?? null;
 }
 
-function insertShortcutHint(input: HTMLInputElement): void {
+function renderHintLines(bindings: ChartShortcutBindings): string {
+	const groups = new Map<ChartShortcutGroup, string[]>();
+
+	for (const action of CHART_SHORTCUT_ACTIONS) {
+		const combos = bindings[action.id];
+		if (combos.length === 0) continue;
+
+		const comboLabel = combos.map((combo) => formatCombo(combo)).join(" or ");
+		const lines = groups.get(action.group) ?? [];
+		lines.push(`${comboLabel} — ${action.hint}`);
+		groups.set(action.group, lines);
+	}
+
+	return [...groups.values()]
+		.map((lines) => lines.join("<br>"))
+		.join("<br><br>");
+}
+
+function insertShortcutHint(
+	input: HTMLInputElement,
+	bindings: ChartShortcutBindings,
+): HTMLElement | null {
 	const label = findShortcutLabel(input);
-	if (!label || label.dataset.ebrHint) return;
+	if (!label || label.dataset.ebrHint) return null;
 
 	label.dataset.ebrHint = "1";
 
@@ -302,9 +306,7 @@ function insertShortcutHint(input: HTMLInputElement): void {
 
 	const hintLines = document.createElement("span");
 	hintLines.style.display = "none";
-	hintLines.innerHTML = `<br>${HINT_LINES.map((line) =>
-		line.replace(/\n/g, "<br>"),
-	).join("<br>")}`;
+	hintLines.innerHTML = `<br>${renderHintLines(bindings)}`;
 
 	const toggle = document.createElement("span");
 	toggle.className = "ebr-hint-toggle";
@@ -320,6 +322,7 @@ function insertShortcutHint(input: HTMLInputElement): void {
 	});
 
 	label.append(document.createElement("br"), toggle, hintLines);
+	return hintLines;
 }
 
 function resetInput(input: HTMLInputElement): void {
@@ -334,69 +337,26 @@ function updateChart(): void {
 	`);
 }
 
-function handleApplyShortcut(
-	event: KeyboardEvent,
-	input: HTMLInputElement,
-): boolean {
-	if (!event.ctrlKey) return false;
-	const category = APPLY_KEY_CATEGORY[event.key.toLowerCase()];
-	if (!category) return false;
-
-	const filterType = filterTypeFor(category, event.shiftKey);
-	void applyNativeMatch(APPLY_SCOPE[category], filterType, input);
-	return true;
+function buildComboToAction(
+	bindings: ChartShortcutBindings,
+): Map<string, ChartShortcutActionId> {
+	const map = new Map<string, ChartShortcutActionId>();
+	for (const [actionId, combos] of Object.entries(bindings) as [
+		ChartShortcutActionId,
+		string[],
+	][]) {
+		for (const combo of combos) map.set(combo, actionId);
+	}
+	return map;
 }
-
-function handleSubToggleShortcut(event: KeyboardEvent): boolean {
-	if (!event.ctrlKey) return false;
-	const category = SUB_TOGGLE_KEY_CATEGORY[event.key.toLowerCase()];
-	if (!category) return false;
-
-	toggleCheckbox(filterTypeFor(category, event.shiftKey), "sub");
-	return true;
-}
-
-function handleAllToggleShortcut(event: KeyboardEvent): boolean {
-	if (!event.ctrlKey) return false;
-	const category = ALL_TOGGLE_KEY_CATEGORY[event.key.toLowerCase()];
-	if (!category) return false;
-
-	toggleCheckbox(filterTypeFor(category, event.shiftKey), "all");
-	return true;
-}
-
-function handleAdvancedToggleShortcut(event: KeyboardEvent): boolean {
-	if (!event.ctrlKey) return false;
-	const table = event.shiftKey ? ADVANCED_EXCLUDE_TOGGLE : ADVANCED_USER_TOGGLE;
-	const toggle = table[event.key.toLowerCase()];
-	if (!toggle) return false;
-
-	toggleAdvanced(toggle);
-	return true;
-}
-
-function handleUpdateChartShortcut(event: KeyboardEvent): boolean {
-	if ((event.key !== "Enter" && event.key !== " ") || !event.ctrlKey)
-		return false;
-	updateChart();
-	return true;
-}
-
-const KEY_HANDLERS = [
-	handleApplyShortcut,
-	handleSubToggleShortcut,
-	handleAllToggleShortcut,
-	handleAdvancedToggleShortcut,
-	handleUpdateChartShortcut,
-];
 
 function onKeyDown(event: KeyboardEvent, input: HTMLInputElement): void {
-	for (const handler of KEY_HANDLERS) {
-		if (!handler(event, input)) continue;
-		event.preventDefault();
-		event.stopPropagation();
-		return;
-	}
+	const actionId = comboToAction.get(comboFromEvent(event));
+	if (!actionId) return;
+
+	event.preventDefault();
+	event.stopPropagation();
+	ACTION_EFFECTS[actionId](input);
 }
 
 function isOtherEditableTarget(
@@ -439,8 +399,19 @@ function patchRYMChartRemoval(): void {
 	`);
 }
 
-function mount(input: HTMLInputElement): void {
-	insertShortcutHint(input);
+function mount(
+	input: HTMLInputElement,
+	initialBindings: ChartShortcutBindings,
+): void {
+	const hintLines = insertShortcutHint(input, initialBindings);
+	comboToAction = buildComboToAction(initialBindings);
+
+	// Keeps an already-open chart page in sync with a rebind made in the
+	// popup, without requiring a page refresh.
+	subscribeToChartShortcutBindings((bindings) => {
+		comboToAction = buildComboToAction(bindings);
+		if (hintLines) hintLines.innerHTML = `<br>${renderHintLines(bindings)}`;
+	});
 
 	document.addEventListener(
 		"keydown",

@@ -1,5 +1,112 @@
 # Todo
 
+- **Bug found (2026-08-22)**: pressing a bound "Include descriptor" shortcut
+  (`includeDescriptor`, e.g. the user's `Ctrl+Shift+O` binding) adds **two**
+  chips to the chart's "Include descriptors" list — the correct matched
+  descriptor (e.g. "dark") *and* a second, separately-removable chip
+  literally labeled "Descriptors". Confirmed via screenshot: both are real
+  filter chips with their own × remove button, not a section-header/grouping
+  label. Does **not** happen when adding a descriptor the normal way
+  (clicking it from RYM's native dropdown) — only via the shortcut path.
+  Ruled out so far: not caused by the `/simplify` cleanup pass on this same
+  session (that pass's only edit to `chart-shortcuts/app.ts` was
+  parallelizing `main()`'s two startup awaits into `Promise.all`, nowhere
+  near `applyItem`/`queryNativeBrowser`/`applyNativeMatch`); not caused by
+  the `chart-shortcuts-customization` feature branch either — diffed
+  `applyItem`/`queryNativeBrowser`/`applyNativeMatch` in
+  `src/modules/chart-shortcuts/app.ts` against commit `740c2ef^` (the
+  original hardcoded-shortcuts `chart-prefix-commands` module, pre-dating
+  this entire branch) and the logic is byte-for-byte identical — so this bug
+  (or its root cause) has existed since the very first hardcoded-shortcuts
+  implementation. No literal `"Descriptors"` string exists anywhere in
+  `src/shared/chart-shortcuts/` or `src/modules/chart-shortcuts/`, so the
+  label is coming straight from RYM's own native search data
+  (`RYMbrowser.resultCache`), not fabricated by this extension.
+
+  Instrumented and tested (2026-08-22): added temporary logging around
+  `queryNativeBrowser`'s candidate list/resolved `item`, around `applyItem`,
+  and monkey-patched `RYMchart.addBrowserItem` itself to log every call (args
+  + stack trace) from any caller. Reproduced the shortcut path once with a
+  real descriptor ("heavy") — the logs showed `queryNativeBrowser` resolving
+  exactly one correct item and `addBrowserItem` being called exactly once,
+  with no second call from any source, and the bug did not occur on that
+  run. It has not recurred since, including on this rebuilt-with-logging
+  build. Instrumentation has been removed (all `[ebr-debug]` logging and the
+  `addBrowserItem` patch reverted; `git diff` on `chart-shortcuts/app.ts` is
+  now clean against the `/simplify` commit). Leaving this open as
+  **unreproduced / status unclear** rather than closing it outright — the
+  one confirmed occurrence had a real screenshot (two removable chips: the
+  matched descriptor + a second chip literally labeled "Descriptors"), but
+  the leading theory (a "browse this whole category" pseudo-entry in RYM's
+  search results getting picked up alongside the real match) wasn't
+  confirmed and doesn't fit the one instrumented run, which showed only a
+  single clean add. The instrumentation was never committed (added and
+  removed within the same working-tree session), so if it recurs, re-add
+  logging around `queryNativeBrowser`'s resolved item and monkey-patch
+  `RYMchart.addBrowserItem` to log every call + stack trace again, and
+  capture the console output on the exact reproduction — ideally noting the
+  specific descriptor typed and any browsing done earlier in that page
+  session.
+
+- **Bug found and fixed (2026-08-22)**: rebinding a shortcut in the popup
+  (adding or removing a combo) did not take effect on an already-open chart
+  page — the old shortcut kept firing (or the new one didn't) until a full
+  page reload. Root cause, confirmed with temporary logging: `setChartShortcutBindings`
+  wrote to `storage.local` correctly (confirmed by reload always picking up
+  the change), but `subscribeToChartShortcutBindings`'s
+  `browser.storage.onChanged` listener never fired in the content script's
+  context for a write made from the popup, on this Safari build — a
+  cross-context propagation gap, same class of problem the native-settings
+  mirror (`native-settings.ts`) already exists to work around elsewhere.
+  Fixed by replacing the `storage.onChanged`-based subscription with an
+  explicit background-mediated broadcast: `background/index.ts`'s
+  `getKeybindingsSetResponse` now calls a new `broadcastKeybindingsChanged`
+  (queries tabs matching `*://*.rateyourmusic.com/charts/*` — the
+  chart-shortcuts content script's own manifest pattern — and
+  `browser.tabs.sendMessage`s each one) before mirroring to native, and
+  `subscribeToChartShortcutBindings` now listens for that message via
+  `browser.runtime.onMessage` instead of `storage.onChanged`. New
+  `KeybindingsUpdatedMessage` type + `isKeybindingsUpdatedMessage` guard
+  added to `messaging.ts` for this one-way background→tab broadcast (no
+  `id`, not part of the existing request/response `BackgroundRequest` union).
+  User confirmed live-updating now works for both add and remove, with the
+  chart page left open and not reloaded.
+
+- Finish manual Safari testing for the `chart-shortcuts-customization`
+  branch before treating it as done (see `docs/plan.md` for the full
+  design writeup). Confirmed so far via the user's own screenshots/testing:
+  the popup's Customize view, recording a combo, live conflict detection,
+  and rebinding live-updating an already-open chart page (see the bug entry
+  above) all work in the real Safari app. **Not yet confirmed**: native-mirror
+  persistence across a full Safari quit/reopen, survival through Safari's
+  "Clear History" (the entire reason the native mirror exists), and that
+  `Ctrl+Shift+1/2/3` (previously dead on `main`, fixed by this branch's
+  `event.code` switch) actually fire on the real chart page.
+
+- The Mac modifier glyphs (`⌃⌥⇧⌘`) in the shortcut popup still don't fully
+  match native macOS menu rendering (2026-08-22): switching the shortcut
+  chip's font from monospace to the system UI stack fixed the flat
+  "^"-style fallback, but removing the space between glyphs (to match
+  native's tight packing, e.g. `⇧⌘N`) looked "more squished" than genuine
+  macOS rendering per the user's own comparison — some rendering-metrics
+  gap beyond font-family remains undiagnosed. Currently shipping with a
+  space between glyphs (`⌘ ⇧ O`) as a compromise. Revisit only if
+  pixel-exact native fidelity is actually wanted — see `docs/plan.md`'s
+  "Platform-native modifier key labels" entry and `CLAUDE.md`'s note in
+  the chart-shortcuts architecture section.
+
+- Manually verify the platform-native modifier key labels (Option/Control/
+  Command off Mac's word form, `⌃⌥⇧⌘` glyphs on Mac) in an actual Safari
+  rebuild — not yet confirmed beyond the user's own screenshot comparison
+  of the glyph rendering. See `docs/plan.md`'s "Platform-native modifier
+  key labels" entry for what shipped and why.
+
+- `EvenBetterRYM/project.pbxproj` has an unrelated 5-line uncommitted diff
+  that predates the `chart-shortcuts-customization` session (2026-08-22) —
+  left unstaged both times a commit was made in that repo during that work
+  since it wasn't this feature's concern. Not investigated; decide whether
+  to commit it as-is or check what changed it first.
+
 - Decide whether to commit the `screenshots/` → `app store submission
   stuff/` migration (2026-08-14): `git status` shows all six files
   previously tracked under `screenshots/` as deleted in the working tree,

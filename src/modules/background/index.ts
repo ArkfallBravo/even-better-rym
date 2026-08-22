@@ -4,6 +4,11 @@ import type { PageKey } from "~/shared/pages";
 import { globalPageKeys, pages } from "~/shared/pages";
 import type {
 	BackgroundResponse,
+	KeybindingsGetRequest,
+	KeybindingsGetResponse,
+	KeybindingsSetRequest,
+	KeybindingsSetResponse,
+	KeybindingsUpdatedMessage,
 	SettingsGetAllRequest,
 	SettingsGetAllResponse,
 	SettingsSetRequest,
@@ -15,6 +20,8 @@ import { isBackgroundRequest } from "~/shared/utils/messaging";
 import type { SettingsDict } from "~/shared/utils/native-settings";
 import {
 	nativeGetAllSettings,
+	nativeGetKeybindings,
+	nativeSetKeybindings,
 	nativeSetOneSetting,
 } from "~/shared/utils/native-settings";
 import * as storage from "~/shared/utils/storage";
@@ -118,25 +125,100 @@ const getSettingsSetResponse = async (
 	return { id: message.id, type: "settingsSet" };
 };
 
+const getKeybindingsGetResponse = async (
+	message: KeybindingsGetRequest,
+): Promise<KeybindingsGetResponse> => ({
+	id: message.id,
+	type: "keybindingsGet",
+	data: await nativeGetKeybindings(),
+});
+
+// Matches this content script's own manifest.ts content_scripts registration.
+const CHART_SHORTCUTS_MATCH_PATTERN = "*://*.rateyourmusic.com/charts/*";
+
+// browser.storage.onChanged doesn't reliably reach a content script's
+// context from a popup write on Safari, so an already-open chart page needs
+// to be told about a binding change explicitly instead.
+const broadcastKeybindingsChanged = async (value: string): Promise<void> => {
+	const tabs = await browser.tabs.query({ url: CHART_SHORTCUTS_MATCH_PATTERN });
+	await Promise.all(
+		tabs
+			.map((tab) => tab.id)
+			.filter((id): id is number => id !== undefined)
+			.map((id) =>
+				browser.tabs
+					.sendMessage(id, {
+						type: "keybindingsUpdated",
+						data: { value },
+					} satisfies KeybindingsUpdatedMessage)
+					.catch(() => {
+						// No content script listening in this tab (e.g. mid-navigation) - fine to drop.
+					}),
+			),
+	);
+};
+
+const getKeybindingsSetResponse = async (
+	message: KeybindingsSetRequest,
+): Promise<KeybindingsSetResponse> => {
+	await broadcastKeybindingsChanged(message.data.value);
+	await nativeSetKeybindings(message.data.value);
+	return { id: message.id, type: "keybindingsSet" };
+};
+
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-	// storageSet/settingsGetAll/settingsSet have no associated tab (e.g. sent
-	// from the popup), so they're handled before the tab-scoped messages below.
-	if (isBackgroundRequest(message) && message.type === "storageSet") {
+	// storageSet/settingsGetAll/settingsSet/keybindingsGet/keybindingsSet have
+	// no associated tab (e.g. sent from the popup), so they're handled before
+	// the tab-scoped messages below. Each has a .catch fallback: without one,
+	// a rejected native call means sendResponse is never called and the
+	// caller's await hangs forever rather than failing (this bit
+	// settingsSet on any build without a native host, i.e. non-Safari).
+	if (isBackgroundRequest(message)) {
 		const respond = sendResponse as (response: BackgroundResponse) => void;
-		void setStorageFromMessage(message).then(respond);
-		return true;
-	}
+		const respondFrom = <R extends BackgroundResponse>(
+			promise: Promise<R>,
+			fallback: R,
+		): true => {
+			void promise.then(respond).catch(() => respond(fallback));
+			return true;
+		};
 
-	if (isBackgroundRequest(message) && message.type === "settingsGetAll") {
-		const respond = sendResponse as (response: BackgroundResponse) => void;
-		void getSettingsGetAllResponse(message).then(respond);
-		return true;
-	}
+		if (message.type === "storageSet") {
+			return respondFrom(setStorageFromMessage(message), {
+				id: message.id,
+				type: "storageSet",
+			});
+		}
 
-	if (isBackgroundRequest(message) && message.type === "settingsSet") {
-		const respond = sendResponse as (response: BackgroundResponse) => void;
-		void getSettingsSetResponse(message).then(respond);
-		return true;
+		if (message.type === "settingsGetAll") {
+			return respondFrom(getSettingsGetAllResponse(message), {
+				id: message.id,
+				type: "settingsGetAll",
+				data: {},
+			});
+		}
+
+		if (message.type === "settingsSet") {
+			return respondFrom(getSettingsSetResponse(message), {
+				id: message.id,
+				type: "settingsSet",
+			});
+		}
+
+		if (message.type === "keybindingsGet") {
+			return respondFrom(getKeybindingsGetResponse(message), {
+				id: message.id,
+				type: "keybindingsGet",
+				data: null,
+			});
+		}
+
+		if (message.type === "keybindingsSet") {
+			return respondFrom(getKeybindingsSetResponse(message), {
+				id: message.id,
+				type: "keybindingsSet",
+			});
+		}
 	}
 
 	const tabId = sender.tab?.id;

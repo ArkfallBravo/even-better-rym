@@ -15,6 +15,12 @@ type NativeGetAllResponse =
 
 type NativeSetOneResponse = { ok: true } | { ok: false; error: string };
 
+type NativeKeybindingsGetResponse =
+	| { ok: true; value: string | null }
+	| { ok: false; error: string };
+
+type NativeKeybindingsSetResponse = { ok: true } | { ok: false; error: string };
+
 export const nativeGetAllSettings = async (): Promise<SettingsDict> => {
 	const response = (await browser.runtime.sendNativeMessage(
 		nativeApplicationName,
@@ -39,5 +45,29 @@ export const nativeSetOneSetting = async (
 
 	if (!response.ok) {
 		throw new Error(`settings.setOne failed: ${response.error}`);
+	}
+};
+
+export const nativeGetKeybindings = async (): Promise<string | null> => {
+	const response = (await browser.runtime.sendNativeMessage(
+		nativeApplicationName,
+		{ type: "keybindings.get" },
+	)) as NativeKeybindingsGetResponse;
+
+	if (!response.ok) {
+		throw new Error(`keybindings.get failed: ${response.error}`);
+	}
+
+	return response.value;
+};
+
+export const nativeSetKeybindings = async (value: string): Promise<void> => {
+	const response = (await browser.runtime.sendNativeMessage(
+		nativeApplicationName,
+		{ type: "keybindings.setAll", value },
+	)) as NativeKeybindingsSetResponse;
+
+	if (!response.ok) {
+		throw new Error(`keybindings.setAll failed: ${response.error}`);
 	}
 };

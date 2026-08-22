@@ -94,20 +94,68 @@ export type SettingsSetResponse = {
 	type: "settingsSet";
 };
 
+export type KeybindingsGetRequest = {
+	id: string;
+	type: "keybindingsGet";
+};
+
+export type KeybindingsGetResponse = {
+	id: string;
+	type: "keybindingsGet";
+	data: string | null;
+};
+
+export type KeybindingsSetRequest = {
+	id: string;
+	type: "keybindingsSet";
+	data: {
+		value: string;
+	};
+};
+
+export type KeybindingsSetResponse = {
+	id: string;
+	type: "keybindingsSet";
+};
+
+// Background -> tab broadcast (not a request/response pair, no `id`): tells
+// an already-open chart page's content script to pick up a binding change
+// made in the popup without a refresh. Needed because browser.storage.onChanged
+// doesn't reliably reach a content script's context from a popup write on
+// Safari, unlike Chrome/Firefox.
+export type KeybindingsUpdatedMessage = {
+	type: "keybindingsUpdated";
+	data: {
+		value: string;
+	};
+};
+
+export const isKeybindingsUpdatedMessage = (
+	o: unknown,
+): o is KeybindingsUpdatedMessage =>
+	typeof o === "object" &&
+	o !== null &&
+	"type" in o &&
+	o.type === "keybindingsUpdated";
+
 export type BackgroundRequest =
 	| FetchRequest
 	| DownloadRequest
 	| ScriptRequest
 	| StorageSetRequest
 	| SettingsGetAllRequest
-	| SettingsSetRequest;
+	| SettingsSetRequest
+	| KeybindingsGetRequest
+	| KeybindingsSetRequest;
 export type BackgroundResponse =
 	| FetchResponse
 	| DownloadResponse
 	| ScriptResponse
 	| StorageSetResponse
 	| SettingsGetAllResponse
-	| SettingsSetResponse;
+	| SettingsSetResponse
+	| KeybindingsGetResponse
+	| KeybindingsSetResponse;
 
 export const isBackgroundRequest = (o: unknown): o is BackgroundRequest =>
 	typeof o === "object" && o !== null && "id" in o && "type" in o;
