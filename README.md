@@ -138,7 +138,7 @@ On the chart-builder page (`/charts/`), adds keyboard shortcuts to the genre/des
 
 Every shortcut is fully customizable:
 
-- In the extension popup, click **Customize mappings** next to the Chart Shortcuts toggle to open the shortcut editor.
+- In the extension popup, click **Customize shortcuts** next to the Chart Shortcuts toggle to open the shortcut editor.
 - Click the **+** next to any action to record a new key combo - just press the keys you want. Shortcuts must include Ctrl, Alt, or Cmd, so they don't interfere with typing in the search field.
 - Click **×** on an existing combo to remove it. An action can have more than one combo bound to it.
 - If a combo is already used by another action, the editor tells you which one, rather than silently overwriting it.

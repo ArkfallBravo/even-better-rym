@@ -82,6 +82,7 @@ export const styles = {
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "space-between",
+		gap: 8,
 		padding: "10px 12px",
 		cursor: "pointer",
 		userSelect: "none" as const,
@@ -127,13 +128,6 @@ export const styles = {
 		boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
 		transition: "transform 0.2s",
 		display: "block",
-	} satisfies CSSProperties,
-
-	featureRow: {
-		display: "flex",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: 8,
 	} satisfies CSSProperties,
 
 	customizeButton: {

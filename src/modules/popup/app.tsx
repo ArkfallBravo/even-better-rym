@@ -95,33 +95,31 @@ export function App() {
 										</div>
 									)}
 									{keys.map((key, i) => (
-										<div
+										<label
 											key={key}
 											style={{
 												...styles.row,
 												...(i < keys.length - 1 ? styles.rowDivider : {}),
 											}}
 										>
-											<label style={styles.featureRow}>
-												<span style={styles.label}>
-													{pageLabels[key]}
-													<span class="ebr-hint">{pageHints[key]}</span>
-												</span>
-												<Toggle
-													checked={features[key]}
-													onChange={() => void toggle(key)}
-												/>
-											</label>
+											<span style={styles.label}>
+												{pageLabels[key]}
+												<span class="ebr-hint">{pageHints[key]}</span>
+											</span>
 											{key === "chartShortcuts" && (
 												<button
 													type="button"
 													onClick={() => setView("chartShortcuts")}
 													style={styles.customizeButton}
 												>
-													Customize mappings
+													Customize shortcuts
 												</button>
 											)}
-										</div>
+											<Toggle
+												checked={features[key]}
+												onChange={() => void toggle(key)}
+											/>
+										</label>
 									))}
 								</div>
 							);
