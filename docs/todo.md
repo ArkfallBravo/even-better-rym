@@ -83,6 +83,24 @@
   `Ctrl+Shift+1/2/3` (previously dead on `main`, fixed by this branch's
   `event.code` switch) actually fire on the real chart page.
 
+- The Mac modifier glyphs (`⌃⌥⇧⌘`) in the shortcut popup still don't fully
+  match native macOS menu rendering (2026-08-22): switching the shortcut
+  chip's font from monospace to the system UI stack fixed the flat
+  "^"-style fallback, but removing the space between glyphs (to match
+  native's tight packing, e.g. `⇧⌘N`) looked "more squished" than genuine
+  macOS rendering per the user's own comparison — some rendering-metrics
+  gap beyond font-family remains undiagnosed. Currently shipping with a
+  space between glyphs (`⌘ ⇧ O`) as a compromise. Revisit only if
+  pixel-exact native fidelity is actually wanted — see `docs/plan.md`'s
+  "Platform-native modifier key labels" entry and `CLAUDE.md`'s note in
+  the chart-shortcuts architecture section.
+
+- Manually verify the platform-native modifier key labels (Option/Control/
+  Command off Mac's word form, `⌃⌥⇧⌘` glyphs on Mac) in an actual Safari
+  rebuild — not yet confirmed beyond the user's own screenshot comparison
+  of the glyph rendering. See `docs/plan.md`'s "Platform-native modifier
+  key labels" entry for what shipped and why.
+
 - `EvenBetterRYM/project.pbxproj` has an unrelated 5-line uncommitted diff
   that predates the `chart-shortcuts-customization` session (2026-08-22) —
   left unstaged both times a commit was made in that repo during that work

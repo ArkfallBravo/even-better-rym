@@ -390,6 +390,52 @@
   History", `Ctrl+Shift+1/2/3` actually firing on the real chart page, and
   live rebinding while a chart page is already open. See `docs/todo.md`.
 
+  **Platform-native modifier key labels (2026-08-22, follow-up round):**
+  `formatCombo` (`src/shared/chart-shortcuts/binding.ts`) now renders
+  modifier keys to match the host OS instead of always showing generic
+  words. Off Mac: `Ctrl` / `Alt` / `Shift` / `Command`, joined with
+  `" + "` (e.g. `Ctrl + Shift + 1`). On Mac: the native `⌃` / `⌥` / `⇧` /
+  `⌘` glyphs, joined with a plain space (e.g. `⌘ ⇧ O`) — in Apple's own
+  canonical modifier order (Control, Option, Shift, Command), which
+  already matched this codebase's existing `ctrl, alt, shift, meta`
+  ordering from `comboFromEvent`.
+
+  Two things worth knowing if this area is touched again:
+  - `formatCombo` takes `mac` as an explicit parameter (`mac: boolean =
+    isMacPlatform`) rather than reading a module-level platform constant
+    directly. This was a real bug fix, not a style choice: Node's
+    `navigator.platform` reports the actual host OS running the test
+    process (confirmed: `"MacIntel"` under Node 22 on this dev machine),
+    so a module-level constant made the existing "formats as Ctrl/Alt"
+    vitest cases fail purely because the test suite happened to run on a
+    Mac. See `CLAUDE.md`'s note in the same area for the general rule to
+    reuse.
+  - Getting the Mac glyphs to actually *look* native took two rounds: the
+    right Unicode code points alone weren't enough — the shortcut chip's
+    monospace font lacked San Francisco's custom glyph shapes and
+    rendered them as a flat "^"-style caret (confirmed against the user's
+    own screenshot of Safari's native menu bar). Switching the chip
+    (`src/modules/popup/styles.ts`) to the popup's existing system-UI
+    font stack fixed the shapes. The user was skeptical of this
+    diagnosis throughout ("I think you're wrong") and asked to try
+    removing the space between glyphs too, to match native macOS's tight
+    packing (`⇧⌘N`, no space) — that came back looking "more squished"
+    than genuine macOS rendering, meaning the font-family fix didn't
+    fully close the gap to native and some further rendering-metrics
+    difference (kerning/spacing, not glyph shape) remains undiagnosed.
+    Reverted to space-separated glyphs as the accepted compromise rather
+    than continuing to chase exact native fidelity — see `docs/todo.md`.
+
+  **Commits added this round:** `bcd264e` (Option/Control/Command word
+  labels + `" + "` spacing), `35b556d` (docs-only, the pending
+  `/preserve` notes from the previous round), `d69f073` (native
+  `⌃⌥⇧⌘` glyphs on Mac + the chip font-family fix) — all in
+  `even-better-rym`, all explicit checkpoint commits per
+  `[[feedback-commit-as-safety-checkpoint]]`, none manually verified in a
+  real Safari rebuild yet. `EvenBetterRYM/` also got one unrelated
+  checkpoint commit (`ba4f145`, an Xcode-generated build-number bump that
+  predated this round and wasn't touched by any feature work).
+
 - Beatport import failure investigation (started 2026-07-28, in progress):
   importing
   `https://www.beatport.com/release/isarnian-bloodlines-d_b-counterfuture-hi-shock/4255009`
