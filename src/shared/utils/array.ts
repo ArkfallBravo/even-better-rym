@@ -42,3 +42,17 @@ export const equals = <T>(a: T[], b: T[]): boolean =>
 	Array.isArray(b) &&
 	a.length === b.length &&
 	a.every((value, index) => JSON.stringify(value) === JSON.stringify(b[index]));
+
+export const groupBy = <T, K>(
+	items: readonly T[],
+	keyFor: (item: T) => K,
+): [K, T[]][] => {
+	const map = new Map<K, T[]>();
+	for (const item of items) {
+		const key = keyFor(item);
+		const group = map.get(key) ?? [];
+		group.push(item);
+		map.set(key, group);
+	}
+	return [...map.entries()];
+};

@@ -51,6 +51,39 @@ export type ScriptResponse = {
 	type: "script";
 };
 
+// One-way messages (not a request/response pair, no `id`) for broadcasting a
+// chart-shortcut rebind to any already-open chart page, so it takes effect
+// without a refresh. Popup -> background -> matching tabs.
+export type KeybindingsChangedMessage = {
+	type: "keybindingsChanged";
+	data: {
+		value: string;
+	};
+};
+
+export type KeybindingsUpdatedMessage = {
+	type: "keybindingsUpdated";
+	data: {
+		value: string;
+	};
+};
+
+export const isKeybindingsChangedMessage = (
+	o: unknown,
+): o is KeybindingsChangedMessage =>
+	typeof o === "object" &&
+	o !== null &&
+	"type" in o &&
+	o.type === "keybindingsChanged";
+
+export const isKeybindingsUpdatedMessage = (
+	o: unknown,
+): o is KeybindingsUpdatedMessage =>
+	typeof o === "object" &&
+	o !== null &&
+	"type" in o &&
+	o.type === "keybindingsUpdated";
+
 export type BackgroundRequest = FetchRequest | DownloadRequest | ScriptRequest;
 export type BackgroundResponse =
 	| FetchResponse
