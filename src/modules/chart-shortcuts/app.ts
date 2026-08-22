@@ -280,7 +280,7 @@ function renderHintLines(bindings: ChartShortcutBindings): string {
 		const combos = bindings[action.id];
 		if (combos.length === 0) continue;
 
-		const comboLabel = combos.map(formatCombo).join(" or ");
+		const comboLabel = combos.map((combo) => formatCombo(combo)).join(" or ");
 		const lines = groups.get(action.group) ?? [];
 		lines.push(`${comboLabel} — ${action.hint}`);
 		groups.set(action.group, lines);

@@ -49,21 +49,32 @@ function codeToLabel(code: string): string {
 	return code;
 }
 
-const MODIFIER_LABELS: Record<string, string> = {
-	ctrl: "Ctrl",
-	alt: "Alt",
-	shift: "Shift",
-	meta: "Cmd",
-};
+export const isMacPlatform =
+	typeof navigator !== "undefined" &&
+	/Mac|iPod|iPhone|iPad/.test(navigator.platform ?? "");
 
-export function formatCombo(combo: string): string {
+function modifierLabels(mac: boolean): Record<string, string> {
+	return {
+		ctrl: mac ? "Control" : "Ctrl",
+		alt: mac ? "Option" : "Alt",
+		shift: "Shift",
+		meta: "Command",
+	};
+}
+
+// mac defaults to real platform detection; tests override it so results
+// don't depend on the host machine running the test.
+export function formatCombo(
+	combo: string,
+	mac: boolean = isMacPlatform,
+): string {
 	const parts = combo.split("+");
 	const code = parts[parts.length - 1];
 	const modifiers = parts.slice(0, -1);
-	return [
-		...modifiers.map((m) => MODIFIER_LABELS[m] ?? m),
-		codeToLabel(code),
-	].join("+");
+	const labels = modifierLabels(mac);
+	return [...modifiers.map((m) => labels[m] ?? m), codeToLabel(code)].join(
+		" + ",
+	);
 }
 
 export function isModifierOnlyCode(code: string): boolean {

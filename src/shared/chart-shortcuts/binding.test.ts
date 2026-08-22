@@ -58,20 +58,28 @@ describe("comboFromEvent", () => {
 
 describe("formatCombo", () => {
 	test("formats a digit combo", () => {
-		expect(formatCombo("ctrl+shift+Digit1")).toBe("Ctrl+Shift+1");
+		expect(formatCombo("ctrl+shift+Digit1", false)).toBe("Ctrl + Shift + 1");
 	});
 
 	test("formats a letter combo", () => {
-		expect(formatCombo("ctrl+KeyZ")).toBe("Ctrl+Z");
+		expect(formatCombo("ctrl+KeyZ", false)).toBe("Ctrl + Z");
 	});
 
 	test("formats named keys as-is", () => {
-		expect(formatCombo("ctrl+Enter")).toBe("Ctrl+Enter");
-		expect(formatCombo("ctrl+Space")).toBe("Ctrl+Space");
+		expect(formatCombo("ctrl+Enter", false)).toBe("Ctrl + Enter");
+		expect(formatCombo("ctrl+Space", false)).toBe("Ctrl + Space");
 	});
 
-	test("formats meta as Cmd", () => {
-		expect(formatCombo("meta+KeyA")).toBe("Cmd+A");
+	test("formats meta as Command", () => {
+		expect(formatCombo("meta+KeyA", false)).toBe("Command + A");
+	});
+
+	test("formats ctrl and alt as Ctrl/Alt off Mac", () => {
+		expect(formatCombo("ctrl+alt+KeyA", false)).toBe("Ctrl + Alt + A");
+	});
+
+	test("formats ctrl and alt as Control/Option on Mac", () => {
+		expect(formatCombo("ctrl+alt+KeyA", true)).toBe("Control + Option + A");
 	});
 });
 

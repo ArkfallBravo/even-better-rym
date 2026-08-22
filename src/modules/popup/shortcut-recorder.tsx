@@ -3,12 +3,13 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import {
 	comboFromEvent,
 	hasRequiredModifier,
+	isMacPlatform,
 	isModifierOnlyCode,
 } from "~/shared/chart-shortcuts/binding";
 
 import { styles } from "./styles";
 
-const NEEDS_MODIFIER_MESSAGE = "Shortcuts need Ctrl, Alt, or Cmd";
+const NEEDS_MODIFIER_MESSAGE = `Shortcuts need ${isMacPlatform ? "Control" : "Ctrl"}, ${isMacPlatform ? "Option" : "Alt"}, or Command`;
 
 type ShortcutRecorderProps = Readonly<{
 	// Returns an error message to display, or null once the combo is saved.
