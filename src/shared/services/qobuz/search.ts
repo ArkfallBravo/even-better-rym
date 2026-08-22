@@ -3,8 +3,9 @@ import { fetch } from "~/shared/utils/fetch";
 import type { SearchFunction } from "../types";
 
 export const search: SearchFunction = async ({ artist, title }) => {
+	const query = encodeURIComponent(`${artist} ${title}`.replace(/\//g, " "));
 	const response = await fetch({
-		url: `https://www.qobuz.com/us-en/search/albums/${artist} ${title}`,
+		url: `https://www.qobuz.com/us-en/search/albums/${query}`,
 		method: "GET",
 	});
 
