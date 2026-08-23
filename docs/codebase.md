@@ -93,3 +93,70 @@ and macOS `.appex` targets reference `../../dist/manifest.json`,
 `../../dist/assets`, etc. as folder references in `project.pbxproj`. There
 is deliberately no per-platform JS build — one `npm run build:safari` run
 updates what both Safari targets will pick up on their next archive.
+
+## Track-listing "Insert link to artist or work" popup is not `RYMbrowser`
+
+`src/modules/release-submission/use-cases/artist-link-formatting.tsx`
+(2026-08-23) auto-formats the artist link inserted when you click a search
+result in the track-listing page's "Insert link to artist or work" popup,
+joining it onto the field's existing linked-artist list per RYM's
+comma/ampersand standard instead of leaving RYM's raw cursor-position
+insertion as-is.
+
+The popup looks similar to the chart-builder's `RYMbrowser` widget (same
+"Insert link" affordance, same general search-and-click UX), and
+`RYMbrowser` was the first thing checked (it's what `chart-shortcuts`
+already knows how to intercept — see `CLAUDE.md`'s "RYM's own
+chart-builder search widget" note). It turned out to be a red herring:
+`RYMbrowser` (`cdn.sonemic.net/dist/rym25/js/ui/browser.js`) only handles
+`genre`/`descriptor`/`location`/`language` — no `artist`/`label`/`work`
+case exists in its `onClickItem` switch. The track-listing popup is a
+separate, older mechanism, loaded via `cdn.sonemic.net/2.5/js/shortcut.js`
+plus inline page script (found by grepping a saved Web-Inspector Elements
+dump for the button's label text, since `rateyourmusic.com` itself
+Cloudflare-blocks both `curl` and `WebFetch` — the same bot-detection
+issue documented in `CLAUDE.md`'s `import-check` section, but this time
+blocking investigation rather than just e2e automation):
+
+- A page-global `currentElement` tracks whichever field last had focus.
+- Clicking a result in the popup's results iframe calls
+  `window.parent.createShortcut(type, assocId, text)` (confirmed directly
+  from the iframe's row markup: `onclick="window.parent.createShortcut('a', '1566274');return false;"`).
+- `createShortcut` calls `insertAtCursor(currentElement, getShortcut(type, assocId, text))`
+  then `currentElement.focus()`. `getShortcut("a", assocId)` returns
+  `"[Artist" + assocId + "]"` — the token format already used elsewhere in
+  this codebase (e.g. `credits-controls.tsx`'s `/\[Artist(\d+)]/` parse).
+
+Because `currentElement` is a `window`-scoped page global, it's invisible
+to this content script's isolated JS world (the same isolated-world
+constraint documented in `CLAUDE.md`'s "content scripts execute in an
+isolated JS world" note) — so interception has to happen by monkey-patching
+`window.createShortcut` itself from injected page-world code
+(`patchCreateShortcut` in `utils/page-functions.ts`), the same
+polling-`setInterval` shape as `patchRYMChartRemoval` in
+`chart-shortcuts/app.ts` (needed because this content script runs at
+`document_start`, before the page's own inline script that defines
+`createShortcut` has executed). The patch captures the target field's
+value *before* calling the original function, then dispatches a
+`CustomEvent` (`EbrArtistShortcutInsertedEvent`) with the raw insert
+parameters back to the content script, which does the actual reformatting
+in real (tested) TypeScript rather than inside the injected script string
+— DOM element properties like `.value` are shared with the page's real
+world even though `window` globals aren't, so the content script can just
+overwrite `target.value` directly once it has the event data.
+
+**Reformat algorithm** (`utils/artist-shortcuts.ts`'s
+`insertArtistShortcut`): split the field's *previous* value on the first
+`" - "`; if that prefix contains no `[ArtistNNNN]`-shaped token, don't
+parse anything — just prepend the new token to the whole existing value
+unchanged. Only when the prefix already contains at least one
+`[ArtistNNNN]` token does it get split into components (on `" & "`/`", "`)
+and rejoined with the new artist appended, via the existing
+`arrayToArtists` join helper (`~/shared/utils/string.ts`). This
+bracket-presence check (rather than, say, treating any `" - "` as a
+boundary, or checking for `" & "`) is deliberate: it's the only way to
+never mistake a plain-text unlinked artist name, or a track title that
+happens to contain its own `" - "`, for a parseable artist list — verified
+against 7 worked examples the user specified by hand (e.g. `Artist1 &
+Artist2 - Track` → `[ArtistX] - Artist1 & Artist2 - Track`, not an attempt
+to join into the unlinked `Artist1 & Artist2` text).

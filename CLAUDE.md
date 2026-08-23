@@ -36,6 +36,25 @@ V2 (Safari) uses a persistent-page background (`background.scripts` + `persisten
 
 Safari-specific native settings persistence: content scripts/popup talk to the background script via `browser.runtime.sendMessage` (see `src/shared/utils/messaging.ts`), and the background script (`src/modules/background/index.ts`) proxies feature-toggle settings through `browser.runtime.sendNativeMessage` to `SafariWebExtensionHandler.swift` (`EvenBetterRYM/Shared (Extension)/`), which persists them via native `UserDefaults` rather than `storage.local` — this was a deliberate change (see `native-settings.ts`) so settings survive Safari's "clear web history" action, which wipes extension storage but not native UserDefaults.
 
+### Rebuilding for Safari without opening the Xcode GUI
+
+The macOS app+extension target can be built and launched entirely from the CLI (confirmed working 2026-08-23), which matters since the user's primary dev/test target is Safari:
+
+```sh
+npm run build:safari
+
+xcodebuild -project EvenBetterRYM/EvenBetterRYM.xcodeproj \
+  -scheme "EvenBetterRYM (macOS)" -configuration Debug build
+
+open "$(xcodebuild -project EvenBetterRYM/EvenBetterRYM.xcodeproj \
+  -scheme "EvenBetterRYM (macOS)" -showBuildSettings 2>/dev/null \
+  | awk -F'= ' '/ BUILT_PRODUCTS_DIR /{print $2}')/EvenBetterRYM.app"
+```
+
+Signing is `CODE_SIGN_STYLE = Automatic` / `CODE_SIGN_IDENTITY = Apple Development`, the same identity Xcode's own Run button would use, so `xcodebuild build` signs without any GUI interaction. As with the GUI workflow, step 3 (relaunching the built `.app`) is what actually gets a running Safari session to pick up the change — `npm run build:safari` alone only regenerates `dist/`. First-time setup (enabling the extension in Safari → Settings → Extensions) is still a one-time manual step, not scriptable.
+
+Caveat: `xcodebuild build` on its own bumped `CURRENT_PROJECT_VERSION` in `project.pbxproj` as a side effect of building (10 → 11, observed 2026-08-23) even though no source changed — worth checking `git diff EvenBetterRYM.xcodeproj/project.pbxproj` after a CLI build if you weren't intending to touch versioning, since it's easy to accidentally bundle an unintended build-number bump into an unrelated commit.
+
 ## Debugging: reaching the extension's own pages in Safari
 
 To open any extension-internal page directly (background page, or the
@@ -139,7 +158,7 @@ These values live only in App Store Connect's web UI, not in this repo, so they'
 
 **Tracking what changed since the last submission**: the commit that was actually on `main` when the v1.0 build was submitted for App Store review (2026-07-28) is tagged `app-store-v1.0-submission` (pushed to origin, points at `5d776223`). For a future version's "What's New" text, diff from there — `git log app-store-v1.0-submission..main` — rather than guessing how far back to look. When a new version is submitted, tag that new submission point too (following the same `app-store-vX.Y-submission` naming) so the chain stays unbroken.
 
-**Working drafts of the App Store Connect description and "What's New" text** live in `app store submission stuff/` (untracked — not committed, no `.gitignore` entry either, just never added) as `app-store-description.txt` and `whats-new.txt`. That directory also holds the macOS screenshot PNGs and, as of 2026-08-14, has effectively replaced the previously git-tracked `screenshots/` dir — `git status` currently shows all six files under `screenshots/` as deleted in the working tree, uncommitted. That move/rename hasn't been committed or explicitly resolved; worth confirming with the user whether to commit the `screenshots/` removal (and start tracking `app store submission stuff/`, or keep it untracked) rather than assuming either direction.
+**Working drafts of the App Store Connect description and "What's New" text** live in `app store submission stuff/` as `app-store-description.txt` and `whats-new.txt`. That directory also holds the macOS screenshot PNGs and replaced the previously git-tracked `screenshots/` dir (removed in commit `6e6ab63`). The top-level files in `app store submission stuff/` are tracked in git. A per-version subfolder (e.g. `app store submission stuff/v1.2/`) is used to stage the next submission's in-progress screenshots/drafts before they're promoted to the top level — that subfolder is `.gitignore`d (pattern per version, e.g. `app store submission stuff/v1.2/`) so in-progress staging doesn't get committed prematurely; add a new pattern for each version as it starts.
 
 **Producing a `*_2560x1600.png` macOS screenshot** (the App Store's required macOS screenshot size): the user's own two-command `sips` pipeline is the canonical method — don't re-derive a crop/scale transform independently, even if the result looks bordered:
 ```sh
