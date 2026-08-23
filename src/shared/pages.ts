@@ -18,6 +18,7 @@ export const pages = {
 	map: "/artist/",
 	hideVotes: "/r",
 	hideRatings: "/",
+	chartShortcuts: "/charts/",
 } as const;
 
 export type PageKey = keyof typeof pages;
@@ -42,6 +43,7 @@ export const pageLabels: Record<PageKey, string> = {
 	map: "Artist Location Map",
 	hideVotes: "Hide Votes on Genre/Descriptor Pages",
 	hideRatings: "Hide Ratings If Unrated",
+	chartShortcuts: "Chart Shortcuts",
 };
 
 export const pageGroupLabels: Partial<Record<string, string>> = {
@@ -56,7 +58,7 @@ export const pageGroupLabels: Partial<Record<string, string>> = {
 	"/rdescriptor/vote_history": "Descriptor Vote History",
 	"/misc/media_link_you_know": "Media Link You Know",
 	"/": "Global",
-	"/charts/": "Film Charts",
+	"/charts/": "Charts",
 	"/film_genre/": "Film Genre",
 	"/artist/": "Artist Pages",
 };
@@ -94,6 +96,8 @@ export const pageHints: Record<PageKey, string> = {
 		"On genre and descriptor pages, adds toggle buttons to hide user votes.",
 	hideRatings:
 		"Hides ratings on supported pages; release and artist ratings remain visible when you have rated them.",
+	chartShortcuts:
+		"Adds keyboard shortcuts for applying genre/descriptor matches, toggling sub-genre and 'must contain all' options, and updating the chart to chart pages.",
 };
 
 // Page keys whose features are global and should not affect the toolbar icon

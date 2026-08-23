@@ -3,12 +3,20 @@ import browser from "webextension-polyfill";
 import { getPageEnabled } from "~/shared/page-settings";
 import type { PageKey } from "~/shared/pages";
 import { globalPageKeys, pages } from "~/shared/pages";
-import type { BackgroundResponse } from "~/shared/utils/messaging";
-import { isBackgroundRequest } from "~/shared/utils/messaging";
+import type {
+	BackgroundResponse,
+	KeybindingsUpdatedMessage,
+} from "~/shared/utils/messaging";
+import {
+	isBackgroundRequest,
+	isKeybindingsChangedMessage,
+} from "~/shared/utils/messaging";
 
 import { download } from "./download";
 import { backgroundFetch } from "./fetch";
 import { script } from "./script";
+
+const CHART_PAGE_PATTERN = "*://*.rateyourmusic.com/charts/*";
 
 const getResponse = (
 	message: unknown,
@@ -22,7 +30,28 @@ const getResponse = (
 	throw new Error(`Invalid message: ${JSON.stringify(message)}`);
 };
 
+// Notifies any already-open chart page so a rebind made in the popup takes
+// effect without a refresh.
+const broadcastKeybindingsChanged = async (value: string): Promise<void> => {
+	const tabs = await browser.tabs.query({ url: CHART_PAGE_PATTERN });
+	await Promise.all(
+		tabs
+			.filter((tab): tab is typeof tab & { id: number } => tab.id != null)
+			.map((tab) =>
+				browser.tabs.sendMessage(tab.id, {
+					type: "keybindingsUpdated",
+					data: { value },
+				} satisfies KeybindingsUpdatedMessage),
+			),
+	);
+};
+
 browser.runtime.onMessage.addListener((message, sender) => {
+	if (isKeybindingsChangedMessage(message)) {
+		void broadcastKeybindingsChanged(message.data.value);
+		return undefined;
+	}
+
 	const tabId = sender.tab?.id;
 	if (tabId === undefined) return undefined;
 
