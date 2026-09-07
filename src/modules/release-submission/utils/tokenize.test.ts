@@ -17,6 +17,14 @@ describe("split phrases", () => {
 			["I'm Just a Singer ", "(In a Rock 'n' Roll Band)"],
 		],
 		["What (Howdy) Yay (Yo)", ["What ", "(Howdy)", " Yay ", "(Yo)"]],
+		["Edifice / Riftworm", ["Edifice", " / ", "Riftworm"]],
+		// Emoticons are kept whole rather than split on their ":" "/" "(" ")".
+		["Sorry :/", ["Sorry :/"]],
+		["Nvm :) ok", ["Nvm :) ok"]],
+		["=( to =)", ["=( to =)"]],
+		// A real slash with nothing after it must not re-emit the trailing
+		// character (regression: "a/" produced a dangling "/" phrase).
+		["a/", ["a", " /"]],
 	] as const;
 
 	test.each(tests)("correctly splits %p", (input, output) =>

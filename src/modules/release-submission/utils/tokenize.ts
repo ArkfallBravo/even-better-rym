@@ -61,11 +61,31 @@ const CLOSING_BRACKETS = new Set([")", "]", "}"]);
 
 const DONT_SPLIT = ["vs.", "v.", "etc."];
 
+// A text emoticon (":/", ":)", ";)", ":-P", "=(", …) whose own ":" "/" "(" ")"
+// characters would otherwise be treated as phrase separators.
+const EMOTICON_REGEX = /^[:;=][-'^o]?[)(/\\|DPpoO3*]/;
+
+// Returns the emoticon starting at `index`, if `index` begins one and is
+// preceded by whitespace or the start of the string.
+const matchEmoticonAt = (text: string, index: number): string | undefined => {
+	if (index !== 0 && !/\s/.test(text[index - 1] ?? "")) return undefined;
+	return EMOTICON_REGEX.exec(text.slice(index))?.[0];
+};
+
 export const splitPhrases = (text: string): string[] => {
 	let lastSplitIndex = 0;
+	let emoticonEndIndex = 0;
 	const phrases = [];
 
 	for (const [index, char] of [...text].entries()) {
+		if (index < emoticonEndIndex) continue;
+
+		const emoticon = matchEmoticonAt(text, index);
+		if (emoticon) {
+			emoticonEndIndex = index + emoticon.length;
+			continue;
+		}
+
 		if (PUNCTUATION.has(char) || CLOSING_BRACKETS.has(char)) {
 			const lastSlice = text.slice(lastSplitIndex, index + 1);
 			if (DONT_SPLIT.some((word) => lastSlice.endsWith(word))) continue;
@@ -80,9 +100,12 @@ export const splitPhrases = (text: string): string[] => {
 					index_ === -1 ? undefined : index_ + 1,
 				),
 			);
-			phrases.push(lastSlice, " / ");
 
-			lastSplitIndex = regexIndexOf(text, /\S/, index + 1);
+			const nextWordIndex = regexIndexOf(text, /\S/, index + 1);
+			const hasTrailingContent = nextWordIndex !== -1;
+			phrases.push(lastSlice, hasTrailingContent ? " / " : " /");
+
+			lastSplitIndex = hasTrailingContent ? nextWordIndex : text.length;
 		} else if (OPENING_BRACKETS.has(char)) {
 			phrases.push(text.slice(lastSplitIndex, index));
 			lastSplitIndex = index;

@@ -83,6 +83,9 @@ describe("title caps", () => {
 		["Edifice/Riftworm", "Edifice / Riftworm"],
 		["Frozen Heart / A Cracked Sea", "Frozen Heart / A Cracked Sea"],
 		["Frozen Heart  /    A Cracked Sea", "Frozen Heart / A Cracked Sea"],
+		// Emoticons keep their punctuation intact (was mangled to "Sorry : / /").
+		["Sorry :/", "Sorry :/"],
+		["Nvm :)", "Nvm :)"],
 		["Howdy - Extended Mix", "Howdy (Extended Mix)"],
 		["This Thing - Vocal Mix", "This Thing (Vocal Mix)"],
 		["Ya Ya  -     Ayo    Remix", "Ya Ya (Ayo Remix)"],
