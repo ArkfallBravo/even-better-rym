@@ -935,8 +935,11 @@
   Developer Team ID, would become permanently public) only applies to the
   public repo — a private one sidesteps it entirely. Set up: `git init`
   inside `EvenBetterRYM/`, its own `.gitignore` (`xcuserdata/`, `.claude/`,
-  `.DS_Store`, `*.bak.*`), initial commit `1fd1c23`. No GitHub remote
-  created yet — local-only for now.
+  `.DS_Store`, `*.bak.*`), initial commit `1fd1c23`. Local-only until
+  2026-09-06, when it got a remote: pushed to the new private GitHub repo
+  `ArkfallBravo/even-better-rym-safari` (`origin`, branch `master`). A new
+  repo was created rather than reusing the older private
+  `ArkfallBravo/Better-RYM-for-Safari` (abandoned, unrelated history).
 
   Considered automating "keep the two repos in sync": since main-repo
   commits don't actually touch any file the Xcode repo tracks (they're

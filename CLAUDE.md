@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A browser extension (Chrome/Firefox/Safari) adding quality-of-life features to RateYourMusic.com. Built with Vite + Preact + TypeScript, packaged via `@samrum/vite-plugin-web-extension`. A Safari build additionally ships inside a native macOS/iOS app wrapper (`EvenBetterRYM/` Xcode project, not tracked in git).
+A browser extension (Chrome/Firefox/Safari) adding quality-of-life features to RateYourMusic.com. Built with Vite + Preact + TypeScript, packaged via `@samrum/vite-plugin-web-extension`. A Safari build additionally ships inside a native macOS/iOS app wrapper (`EvenBetterRYM/` Xcode project). The `EvenBetterRYM/` directory is gitignored in *this* repo but is its own separate git repository, pushed to the private `ArkfallBravo/even-better-rym-safari` on GitHub (`origin`, branch `master`). A bare "commit"/"push" covers both repos.
 
 ## Commands
 

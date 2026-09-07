@@ -78,10 +78,17 @@ switching direction determined whether files got stranded or the checkout
 failed outright. Nothing in the repo depends on it being tracked: there's
 no CI step or build script that reads it from git history, and Xcode reads
 the project straight off local disk regardless of git state. It's now
-gitignored consistently on every branch. This also means: whoever needs
-the Xcode project has their own local copy, and it will *not* pick up
-changes to itself via `git pull` — only the JS-side `dist/` output it
-references is shared through the repo.
+gitignored consistently on every branch — only the JS-side `dist/` output
+it references is shared through *this* repo.
+
+`EvenBetterRYM/` is its own separate git repository. As of 2026-09-06 it
+has a remote: the private GitHub repo `ArkfallBravo/even-better-rym-safari`
+(`origin`, default branch `master`), so the Xcode project's own history is
+now backed up and pushable independently of the main repo. Its history is
+self-contained (root commit "Initial commit of Xcode project for local
+backup/history") and shares nothing with the older, abandoned private repo
+`ArkfallBravo/Better-RYM-for-Safari` (last pushed 2025-06-17) — that one is
+unrelated and not a remote of this working copy.
 
 ## `dist/` is the single build artifact shared by every platform
 
@@ -160,3 +167,33 @@ happens to contain its own `" - "`, for a parseable artist list — verified
 against 7 worked examples the user specified by hand (e.g. `Artist1 &
 Artist2 - Track` → `[ArtistX] - Artist1 & Artist2 - Track`, not an attempt
 to join into the unlinked `Artist1 & Artist2` text).
+
+## Title-case tokenizer keeps text emoticons whole
+
+`utils/tokenize.ts`'s `splitPhrases` (the phrase splitter behind the
+release-submission title-case capitalizer) treats `:` `/` `(` `)` as phrase
+separators. That mangled emoticon titles: importing Apple Music's `Sorry :/
+- EP` produced `Sorry : / /` — the `:` split off `"sorry :"`, then the
+trailing `/` hit a `regexIndexOf(..., /\S/)` that returned `-1`, and the
+final `text.slice(lastSplitIndex)` guard ran `text.slice(-1)` and
+re-appended the `/`.
+
+Fix (`0942e7c`, 2026-09-06): `splitPhrases` recognizes a text emoticon
+starting at a whitespace/start boundary (`EMOTICON_REGEX`) and skips it
+whole instead of splitting on its punctuation; the trailing-slash branch
+also guards the `-1` case so a slash with nothing after it no longer
+duplicates a character.
+
+Deliberate scoping:
+- Emoticon "eyes" are only `[:;=]`, **not** `8`/`x`/`X`. Allowing those
+  risked false positives on real single-letter titles (`X/Y`) and figures
+  like `8/8`.
+- `:/ :) ;) =(` round-trip perfectly because their mouth char (`/ ) (`) is
+  its own token. `:P` / `:D` / `:3` tokenize as a single *word* token, so
+  title-case still lowercases the letter (`:P` → `:p`). Accepted as a minor
+  known limitation — not worth special-casing.
+- Apple Music's `resolve.ts` still strips a trailing `" - EP"` / `" - Single"`
+  from the title and uses it to set the release type. This was reconfirmed
+  as correct: it's Apple's format-designation suffix (the whole artist
+  discography uses it), not part of the title, and RYM keeps the format out
+  of the title field. Not to be re-litigated.
