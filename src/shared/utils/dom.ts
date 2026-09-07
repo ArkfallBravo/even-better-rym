@@ -74,6 +74,32 @@ export const runScript = (script: string): void => {
 	element.remove();
 };
 
+// Builds a page-world polling script for `runScript` - retries `isReadyExpression`
+// (a JS boolean expression) every `intervalMs` until it's true or `attempts` is
+// exceeded, then runs `onReadyStatements` once and stops polling. Needed for page
+// globals defined by the page's own inline scripts, which haven't necessarily run
+// yet when a content script executes at document_start.
+export const buildPollForGlobalScript = (
+	isReadyExpression: string,
+	onReadyStatements: string,
+	attempts: number,
+	intervalMs: number,
+): string => `
+	(function () {
+		var attempts = 0;
+		var interval = setInterval(function () {
+			attempts += 1;
+			if (attempts > ${attempts}) {
+				clearInterval(interval);
+				return;
+			}
+			if (!(${isReadyExpression})) return;
+			clearInterval(interval);
+			${onReadyStatements}
+		}, ${intervalMs});
+	})();
+`;
+
 export const waitForResult = (
 	iframe: HTMLIFrameElement,
 ): Promise<HTMLDivElement | undefined> =>

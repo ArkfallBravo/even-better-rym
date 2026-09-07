@@ -9,7 +9,11 @@ import {
 	getChartShortcutBindings,
 	subscribeToChartShortcutBindings,
 } from "~/shared/chart-shortcuts/settings";
-import { runScript, waitForElement } from "~/shared/utils/dom";
+import {
+	buildPollForGlobalScript,
+	runScript,
+	waitForElement,
+} from "~/shared/utils/dom";
 
 type FilterType =
 	| "genre_include"
@@ -372,18 +376,11 @@ function isOtherEditableTarget(
 }
 
 function patchRYMChartRemoval(): void {
-	runScript(`
-		(function () {
-			var attempts = 0;
-			var interval = setInterval(function () {
-				attempts += 1;
-				if (attempts > ${RYMCHART_PATCH_ATTEMPTS}) {
-					clearInterval(interval);
-					return;
-				}
+	runScript(
+		buildPollForGlobalScript(
+			`window.RYMchart && typeof window.RYMchart.removeBrowserItem === "function"`,
+			`
 				var chart = window.RYMchart;
-				if (!chart || typeof chart.removeBrowserItem !== "function") return;
-				clearInterval(interval);
 				var original = chart.removeBrowserItem.bind(chart);
 				chart.removeBrowserItem = function () {
 					var originalCreateChart = chart.onClickCreateChart;
@@ -394,9 +391,11 @@ function patchRYMChartRemoval(): void {
 						chart.onClickCreateChart = originalCreateChart;
 					}
 				};
-			}, ${RYMCHART_PATCH_INTERVAL_MS});
-		})();
-	`);
+			`,
+			RYMCHART_PATCH_ATTEMPTS,
+			RYMCHART_PATCH_INTERVAL_MS,
+		),
+	);
 }
 
 function mount(
