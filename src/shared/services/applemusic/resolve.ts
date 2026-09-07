@@ -15,7 +15,7 @@ import type {
 } from "../types";
 import type { MusicVideoData, ReleaseData } from "./codec";
 import { convertAppleMusicDuration } from "./convert";
-import { getTrackArtists } from "./track-artists";
+import { findTrackLockupScriptText, getTrackArtists } from "./track-artists";
 
 const FULL_IMAGE_SIZE = "3000x3000bb.jpg";
 
@@ -105,21 +105,16 @@ const parseLabelAndType = (
 	};
 };
 
-const getIsVariousArtists = (document_: Document): boolean => {
-	for (const script of document_.querySelectorAll("script")) {
-		if (!script.text.includes("track-lockup")) continue;
-		if (/"subtitleLinks":\[\{"title":"Various Artists"/.test(script.text))
-			return true;
-		break;
-	}
-	return false;
-};
+const getIsVariousArtists = (scriptText: string | undefined): boolean =>
+	scriptText !== undefined &&
+	/"subtitleLinks":\[\{"title":"Various Artists"/.test(scriptText);
 
 const resolveAlbumFields = (
 	release: ReleaseData,
 	document_: Document,
 ): ResolvedFields => {
-	const trackArtists = getTrackArtists(document_);
+	const trackLockupScriptText = findTrackLockupScriptText(document_);
+	const trackArtists = getTrackArtists(trackLockupScriptText);
 	const tracks = release.tracks.map((t, i) => {
 		const position = String(i + 1);
 		const artist = trackArtists.get(i + 1);
@@ -152,7 +147,7 @@ const resolveAlbumFields = (
 		),
 	);
 
-	const artists = getIsVariousArtists(document_)
+	const artists = getIsVariousArtists(trackLockupScriptText)
 		? ["Various Artists"]
 		: release.byArtist.map((a) => a.name);
 

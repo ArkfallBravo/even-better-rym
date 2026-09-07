@@ -21,16 +21,22 @@ type NativeKeybindingsGetResponse =
 
 type NativeKeybindingsSetResponse = { ok: true } | { ok: false; error: string };
 
+function assertNativeOk<T extends { ok: boolean; error?: string }>(
+	response: T,
+	opName: string,
+): asserts response is T & { ok: true } {
+	if (!response.ok) {
+		throw new Error(`${opName} failed: ${response.error}`);
+	}
+}
+
 export const nativeGetAllSettings = async (): Promise<SettingsDict> => {
 	const response = (await browser.runtime.sendNativeMessage(
 		nativeApplicationName,
 		{ type: "settings.getAll" },
 	)) as NativeGetAllResponse;
 
-	if (!response.ok) {
-		throw new Error(`settings.getAll failed: ${response.error}`);
-	}
-
+	assertNativeOk(response, "settings.getAll");
 	return response.settings;
 };
 
@@ -43,9 +49,7 @@ export const nativeSetOneSetting = async (
 		{ type: "settings.setOne", key, value },
 	)) as NativeSetOneResponse;
 
-	if (!response.ok) {
-		throw new Error(`settings.setOne failed: ${response.error}`);
-	}
+	assertNativeOk(response, "settings.setOne");
 };
 
 export const nativeGetKeybindings = async (): Promise<string | null> => {
@@ -54,10 +58,7 @@ export const nativeGetKeybindings = async (): Promise<string | null> => {
 		{ type: "keybindings.get" },
 	)) as NativeKeybindingsGetResponse;
 
-	if (!response.ok) {
-		throw new Error(`keybindings.get failed: ${response.error}`);
-	}
-
+	assertNativeOk(response, "keybindings.get");
 	return response.value;
 };
 
@@ -67,7 +68,5 @@ export const nativeSetKeybindings = async (value: string): Promise<void> => {
 		{ type: "keybindings.setAll", value },
 	)) as NativeKeybindingsSetResponse;
 
-	if (!response.ok) {
-		throw new Error(`keybindings.setAll failed: ${response.error}`);
-	}
+	assertNativeOk(response, "keybindings.setAll");
 };

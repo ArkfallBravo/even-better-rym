@@ -25,17 +25,25 @@ export const extractTrackArtist = (
 	return SUBTITLE_TITLE_REGEX.exec(trackObjectText)?.[1];
 };
 
-export const getTrackArtists = (document_: Document): Map<number, string> => {
-	const map = new Map<number, string>();
+export const findTrackLockupScriptText = (
+	document_: Document,
+): string | undefined => {
 	for (const script of document_.querySelectorAll("script")) {
-		if (!script.text.includes("track-lockup")) continue;
-		for (const match of script.text.matchAll(TRACK_NUMBER_REGEX)) {
-			const trackNum = Number.parseInt(match[1], 10);
-			if (map.has(trackNum)) continue;
-			const artist = extractTrackArtist(script.text, match);
-			if (artist !== undefined) map.set(trackNum, artist);
-		}
-		break;
+		if (script.text.includes("track-lockup")) return script.text;
+	}
+	return undefined;
+};
+
+export const getTrackArtists = (
+	scriptText: string | undefined,
+): Map<number, string> => {
+	const map = new Map<number, string>();
+	if (scriptText === undefined) return map;
+	for (const match of scriptText.matchAll(TRACK_NUMBER_REGEX)) {
+		const trackNum = Number.parseInt(match[1], 10);
+		if (map.has(trackNum)) continue;
+		const artist = extractTrackArtist(scriptText, match);
+		if (artist !== undefined) map.set(trackNum, artist);
 	}
 	return map;
 };

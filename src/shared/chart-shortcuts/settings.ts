@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-
+import { equals } from "~/shared/utils/array";
 import type {
 	KeybindingsGetRequest,
 	KeybindingsGetResponse,
@@ -41,9 +41,7 @@ function overridesFrom(bindings: ChartShortcutBindings): BindingOverrides {
 	const defaults = defaultBindings();
 	const overrides: BindingOverrides = {};
 	for (const action of CHART_SHORTCUT_ACTIONS) {
-		const isDefault =
-			JSON.stringify(bindings[action.id]) ===
-			JSON.stringify(defaults[action.id]);
+		const isDefault = equals(bindings[action.id], defaults[action.id]);
 		if (!isDefault) overrides[action.id] = bindings[action.id];
 	}
 	return overrides;
