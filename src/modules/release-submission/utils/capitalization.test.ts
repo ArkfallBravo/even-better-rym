@@ -83,9 +83,13 @@ describe("title caps", () => {
 		["Edifice/Riftworm", "Edifice / Riftworm"],
 		["Frozen Heart / A Cracked Sea", "Frozen Heart / A Cracked Sea"],
 		["Frozen Heart  /    A Cracked Sea", "Frozen Heart / A Cracked Sea"],
-		// Emoticons keep their punctuation intact (was mangled to "Sorry : / /").
+		// Emoticons keep their punctuation intact (was mangled to "Sorry : / /")
+		// and their letter part stays uppercase (was lowercased to "Sorry :p").
 		["Sorry :/", "Sorry :/"],
 		["Nvm :)", "Nvm :)"],
+		["Sorry :P", "Sorry :P"],
+		["Haha :D", "Haha :D"],
+		[":P Forever", ":P Forever"],
 		["Howdy - Extended Mix", "Howdy (Extended Mix)"],
 		["This Thing - Vocal Mix", "This Thing (Vocal Mix)"],
 		["Ya Ya  -     Ayo    Remix", "Ya Ya (Ayo Remix)"],

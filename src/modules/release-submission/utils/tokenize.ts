@@ -1,9 +1,21 @@
 import { pipe } from "~/shared/utils/pipe";
 import { regexIndexOf, regexLastIndexOf } from "~/shared/utils/string";
 
-export type TokenType = "word" | "romanNumeral" | "whitespace" | "punctuation";
+export type TokenType =
+	| "word"
+	| "romanNumeral"
+	| "whitespace"
+	| "punctuation"
+	| "emoticon";
+
+// A text emoticon (":/", ":)", ";)", ":-P", "=(", …). Its own ":" "/" "(" ")"
+// must not be treated as phrase/token separators, and its letter part keeps
+// its conventional uppercase ("Sorry :P", not "Sorry :p"). The trailing
+// lookahead stops a real word from matching (":Paris", ":30").
+const EMOTICON_REGEX = /^[:;=][-'^o]?[)(/\\|dpo3*](?![a-z0-9])/i;
 
 const parsers: [TokenType, RegExp][] = [
+	["emoticon", EMOTICON_REGEX],
 	[
 		"romanNumeral",
 		/(?!mi)m*(?:c[dm]|d?c*)(?:x[cl]|l?x*)(?:i[vx]|v?i*)\b(?![''\u2018\u2019])/i,
@@ -60,10 +72,6 @@ const OPENING_BRACKETS = new Set(["(", "[", "{"]);
 const CLOSING_BRACKETS = new Set([")", "]", "}"]);
 
 const DONT_SPLIT = ["vs.", "v.", "etc."];
-
-// A text emoticon (":/", ":)", ";)", ":-P", "=(", …) whose own ":" "/" "(" ")"
-// characters would otherwise be treated as phrase separators.
-const EMOTICON_REGEX = /^[:;=][-'^o]?[)(/\\|DPpoO3*]/;
 
 // Returns the emoticon starting at `index`, if `index` begins one and is
 // preceded by whitespace or the start of the string.

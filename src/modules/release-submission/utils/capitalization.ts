@@ -49,7 +49,7 @@ const isWord = ({ type }: Token) => type === "word" || type === "romanNumeral";
 
 const toTitleCase = ({ text, type }: Token) => {
 	if (!text[0]) return text;
-	if (type === "romanNumeral") return text.toUpperCase();
+	if (type === "romanNumeral" || type === "emoticon") return text.toUpperCase();
 	return text[0].toUpperCase() + text.slice(1).toLowerCase();
 };
 
@@ -74,7 +74,7 @@ const capitalizePhrase =
 					phrase
 						.map((token, index) => {
 							if (index === firstWordIndex) return toTitleCase(token);
-							if (token.type === "romanNumeral")
+							if (token.type === "romanNumeral" || token.type === "emoticon")
 								return token.text.toUpperCase();
 							return token.text.toLowerCase();
 						})

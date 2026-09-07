@@ -178,20 +178,26 @@ trailing `/` hit a `regexIndexOf(..., /\S/)` that returned `-1`, and the
 final `text.slice(lastSplitIndex)` guard ran `text.slice(-1)` and
 re-appended the `/`.
 
-Fix (`0942e7c`, 2026-09-06): `splitPhrases` recognizes a text emoticon
-starting at a whitespace/start boundary (`EMOTICON_REGEX`) and skips it
-whole instead of splitting on its punctuation; the trailing-slash branch
-also guards the `-1` case so a slash with nothing after it no longer
-duplicates a character.
+Fix, in two parts (2026-09-06):
+- `0942e7c`: `splitPhrases` recognizes a text emoticon starting at a
+  whitespace/start boundary and skips it whole instead of splitting on its
+  punctuation; the trailing-slash branch also guards the `-1` case so a
+  slash with nothing after it no longer duplicates a character.
+- follow-up: `tokenizePhrase` has an `emoticon` token type (first parser,
+  `EMOTICON_REGEX`), and `capitalize` upper-cases emoticon tokens instead of
+  running them through `toTitleCase`, so `:P` / `:D` keep their conventional
+  case (`Sorry :P`, not `Sorry :p`).
 
 Deliberate scoping:
 - Emoticon "eyes" are only `[:;=]`, **not** `8`/`x`/`X`. Allowing those
   risked false positives on real single-letter titles (`X/Y`) and figures
   like `8/8`.
-- `:/ :) ;) =(` round-trip perfectly because their mouth char (`/ ) (`) is
-  its own token. `:P` / `:D` / `:3` tokenize as a single *word* token, so
-  title-case still lowercases the letter (`:P` → `:p`). Accepted as a minor
-  known limitation — not worth special-casing.
+- `EMOTICON_REGEX` matches case-insensitively (`capitalize` lower-cases
+  before tokenizing) and has a trailing `(?![a-z0-9])` lookahead so a real
+  word can't match (`:Paris`, `:30`). Lookahead only — no lookbehind, which
+  the iOS 15 Safari target doesn't support.
+- Emoticons are upper-cased as canonicalization, not case preservation: a
+  lower-case `:p` in the source still comes out `:P`.
 - Apple Music's `resolve.ts` still strips a trailing `" - EP"` / `" - Single"`
   from the title and uses it to set the release type. This was reconfirmed
   as correct: it's Apple's format-designation suffix (the whole artist

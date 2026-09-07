@@ -67,6 +67,26 @@ describe("tokenize", () => {
 				{ text: "Riftworm", type: "word" },
 			],
 		],
+		[
+			"sorry :P",
+			[
+				{ text: "sorry", type: "word" },
+				{ text: " ", type: "whitespace" },
+				{ text: ":P", type: "emoticon" },
+			],
+		],
+		[
+			"a :) b",
+			[
+				{ text: "a", type: "word" },
+				{ text: " ", type: "whitespace" },
+				{ text: ":)", type: "emoticon" },
+				{ text: " ", type: "whitespace" },
+				{ text: "b", type: "word" },
+			],
+		],
+		// "re:P" glued to a word is not an emoticon.
+		["re:P", [{ text: "re:P", type: "word" }]],
 	] as const;
 
 	test.each(tests)("correctly tokenizes %p", (input, output) =>
