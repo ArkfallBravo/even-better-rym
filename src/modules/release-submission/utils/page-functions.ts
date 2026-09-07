@@ -1,4 +1,4 @@
-import { runScript } from "~/shared/utils/dom";
+import { buildPollForGlobalScript, runScript } from "~/shared/utils/dom";
 
 const CREATE_SHORTCUT_PATCH_ATTEMPTS = 20;
 const CREATE_SHORTCUT_PATCH_INTERVAL_MS = 200;
@@ -22,18 +22,10 @@ export const goInfobox = (id: number): void =>
 // code; it polls because this content script runs at document_start, before
 // the page's own inline script (which defines createShortcut) has executed.
 export const patchCreateShortcut = (): void =>
-	void runScript(`
-		(function () {
-			var attempts = 0;
-			var interval = setInterval(function () {
-				attempts += 1;
-				if (attempts > ${CREATE_SHORTCUT_PATCH_ATTEMPTS}) {
-					clearInterval(interval);
-					return;
-				}
-				if (typeof window.createShortcut !== "function") return;
-				clearInterval(interval);
-
+	void runScript(
+		buildPollForGlobalScript(
+			`typeof window.createShortcut === "function"`,
+			`
 				var original = window.createShortcut;
 				window.createShortcut = function (type, assocId, text) {
 					var target = window.currentElement;
@@ -52,6 +44,8 @@ export const patchCreateShortcut = (): void =>
 					}
 					return result;
 				};
-			}, ${CREATE_SHORTCUT_PATCH_INTERVAL_MS});
-		})();
-	`);
+			`,
+			CREATE_SHORTCUT_PATCH_ATTEMPTS,
+			CREATE_SHORTCUT_PATCH_INTERVAL_MS,
+		),
+	);
