@@ -1,11 +1,5 @@
 # Todo
 
-- Finish and commit `tokenize.ts`/`tokenize.test.ts`/
-  `capitalization.test.ts` on `fix-apple-music-title-slash-mangling`
-  (surfaced 2026-09-06 as pre-existing uncommitted work, unrelated to that
-  session's `/simplify` pass) — presumably this branch's actual named fix
-  (Apple Music title slash mangling), still in progress.
-
 - Follow-up candidates surfaced but explicitly skipped by the 2026-09-06
   `/simplify` pass (see `docs/plan.md` for why each was held back — none
   are urgent, listed here so they aren't lost):
