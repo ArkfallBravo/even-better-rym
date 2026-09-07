@@ -1,5 +1,37 @@
 # Todo
 
+- Manually test the `/simplify` poll-and-patch refactor (2026-09-06, branch
+  `fix-apple-music-title-slash-mangling`, uncommitted) before committing:
+  `dom.ts`'s new `buildPollForGlobalScript` helper, used by
+  `chart-shortcuts/app.ts`'s `patchRYMChartRemoval` and
+  `release-submission/utils/page-functions.ts`'s `patchCreateShortcut`.
+  Test creating/rebinding a chart shortcut and using the release-submission
+  "create shortcut" (artist/work link insertion) flow in the Safari-wrapped
+  app. See `docs/plan.md` for the full before/after.
+
+- Finish and commit `tokenize.ts`/`tokenize.test.ts`/
+  `capitalization.test.ts` on `fix-apple-music-title-slash-mangling`
+  (surfaced 2026-09-06 as pre-existing uncommitted work, unrelated to that
+  session's `/simplify` pass) — presumably this branch's actual named fix
+  (Apple Music title slash mangling), still in progress.
+
+- Follow-up candidates surfaced but explicitly skipped by the 2026-09-06
+  `/simplify` pass (see `docs/plan.md` for why each was held back — none
+  are urgent, listed here so they aren't lost):
+  - `fetch.ts`'s direct-fetch-before-background-fallback always retries a
+    doomed request for hosts that need the background path; a per-host
+    CORS-failure allow-list/memoization would avoid the wasted round-trip.
+  - `background/index.ts`'s tab-scoped dispatcher's catch-all fallback
+    hardcodes `type: "fetch"` regardless of the original request's type —
+    blocked on `DownloadResponse`/`ScriptResponse` (kknq's types) having no
+    field to carry an error.
+  - `use-release-info.ts`'s `fetchInfo` pushes the "commit complete state"
+    decision to its callers (`cover-art-downloader.tsx`,
+    `release-submission/app.tsx`), each reimplementing the same `if
+    (isComplete(...)) setInfo(...)` check — could be centralized back into
+    the hook via an `onComplete` callback parameter.
+
+
 - **Bug found (2026-08-22)**: pressing a bound "Include descriptor" shortcut
   (`includeDescriptor`, e.g. the user's `Ctrl+Shift+O` binding) adds **two**
   chips to the chart's "Include descriptors" list — the correct matched

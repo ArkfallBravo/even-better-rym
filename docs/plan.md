@@ -1,5 +1,90 @@
 # Plan / open work
 
+- `/simplify` pass on `fix-apple-music-title-slash-mangling` (2026-09-06,
+  **partially committed** — safe half landed as `afe3274`, the rest is
+  waiting on manual Safari testing): no recent commit's message actually
+  started with "Simplify:" (only a 2022 `b9e8647` — predates the convention),
+  so diffing "since the last simplify commit" would have meant the whole
+  427-file, ~70k-line project history. Re-scoped, per the user's own
+  clarification, to "everything we've written that isn't from kknq upstream":
+  `git diff <merge-base-with-upstream/main>..main` (merge-base `25ce505e`),
+  excluding non-code reference-dump files (`charts_source.html`,
+  `apple_music_source.html`, the saved uBlock issue HTML, `docs/*.md`,
+  `package-lock.json`) — 79 source files / ~3,840 lines.
+
+  **Important correction mid-session** (now saved as a memory update, see
+  `[[feedback-upstream-kknq-code]]`): the user clarified that "don't touch
+  kknq's code" means *authored-by-us*, not *falls after the fork's
+  merge-base* — code we wrote can also have been contributed back into
+  kknq's own repo and would still be ours to simplify. Re-verified every
+  finding with `git blame -e -L <range> <file>` against author identity
+  (`Helena Simson`/`ArkfallBravo` share one email) before touching it, not
+  by which side of the merge-base the file fell on.
+
+  Ran 4 parallel review agents (reuse / simplification / efficiency /
+  altitude) against the filtered diff. **Fixed and committed** (`afe3274`,
+  all verified ours via blame, verified with `tsc --noEmit` + `npm run
+  build` + `npx biome check` + `npx vitest run`, 146/146 passing):
+  - `storage.ts`: removed leftover debug `console.log`/`getBytesInUse`
+    instrumentation from `get`/`set` (flagged independently by all 3 of the
+    reuse/simplification/altitude agents) — restored to byte-identical to
+    upstream's original.
+  - `native-settings.ts`: collapsed 4 duplicated `if (!response.ok) throw
+    ...` blocks into one `assertNativeOk` TS assertion-function helper.
+  - `chart-shortcuts/settings.ts`: `overridesFrom` now calls the existing
+    `array.ts`'s `equals()` instead of reimplementing array comparison via
+    `JSON.stringify`.
+  - `applemusic/{resolve,track-artists}.ts`: extracted a shared
+    `findTrackLockupScriptText` helper so `getIsVariousArtists`/
+    `getTrackArtists` share one DOM scan instead of each independently
+    walking `document_.querySelectorAll("script")`.
+
+  **Fixed but held back, uncommitted** (needs manual Safari testing per the
+  project's manual-testing-before-commit rule — these generate JS injected
+  into live RYM pages, which `tsc`/`vitest` can't exercise): added
+  `dom.ts`'s `buildPollForGlobalScript` helper and had
+  `chart-shortcuts/app.ts`'s `patchRYMChartRemoval` and
+  `release-submission/utils/page-functions.ts`'s `patchCreateShortcut`
+  (near-identical "poll for a page-world global every 200ms up to 20
+  attempts, then monkey-patch it" scripts) both build off it instead of
+  each hand-rolling the same polling loop. Needs: create/rebind a chart
+  shortcut and use the release-submission "create shortcut" flow in the
+  Safari-wrapped app before this gets committed.
+
+  **Investigated and explicitly skipped**, each for a documented reason
+  (not silently dropped — see `docs/todo.md` for the ones worth revisiting):
+  URL-param-loop duplication between `shared/utils/fetch.ts` (ours) and
+  `background/fetch.ts` (kknq's — fixing it means editing kknq's loop);
+  `fetch.ts`'s direct-fetch-before-background-fallback extra network
+  round-trip on CORS-blocked hosts (a deliberate, already-commented design
+  tradeoff, not an accident); the small `onClickCreateChart`-suppression
+  snippet duplicated twice in `chart-shortcuts/app.ts` (judged not worth
+  nested-template-string complexity for 4 lines); `use-release-info.ts`
+  pushing the "commit complete state" decision out to its callers (this was
+  itself a deliberate change made earlier in this fork, not an accident —
+  undoing it means reworking the hook's public API and both call sites);
+  `background/index.ts`'s hardcoded `type: "fetch"` fallback in the
+  tab-scoped dispatcher's catch path (real gap, but `DownloadResponse`/
+  `ScriptResponse` — kknq's types — have no field to carry an error, so a
+  correct fix needs widening kknq-authored type declarations);
+  `import-controls.tsx`'s sequential `await fill(...)` before `await
+  download(...)` (parallelizing would delay when `setInfo` commits the
+  "complete" state relative to the cover-art download finishing — a real
+  timing/UX change, not verifiable without running the live import flow);
+  `runScript`'s direct `<script>`-tag injection vs. `fetchInPage`'s
+  still-background-routed injection (confirmed via `git log -S` this is a
+  deliberate, documented fix — commit `218d29b`, "fix: Streaming links
+  visible" — for `scripting.executeScript` being unavailable in iOS
+  Safari's MV2 background, not architectural drift).
+
+  **Also surfaced**: `tokenize.ts`/`tokenize.test.ts`/
+  `capitalization.test.ts` were sitting modified on this branch,
+  pre-dating and unrelated to this `/simplify` session (this branch's
+  actual named purpose, the Apple Music title-slash-mangling fix,
+  presumably) — excluded from the `/simplify` commit; still uncommitted,
+  see `docs/todo.md`.
+
+
 - App Store v1.1 submission prep (started 2026-08-14): tagged the exact
   commit that was on `main` when the v1.0 build was submitted for review
   (`app-store-v1.0-submission` on `5d776223`, pushed to origin — see
