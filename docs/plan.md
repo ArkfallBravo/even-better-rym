@@ -39,17 +39,16 @@
     `getTrackArtists` share one DOM scan instead of each independently
     walking `document_.querySelectorAll("script")`.
 
-  **Fixed but held back, uncommitted** (needs manual Safari testing per the
-  project's manual-testing-before-commit rule — these generate JS injected
-  into live RYM pages, which `tsc`/`vitest` can't exercise): added
-  `dom.ts`'s `buildPollForGlobalScript` helper and had
-  `chart-shortcuts/app.ts`'s `patchRYMChartRemoval` and
+  **Fixed and fully committed**: added `dom.ts`'s `buildPollForGlobalScript`
+  helper so `chart-shortcuts/app.ts`'s `patchRYMChartRemoval` and
   `release-submission/utils/page-functions.ts`'s `patchCreateShortcut`
   (near-identical "poll for a page-world global every 200ms up to 20
   attempts, then monkey-patch it" scripts) both build off it instead of
-  each hand-rolling the same polling loop. Needs: create/rebind a chart
-  shortcut and use the release-submission "create shortcut" flow in the
-  Safari-wrapped app before this gets committed.
+  each hand-rolling the same polling loop — split into two commits so each
+  half only landed once its own manual Safari test passed: `dom.ts` +
+  `chart-shortcuts/app.ts` as `93fff72` (chart-shortcut creation/removal
+  confirmed working), then `page-functions.ts` as `9328427` (inserting an
+  artist/work link into a track title confirmed working).
 
   **Investigated and explicitly skipped**, each for a documented reason
   (not silently dropped — see `docs/todo.md` for the ones worth revisiting):

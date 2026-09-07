@@ -1,14 +1,5 @@
 # Todo
 
-- Manually test the `/simplify` poll-and-patch refactor (2026-09-06, branch
-  `fix-apple-music-title-slash-mangling`, uncommitted) before committing:
-  `dom.ts`'s new `buildPollForGlobalScript` helper, used by
-  `chart-shortcuts/app.ts`'s `patchRYMChartRemoval` and
-  `release-submission/utils/page-functions.ts`'s `patchCreateShortcut`.
-  Test creating/rebinding a chart shortcut and using the release-submission
-  "create shortcut" (artist/work link insertion) flow in the Safari-wrapped
-  app. See `docs/plan.md` for the full before/after.
-
 - Finish and commit `tokenize.ts`/`tokenize.test.ts`/
   `capitalization.test.ts` on `fix-apple-music-title-slash-mangling`
   (surfaced 2026-09-06 as pre-existing uncommitted work, unrelated to that
