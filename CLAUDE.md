@@ -55,6 +55,8 @@ Signing is `CODE_SIGN_STYLE = Automatic` / `CODE_SIGN_IDENTITY = Apple Developme
 
 Caveat: `xcodebuild build` on its own bumped `CURRENT_PROJECT_VERSION` in `project.pbxproj` as a side effect of building (10 → 11, observed 2026-08-23) even though no source changed — worth checking `git diff EvenBetterRYM.xcodeproj/project.pbxproj` after a CLI build if you weren't intending to touch versioning, since it's easy to accidentally bundle an unintended build-number bump into an unrelated commit.
 
+**Gotcha: don't run two copies of the app at once.** If a prior build was ever launched from `/Applications` (e.g. an earlier manual install) and a newer one is also running from Xcode's debug build-products folder (the `open .../BUILT_PRODUCTS_DIR/EvenBetterRYM.app` step above), having both open simultaneously breaks feature-toggle persistence — settings appeared not to survive a page reload or a new Safari session (observed 2026-09-11). Quit whichever copy isn't the one you're actively testing before relying on native-settings behavior; only one running instance should own the extension at a time.
+
 ## Debugging: reaching the extension's own pages in Safari
 
 To open any extension-internal page directly (background page, or the
