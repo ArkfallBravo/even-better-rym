@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
 
 import { convertAppleMusicDuration } from "./convert";
-import { extractTrackArtist, TRACK_NUMBER_REGEX } from "./track-artists";
+import {
+	extractTrackArtists,
+	getAlbumHeaderArtists,
+	TRACK_NUMBER_REGEX,
+} from "./track-artists";
 
 describe("convertAppleMusicDuration", () => {
 	const cases = [
@@ -15,15 +19,15 @@ describe("convertAppleMusicDuration", () => {
 	});
 });
 
-describe("extractTrackArtist", () => {
+describe("extractTrackArtists", () => {
 	test("extracts the artist within the track's own object", () => {
 		const scriptText =
 			'{"trackNumber":1,"subtitleLinks":[{"title":"Artist A"}],"other":"x"},' +
 			'{"trackNumber":2,"subtitleLinks":[{"title":"Artist B"}],"other":"y"}';
 		const matches = [...scriptText.matchAll(TRACK_NUMBER_REGEX)];
 
-		expect(extractTrackArtist(scriptText, matches[0])).toBe("Artist A");
-		expect(extractTrackArtist(scriptText, matches[1])).toBe("Artist B");
+		expect(extractTrackArtists(scriptText, matches[0])).toEqual(["Artist A"]);
+		expect(extractTrackArtists(scriptText, matches[1])).toEqual(["Artist B"]);
 	});
 
 	test("handles nested objects between trackNumber and subtitleLinks", () => {
@@ -32,7 +36,7 @@ describe("extractTrackArtist", () => {
 			'{"storeAdamID":"1"}},"subtitleLinks":[{"title":"Artist A"}]}';
 		const [match] = scriptText.matchAll(TRACK_NUMBER_REGEX);
 
-		expect(extractTrackArtist(scriptText, match)).toBe("Artist A");
+		expect(extractTrackArtists(scriptText, match)).toEqual(["Artist A"]);
 	});
 
 	test("does not leak into unrelated content when a track has no subtitleLinks", () => {
@@ -46,7 +50,49 @@ describe("extractTrackArtist", () => {
 			'"recommendations":{"subtitleLinks":[{"title":"2020"}]}';
 		const matches = [...scriptText.matchAll(TRACK_NUMBER_REGEX)];
 
-		expect(extractTrackArtist(scriptText, matches[0])).toBe("Artist A");
-		expect(extractTrackArtist(scriptText, matches[1])).toBeUndefined();
+		expect(extractTrackArtists(scriptText, matches[0])).toEqual(["Artist A"]);
+		expect(extractTrackArtists(scriptText, matches[1])).toEqual([]);
+	});
+	test("returns every distinct artist when a track has several", () => {
+		const scriptText =
+			'{"trackNumber":17,"subtitleLinks":[' +
+			'{"title":"Parallx","segue":{"destination":{"contentDescriptor":' +
+			'{"kind":"artist","identifiers":{"storeAdamID":"961290429"}}}}},' +
+			'{"title":"NENDZA","segue":{"destination":{"contentDescriptor":' +
+			'{"kind":"artist","identifiers":{"storeAdamID":"1198760356"}}}}}' +
+			'],"artistName":"Parallx & NENDZA"}';
+		const [match] = scriptText.matchAll(TRACK_NUMBER_REGEX);
+
+		expect(extractTrackArtists(scriptText, match)).toEqual([
+			"Parallx",
+			"NENDZA",
+		]);
+	});
+
+	test("keeps an artist name containing brackets or an ampersand whole", () => {
+		const scriptText =
+			'{"trackNumber":1,"subtitleLinks":[{"title":"Simon & Garfunkel"},' +
+			'{"title":"Odd ] Name {x}"}]}';
+		const [match] = scriptText.matchAll(TRACK_NUMBER_REGEX);
+
+		expect(extractTrackArtists(scriptText, match)).toEqual([
+			"Simon & Garfunkel",
+			"Odd ] Name {x}",
+		]);
+	});
+});
+
+describe("getAlbumHeaderArtists", () => {
+	test("reads only the first subtitleLinks array", () => {
+		const script =
+			'{"subtitleLinks":[{"title":"1000 Eyes"},{"title":"Tom Schley"}]},' +
+			'{"trackNumber":1,"subtitleLinks":[]},' +
+			'{"subtitleLinks":[{"title":"Various Artists"}]}';
+
+		expect(getAlbumHeaderArtists(script)).toEqual(["1000 Eyes", "Tom Schley"]);
+	});
+
+	test("returns nothing when there are no subtitleLinks", () => {
+		expect(getAlbumHeaderArtists('{"trackNumber":1}')).toEqual([]);
 	});
 });

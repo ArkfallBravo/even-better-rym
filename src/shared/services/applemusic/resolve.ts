@@ -15,9 +15,14 @@ import type {
 } from "../types";
 import type { MusicVideoData, ReleaseData } from "./codec";
 import { convertAppleMusicDuration } from "./convert";
-import { findTrackLockupScriptText, getTrackArtists } from "./track-artists";
+import {
+	findTrackLockupScriptText,
+	getAlbumHeaderArtists,
+	getTrackArtists,
+} from "./track-artists";
 
 const FULL_IMAGE_SIZE = "3000x3000bb.jpg";
+const VARIOUS_ARTISTS = "Various Artists";
 
 const BROWSER_LIKE_HEADERS = {
 	Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -105,9 +110,11 @@ const parseLabelAndType = (
 	};
 };
 
+// Only the album header counts: "Various Artists" also shows up on
+// recommended albums further down the page.
 const getIsVariousArtists = (scriptText: string | undefined): boolean =>
 	scriptText !== undefined &&
-	/"subtitleLinks":\[\{"title":"Various Artists"/.test(scriptText);
+	getAlbumHeaderArtists(scriptText)[0] === VARIOUS_ARTISTS;
 
 const resolveAlbumFields = (
 	release: ReleaseData,
@@ -117,12 +124,12 @@ const resolveAlbumFields = (
 	const trackArtists = getTrackArtists(trackLockupScriptText);
 	const tracks = release.tracks.map((t, i) => {
 		const position = String(i + 1);
-		const artist = trackArtists.get(i + 1);
+		const artists = trackArtists.get(i + 1);
 		return {
 			position,
 			title: t.name,
 			duration: ifDefined(convertAppleMusicDuration)(t.duration),
-			...(artist !== undefined ? { artists: [artist] } : {}),
+			...(artists !== undefined ? { artists } : {}),
 		};
 	});
 
@@ -148,7 +155,7 @@ const resolveAlbumFields = (
 	);
 
 	const artists = getIsVariousArtists(trackLockupScriptText)
-		? ["Various Artists"]
+		? [VARIOUS_ARTISTS]
 		: release.byArtist.map((a) => a.name);
 
 	return {

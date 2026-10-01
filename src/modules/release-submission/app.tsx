@@ -1,4 +1,5 @@
 import injectArtistLinkFormatting from "./use-cases/artist-link-formatting";
+import injectArtistLinkPicker from "./use-cases/artist-link-picker";
 import injectCatalogNumberControls from "./use-cases/catalog-number-controls";
 import injectCreditsControls from "./use-cases/credits-controls";
 import injectDateControls from "./use-cases/date-controls";
@@ -12,6 +13,7 @@ export const main = () =>
 		injectImportControls(),
 		injectTracklistControls(),
 		injectArtistLinkFormatting(),
+		injectArtistLinkPicker(),
 		injectFileUnderControls(),
 		injectCreditsControls(),
 		injectLabelControls(),

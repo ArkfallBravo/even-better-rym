@@ -170,6 +170,12 @@
   apply "Update to recommended settings" (not done yet, just made safely
   revertible), and whether to clean up the stray copy-Info.plist / the
   `GENERATE_INFOPLIST_FILE`/`INFOPLIST_FILE` conflict that likely caused it.
+  Observed 2026-10-01: `EvenBetterRYM/project.pbxproj` has an uncommitted
+  change, not made by Claude, switching all four macOS configurations'
+  `MACOSX_DEPLOYMENT_TARGET` from `11.0` to
+  `$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)` (resolves to 14.0 under Xcode 27).
+  That's plausibly this "recommended settings" update having been applied.
+  Unconfirmed, and the keep/revert decision is tracked in `docs/todo.md`.
 
 - `chart-searchbar` → `main`: brought the `chart-shortcuts` feature
   work over (done 2026-08-06, squashed as `f96852bd` — see `CLAUDE.md`'s
@@ -875,6 +881,170 @@
   `feedback-commit-means-both-repos`): a bare "commit" from the user means
   commit in **both** repos when both have relevant uncommitted work, not
   just whichever one the conversation was most recently focused on.
+
+- Tracklist artist-link picker (started 2026-10-01, branch
+  `tracklist-artist-links`, **implemented and uncommitted. The first Safari
+  test failed; the follow-up fix is built into `/Applications` but not yet
+  confirmed**). Goal: on import,
+  prefix track titles with `[ArtistNNNN] - ` links for per-track artists
+  without ever guessing which RYM artist is meant. The earlier bulk
+  auto-link (`5ed78c7`, credits flavor) was pulled because it clicked the
+  first search result blindly; per the user, a RYM mod objected to the
+  resulting wrong links. New approach (user's idea): collect each *unique*
+  track-artist name, show the user one picker per name, then apply each
+  chosen link to every track with that name. Scope is track-title links
+  only (option 1), not credits.
+
+  Findings:
+  - `fillTracks` (`release-submission/utils/fillers.ts`, upstream kknq
+    code) writes `position|title|duration` only and never uses
+    `track.artists`; the picker rewrites titles afterward instead of
+    touching it. Only Apple Music sets `Track.artists` (now one entry per
+    distinct artist; see below). Spotify drops per-track artists and `alert()`s on likely VA
+    releases. Beatport bakes plain `"Name1, Name2 - "` text straight into
+    `title`. So per-service artist data has to be normalized before any of
+    this works beyond Apple Music.
+  - **No custom search UI** (user's call): the picker is RYM's own "Insert
+    link to artist or work" popup, so the user sees RYM's real results and
+    we don't need to know what a result row contains. Popup internals,
+    verified from `cdn.sonemic.net/2.5/js/shortcut.js` (fetchable; only
+    rateyourmusic.com itself is Cloudflare-blocked), the saved
+    `Release Editing - Rate Your Music.html`, and the user's Web Inspector
+    paste of the iframe:
+    - `openShortcut(element)` shows `#shortcut` and calls
+      `viewshortcut('shortcutartist','')`, which loads
+      `/go/search2?type=shortcutartist&func=` into `#shortcutsearchframe`.
+    - The iframe's search box is a GET form (no `action`, so it submits to
+      the same path) with `#searchterm` plus hidden `searchtype=a`,
+      `searchdest=a`, `func=`. To pre-fill, either fill `#searchterm` and
+      submit that form through `contentDocument` (same origin). That approach
+      is the one implemented, and it's confirmed working in Safari: the frame
+      loaded `go/search2?searchterm=…&searchtype=a&searchdest=a&func=`.
+    - The release-edit page's inline `createShortcut(type, assoc_id, text)`
+      inserts into the page-global `currentElement` and does **not** close
+      the popup (`closeShortcut()` is commented out), unlike the CDN
+      version. In the user's Safari, though, the result rows' inline
+      `onclick` never reaches it (see "First Safari test" below), so the
+      picker doesn't use `createShortcut`/`currentElement` at all.
+  - **One pick per individual artist (option 1).** Dedupe artist names
+    across tracks and have the user pick once per name. Each pick applies to
+    every track that name appears on. Example: tracks `A` / `A & B` /
+    `B & C` need three picks.
+  - **Artists are separated the way Apple Music separates them, not by
+    splitting text** (user's call, so band names like `Simon & Garfunkel`
+    stay whole). Verified in `apple_music_source.html`: each track's
+    `"subtitleLinks"` array has **one entry per distinct artist**, each with
+    its own Apple artist ID (track 17 there has `["Parallx", "NENDZA"]`).
+    The combined display string (`"artistName":"Parallx & NENDZA"`) is a
+    separate field. `extractTrackArtist`
+    (`services/applemusic/track-artists.ts`, our own code, not upstream)
+    currently reads only `subtitleLinks[0].title`, so today a multi-artist
+    track silently loses every artist after the first. Change it to return
+    every entry's `title` as `Track.artists`. That fixes the loss and
+    provides the per-artist list with no delimiter guessing. The saved file
+    has no band-with-`&` example, so treating one as a single entry is
+    inferred from Apple's per-artist link model, not observed.
+  - Rejected capture mechanism (first implementation): point
+    `currentElement` at a hidden scratch input and read `assocId` from
+    `patchCreateShortcut`'s `EbrArtistShortcutInsertedEvent`. It failed
+    because `createShortcut` never runs; it was replaced by reading the
+    clicked row directly (below).
+  - Final title per track:
+    `arrayToArtists(names.map(name => token ?? name)) + ARTIST_SEPARATOR +
+    capitalizedTitle`, in the track's own artist order (not pick order).
+    Capitalize first so `capitalize` never touches tokens or names.
+    Gotcha: `arrayToArtists` mutates its input (`pop()`), so pass a copy.
+  - Planned layering: splitting/grouping and title building as pure
+    functions in `utils/` with tests; page-world popup driving in
+    `utils/page-functions.ts`; the picker panel in `use-cases/`.
+
+  Decisions (user, 2026-10-01):
+  - **No preselection.** Every artist starts unpicked, even on an exact name
+    match, because RYM has many same-name artists. This overrides
+    `docs/todo.md`'s "auto-select exact match" item for this feature.
+  - **Every track gets a prefix, always** (user, 2026-10-01, replacing the
+    first rule of "only tracks whose artists differ from the release's").
+    A track with no artists of its own uses the release artists. Apple Music
+    leaves `subtitleLinks` empty on tracks by the album artists, e.g. 48 of
+    the 57 tracks on Vholume (Original Soundtrack) by 1000 Eyes & Tom
+    Schley, so under the old rule those tracks got no prefix.
+  - **Skipped artist:** keep the plain-text name in the prefix
+    (`[Artist123] & Some Name - Title`).
+  - **Apple Music first.** Spotify/Beatport/LiveMixtapes switching to
+    per-track artist data is a separate follow-up, tracked in `docs/todo.md`.
+
+  Implementation (2026-10-01; compiles and unit tests pass):
+  - `applemusic/track-artists.ts`: `extractTrackArtists` returns every
+    `subtitleLinks` title, using a string-aware bracket matcher plus
+    `JSON.parse`. `getTrackArtists` returns `Map<number, string[]>`.
+  - `release-submission/utils/track-artist-links.ts` (pure, tested):
+    `withReleaseArtistFallback`, `getDistinctTrackArtists`, `buildLinkedTitle`,
+    `buildRelinkPlan`, `relinkTracklistLines`.
+  - `utils/page-functions.ts`: `openArtistLinkPopup(anchorId)`,
+    `closeShortcutPopup`, `showAdvancedTracklist`/`showSimpleTracklist`.
+    `utils/shortcut-popup.ts`: `prefillArtistSearch` loads
+    `/go/search2?type=shortcutartist&func=` fresh in the popup iframe, then
+    fills and submits its `#searchterm` form.
+  - `use-cases/artist-link-picker.tsx`: panel below `#tracks_adv`, driven by
+    `importEvent`. A pick auto-advances to the next unpicked artist, and
+    Apply rewrites `#track_advanced` once.
+
+  First Safari test (2026-10-01): opening the popup and filling in the
+  search both worked (the frame loaded
+  `go/search2?searchterm=Tom+Schley&searchtype=a&searchdest=a&func=`), but
+  clicking a result did nothing. Temporary logging showed RYM's
+  `createShortcut` was never called, **even from RYM's own popup with the
+  picker uninvolved**. Each result row is
+  `<div onclick="window.parent.createShortcut('a', 'NNN');return false;">`
+  (inline handler), and those inline handlers don't run in the user's Safari.
+  Suspected cause: the console's "Refused to execute a script … 'unsafe-inline'
+  … Content Security Policy" errors. Interference from AdGuard or the
+  userscript manager (both inject into that frame) is not ruled out.
+  Click fix: `watchArtistResultClicks` (`utils/shortcut-popup.ts`) adds a
+  capture-phase click listener to the frame's `contentDocument` (re-attached
+  on every frame `load`) and reads the artist id from the clicked row's
+  `onclick` attribute text with `parseArtistResultId` (tested), so nothing
+  depends on RYM's handler running. This removed the hidden scratch input,
+  the `setCurrentElement` call, and the picker's use of
+  `EbrArtistShortcutInsertedEvent`. Temporary logging removed.
+
+  Second Safari test (2026-10-01): **clicking a result now links the
+  artist** (confirmed by the user). Apply only prefixed the tracks whose
+  artists differed from the album's, which led to the every-track rule
+  above. In the third test the album-artist tracks were prefixed with
+  "Various Artists". Root cause: `getIsVariousArtists`
+  (`applemusic/resolve.ts`) matched `"subtitleLinks":[{"title":"Various
+  Artists"` anywhere in the track-lockup script, and on this page that hit a
+  recommended album ("Lunacid (Original Game Soundtrack)") listed after the
+  tracklist. The whole release was treated as VA, so the release artists
+  (and the fallback) became "Various Artists". This contradicts what
+  `b99039c` meant to do ("check the album-level subtitleLinks"). Fix:
+  `getAlbumHeaderArtists` (`track-artists.ts`, tested) reads only the
+  script's first `subtitleLinks` array, which is the album header on both
+  pages checked (Vholume: `["1000 Eyes", "Tom Schley"]`, before the first
+  `trackNumber`; `apple_music_source.html`: `E.DN`, likewise). A real VA
+  page hasn't been checked, so "the VA header comes first" is inferred.
+  This also fixes the release-artist field, which was being filled with
+  Various Artists on such pages.
+
+  Third Safari test (2026-10-01): **the user confirmed linking and Apply
+  both work** on Vholume, with album-artist tracks prefixed with
+  `[Artist1639184] & Tom Schley`.
+
+  Follow-up (user, 2026-10-01): Apply must stay clickable so a changed
+  link or name can be reapplied; it no longer locks into "Applied". To keep
+  a second Apply from stacking a second prefix, the picker remembers the
+  plan it last applied (`appliedPlan`). Each Apply first runs
+  `unlinkTracklistLines(text, appliedPlan)` to strip exactly those prefixes,
+  then `relinkTracklistLines(text, newPlan)`. Stripping only removes an
+  exact match (`removeLinkedPrefix`), so a title the user edited by hand
+  keeps its edit, but if they changed the prefix itself it gets a second
+  prefix. Reapply confirmed working in Safari by the user (2026-10-01), and
+  the work is committed on branch `tracklist-artist-links` (not merged to
+  `main`). Popup internals written into `CLAUDE.md`. Still unchecked:
+  a real VA album still imports as Various Artists; the popup's position
+  beside the panel; and a band name containing `&` arriving as one Apple
+  Music entry.
 
 ## Archived initiatives
 

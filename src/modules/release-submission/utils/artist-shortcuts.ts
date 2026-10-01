@@ -1,7 +1,17 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : artist-shortcuts.ts
+//
+// PURPOSE : [ArtistNNNN] token building and track-title artist list joining
+//
+// CREATED : 8/23/2026
+//
+// ----------------------------------------------------------------------- //
+
 import { arrayToArtists } from "~/shared/utils/string";
 
 const TRACK_TITLE_ID_PATTERN = /^track_track_title\d+$/;
-const ARTIST_SEPARATOR = " - ";
+export const ARTIST_SEPARATOR = " - ";
 const ARTIST_LIST_DELIMITER = /\s*&\s*|\s*,\s*/;
 const ARTIST_LINK_PATTERN = /\[Artist\d+]/;
 

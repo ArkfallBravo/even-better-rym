@@ -187,10 +187,24 @@
   rateyourmusic.com navigation. Confirmed unrelated to the CORS
   investigation above — separate real bug.
 
-- Track-artist autofill should only auto-select an exact match; when
-  multiple candidate matches are found for a track artist, it should not
-  silently pick one — display a warning to the user instead so they can
-  resolve it manually.
+- Track-artist autofill should never auto-select a match. Instead, prefill
+  RYM's artist search with each distinct track artist (one entry per
+  distinct artist, as the source service lists them) and let the user pick
+  the result. Being built on branch `tracklist-artist-links`; see
+  `docs/plan.md`.
+
+- Decide the macOS deployment target for v1.3. `EvenBetterRYM/project.pbxproj`
+  has an uncommitted change (2026-10-01, source unconfirmed, probably Xcode's
+  "Update to recommended settings") raising it from 11.0 to
+  `$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)` = 14.0, which would drop macOS
+  11–13 users. Xcode 27 only warns below 12.0, so the options are to keep 14.0
+  or set 12.0. Commit or revert accordingly.
+
+- Extend the tracklist artist-link picker (branch `tracklist-artist-links`,
+  see `docs/plan.md`) beyond Apple Music: make Spotify, Beatport, and
+  LiveMixtapes return per-track artists as `Track.artists` data instead of
+  baking plain names into `title` (Beatport/LiveMixtapes) or dropping them
+  with an `alert()` (Spotify).
 
 - Tracklisting import should strip "feat. <artist>" (and variants) out of
   track titles and instead add those artists to the track's credits with
