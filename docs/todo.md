@@ -187,11 +187,15 @@
   rateyourmusic.com navigation. Confirmed unrelated to the CORS
   investigation above — separate real bug.
 
-- Track-artist autofill should never auto-select a match. Instead, prefill
-  RYM's artist search with each distinct track artist (one entry per
-  distinct artist, as the source service lists them) and let the user pick
-  the result. Being built on branch `tracklist-artist-links`; see
-  `docs/plan.md`.
+- Import a real Various Artists album from Apple Music on `main` and check
+  it still comes in as Various Artists. The VA check was narrowed to the
+  album header on 2026-10-01 (see the picker entry in `docs/plan.md`) and
+  hasn't been tried on a VA page since.
+
+- Check who wrote `fillers.ts` lines 251 and 254 (`git blame -e`), which
+  ESLint flags with `@typescript-eslint/await-thenable` on the fork's
+  `main`, before deciding whether to fix them. The file is mostly upstream
+  (kknq) code.
 
 - Decide the macOS deployment target for v1.3. `EvenBetterRYM/project.pbxproj`
   has an uncommitted change (2026-10-01, source unconfirmed, probably Xcode's
@@ -200,8 +204,8 @@
   11–13 users. Xcode 27 only warns below 12.0, so the options are to keep 14.0
   or set 12.0. Commit or revert accordingly.
 
-- Extend the tracklist artist-link picker (branch `tracklist-artist-links`,
-  see `docs/plan.md`) beyond Apple Music: make Spotify, Beatport, and
+- Extend the tracklist artist-link picker (on `main`, see `docs/plan.md`)
+  beyond Apple Music: make Spotify, Beatport, and
   LiveMixtapes return per-track artists as `Track.artists` data instead of
   baking plain names into `title` (Beatport/LiveMixtapes) or dropping them
   with an `alert()` (Spotify).
@@ -294,6 +298,7 @@
   `src/modules/stream-links/stream-link.tsx` and
   `src/shared/services/applemusic/search.ts`, apparently from a prior
   debugging session) is sitting on the stash stack — surfaced accidentally
-  2026-08-06 by an unrelated `git stash`/`git stash pop` and restored as
-  `stash@{0}` with a descriptive message rather than dropped. Needs the
+  2026-08-06 by an unrelated `git stash`/`git stash pop` and restored with
+  a descriptive message rather than dropped. Find it by that message in
+  `git stash list`, since its index shifts as other stashes are added. Needs the
   user's call: turn it into a real commit, or drop it.

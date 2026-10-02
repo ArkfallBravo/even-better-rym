@@ -882,10 +882,10 @@
   commit in **both** repos when both have relevant uncommitted work, not
   just whichever one the conversation was most recently focused on.
 
-- Tracklist artist-link picker (started 2026-10-01, branch
-  `tracklist-artist-links`, **implemented and uncommitted. The first Safari
-  test failed; the follow-up fix is built into `/Applications` but not yet
-  confirmed**). Goal: on import,
+- Tracklist artist-link picker (started 2026-10-01 on branch
+  `tracklist-artist-links`, **confirmed working in Safari and merged into
+  `main` on 2026-10-02; a few edge cases are unchecked, and the upstream PR
+  is on hold**, see the end of this entry). Goal: on import,
   prefix track titles with `[ArtistNNNN] - ` links for per-track artists
   without ever guessing which RYM artist is meant. The earlier bulk
   auto-link (`5ed78c7`, credits flavor) was pulled because it clicked the
@@ -936,12 +936,12 @@
     `"subtitleLinks"` array has **one entry per distinct artist**, each with
     its own Apple artist ID (track 17 there has `["Parallx", "NENDZA"]`).
     The combined display string (`"artistName":"Parallx & NENDZA"`) is a
-    separate field. `extractTrackArtist`
+    separate field. The old `extractTrackArtist`
     (`services/applemusic/track-artists.ts`, our own code, not upstream)
-    currently reads only `subtitleLinks[0].title`, so today a multi-artist
-    track silently loses every artist after the first. Change it to return
-    every entry's `title` as `Track.artists`. That fixes the loss and
-    provides the per-artist list with no delimiter guessing. The saved file
+    read only `subtitleLinks[0].title`, so a multi-artist track silently
+    lost every artist after the first. It now returns every entry's `title`
+    as `Track.artists`, which fixes the loss and gives the per-artist list
+    with no delimiter guessing. The saved file
     has no band-with-`&` example, so treating one as a single entry is
     inferred from Apple's per-artist link model, not observed.
   - Rejected capture mechanism (first implementation): point
@@ -954,7 +954,7 @@
     capitalizedTitle`, in the track's own artist order (not pick order).
     Capitalize first so `capitalize` never touches tokens or names.
     Gotcha: `arrayToArtists` mutates its input (`pop()`), so pass a copy.
-  - Planned layering: splitting/grouping and title building as pure
+  - Layering: splitting/grouping and title building as pure
     functions in `utils/` with tests; page-world popup driving in
     `utils/page-functions.ts`; the picker panel in `use-cases/`.
 
@@ -979,7 +979,7 @@
     `JSON.parse`. `getTrackArtists` returns `Map<number, string[]>`.
   - `release-submission/utils/track-artist-links.ts` (pure, tested):
     `withReleaseArtistFallback`, `getDistinctTrackArtists`, `buildLinkedTitle`,
-    `buildRelinkPlan`, `relinkTracklistLines`.
+    `buildRelinkPlan`, `relinkTracklistLines`, `unlinkTracklistLines`.
   - `utils/page-functions.ts`: `openArtistLinkPopup(anchorId)`,
     `closeShortcutPopup`, `showAdvancedTracklist`/`showSimpleTracklist`.
     `utils/shortcut-popup.ts`: `prefillArtistSearch` loads
@@ -987,7 +987,7 @@
     fills and submits its `#searchterm` form.
   - `use-cases/artist-link-picker.tsx`: panel below `#tracks_adv`, driven by
     `importEvent`. A pick auto-advances to the next unpicked artist, and
-    Apply rewrites `#track_advanced` once.
+    Apply rewrites `#track_advanced` (repeatable; see "Follow-up" below).
 
   First Safari test (2026-10-01): opening the popup and filling in the
   search both worked (the frame loaded
@@ -1056,7 +1056,12 @@
   VA detection). It also carries the four new `page-functions.ts`
   functions, the `ARTIST_SEPARATOR` export, and the picker files; docs and
   fork-only refactors are left out. Build, Biome, tsc and 240 tests passed
-  on it; not yet tested in Safari. Open questions for the user: keep or
+  on it; not yet tested in Safari. Gotcha: the branch was created with
+  `git switch -c … upstream/main`, so it tracks `upstream/main` and a bare
+  `git push` would target kknq's repo. Push it with
+  `git push -u origin tracklist-artist-links-upstream`. To test it in
+  Safari, see `CLAUDE.md` ("Testing an upstream-based branch in Safari").
+  Open questions for the user: keep or
   strip the file headers on the new files (upstream files have none), and
   whether to fix the `require-await` ESLint error in
   `artist-link-formatting.tsx` (the user's own PR #82 code, already on
