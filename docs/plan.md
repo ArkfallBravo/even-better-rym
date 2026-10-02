@@ -1040,11 +1040,27 @@
   exact match (`removeLinkedPrefix`), so a title the user edited by hand
   keeps its edit, but if they changed the prefix itself it gets a second
   prefix. Reapply confirmed working in Safari by the user (2026-10-01), and
-  the work is committed on branch `tracklist-artist-links` (not merged to
-  `main`). Popup internals written into `CLAUDE.md`. Still unchecked:
-  a real VA album still imports as Various Artists; the popup's position
-  beside the panel; and a band name containing `&` arriving as one Apple
-  Music entry.
+  the work (`bffb8ac`) was fast-forwarded into `main` on 2026-10-02.
+  Popup internals written into `CLAUDE.md`. Still unchecked: a real VA
+  album still imports as Various Artists (the header-only check changes
+  every Apple Music import, so this is the one possible regression on
+  `main`); the popup's position beside the panel; and a band name
+  containing `&` arriving as one Apple Music entry.
+
+  Upstream PR to `kknq/even-better-rym` (on hold at the user's request,
+  2026-10-02): branch `tracklist-artist-links-upstream`, created from
+  `upstream/main`, with its uncommitted port saved in `git stash` ("picker
+  port (uncommitted)"). Upstream has no per-track Apple Music artists (PR
+  #65 was closed unmerged), so the port carries `Track.artists` and
+  `track-artists.ts` (without `getAlbumHeaderArtists`, since upstream has no
+  VA detection). It also carries the four new `page-functions.ts`
+  functions, the `ARTIST_SEPARATOR` export, and the picker files; docs and
+  fork-only refactors are left out. Build, Biome, tsc and 240 tests passed
+  on it; not yet tested in Safari. Open questions for the user: keep or
+  strip the file headers on the new files (upstream files have none), and
+  whether to fix the `require-await` ESLint error in
+  `artist-link-formatting.tsx` (the user's own PR #82 code, already on
+  `upstream/main`, also present on the fork) by dropping its `async`.
 
 ## Archived initiatives
 
