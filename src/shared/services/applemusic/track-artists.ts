@@ -13,24 +13,12 @@ const SUBTITLE_LINKS_KEY = '"subtitleLinks":[';
 
 type SubtitleLink = { title?: string };
 
-const findEnclosingObjectEnd = (text: string, startIndex: number): number => {
-	let depth = 0;
-	for (let i = startIndex; i < text.length; i++) {
-		if (text[i] === "{") depth += 1;
-		else if (text[i] === "}") {
-			depth -= 1;
-			if (depth < 0) return i;
-		}
-	}
-	return text.length;
-};
-
-// Returns the index just past the bracket closing the one at openIndex,
-// skipping brackets inside JSON strings, or -1 if it's never closed.
-const findMatchingBracketEnd = (text: string, openIndex: number): number => {
+// Returns the index of the first bracket closing one opened before
+// startIndex, skipping brackets inside JSON strings, or -1 if there is none.
+const findUnmatchedCloseIndex = (text: string, startIndex: number): number => {
 	let depth = 0;
 	let inString = false;
-	for (let i = openIndex; i < text.length; i++) {
+	for (let i = startIndex; i < text.length; i++) {
 		const char = text[i];
 		if (inString) {
 			if (char === "\\") {
@@ -46,13 +34,27 @@ const findMatchingBracketEnd = (text: string, openIndex: number): number => {
 			depth += 1;
 		} else if (char === "]" || char === "}") {
 			depth -= 1;
-			if (depth === 0) return i + 1;
+			if (depth < 0) return i;
 		}
 	}
 	return -1;
 };
 
-// Returns every artist name in the track object's subtitleLinks array.
+// Returns the index of the brace closing the object startIndex is inside, or
+// the text's length if it's never closed.
+const findEnclosingObjectEnd = (text: string, startIndex: number): number => {
+	const closeIndex = findUnmatchedCloseIndex(text, startIndex);
+	return closeIndex === -1 ? text.length : closeIndex;
+};
+
+// Returns the index just past the bracket closing the one at openIndex, or
+// -1 if it's never closed.
+const findMatchingBracketEnd = (text: string, openIndex: number): number => {
+	const closeIndex = findUnmatchedCloseIndex(text, openIndex + 1);
+	return closeIndex === -1 ? -1 : closeIndex + 1;
+};
+
+// Returns every artist name in the text's first subtitleLinks array.
 const parseSubtitleLinkTitles = (trackObjectText: string): string[] => {
 	const keyIndex = trackObjectText.indexOf(SUBTITLE_LINKS_KEY);
 	if (keyIndex === -1) return [];

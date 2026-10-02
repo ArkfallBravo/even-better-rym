@@ -1,7 +1,18 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : artist-shortcuts.test.ts
+//
+// PURPOSE : Tests for [ArtistNNNN] token building and artist list joining
+//
+// CREATED : 8/23/2026
+//
+// ----------------------------------------------------------------------- //
+
 import { describe, expect, test } from "vitest";
 
 import {
 	buildArtistToken,
+	buildLinkedTitle,
 	insertArtistShortcut,
 	isTrackTitleFieldId,
 } from "./artist-shortcuts";
@@ -53,5 +64,27 @@ describe("isTrackTitleFieldId", () => {
 		["track_advanced", false],
 	])("%s -> %s", (id, expected) => {
 		expect(isTrackTitleFieldId(id)).toBe(expected);
+	});
+});
+
+describe("buildLinkedTitle", () => {
+	const tests: [string[], string][] = [
+		[["[Artist1]"], "[Artist1] - Title"],
+		[["[Artist1]", "[Artist2]"], "[Artist1] & [Artist2] - Title"],
+		[
+			["[Artist1]", "Plain Name", "[Artist3]"],
+			"[Artist1], Plain Name & [Artist3] - Title",
+		],
+	];
+
+	test.each(tests)("prefixes %j", (labels, expected) => {
+		expect(buildLinkedTitle("Title", labels)).toBe(expected);
+	});
+
+	test("leaves the caller's labels untouched", () => {
+		const labels = ["[Artist1]", "[Artist2]", "[Artist3]"];
+		buildLinkedTitle("Title", labels);
+
+		expect(labels).toEqual(["[Artist1]", "[Artist2]", "[Artist3]"]);
 	});
 });

@@ -47,9 +47,13 @@ const ENG_DO_NOT_CAPITALIZE_FORCE = new Set(["etc", "etc."]);
 
 const isWord = ({ type }: Token) => type === "word" || type === "romanNumeral";
 
+// Checks whether tokens of this type are always written in uppercase.
+const isAlwaysUppercase = (type: Token["type"]) =>
+	type === "romanNumeral" || type === "emoticon";
+
 const toTitleCase = ({ text, type }: Token) => {
 	if (!text[0]) return text;
-	if (type === "romanNumeral" || type === "emoticon") return text.toUpperCase();
+	if (isAlwaysUppercase(type)) return text.toUpperCase();
 	return text[0].toUpperCase() + text.slice(1).toLowerCase();
 };
 
@@ -74,7 +78,7 @@ const capitalizePhrase =
 					phrase
 						.map((token, index) => {
 							if (index === firstWordIndex) return toTitleCase(token);
-							if (token.type === "romanNumeral" || token.type === "emoticon")
+							if (isAlwaysUppercase(token.type))
 								return token.text.toUpperCase();
 							return token.text.toLowerCase();
 						})

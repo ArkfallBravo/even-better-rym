@@ -90,34 +90,47 @@ function applyArtistLinks(appliedPlan: RelinkPlan, plan: RelinkPlan): void {
 	showSimpleTracklist();
 }
 
-// Tracks the picker session started by the most recent import.
-function usePickerSession() {
-	const [session, setSession] = useState<PickerSession | undefined>();
+type PickerImport = {
+	count: number;
+	session: PickerSession | undefined;
+};
+
+// Tracks the picker session started by the most recent import, numbered so
+// each import gets a fresh panel.
+function usePickerImport(): PickerImport {
+	const [pickerImport, setPickerImport] = useState<PickerImport>({
+		count: 0,
+		session: undefined,
+	});
 
 	useEffect(() => {
 		const listener = (event: CustomEvent<ResolveData>) =>
-			setSession(getPickerSession(event.detail));
+			setPickerImport((previous) => ({
+				count: previous.count + 1,
+				session: getPickerSession(event.detail),
+			}));
 		document.addEventListener("importEvent", listener);
 		return () => document.removeEventListener("importEvent", listener);
 	}, []);
 
-	return session;
+	return pickerImport;
 }
 
 function ArtistLinkPicker() {
-	const session = usePickerSession();
+	const { count, session } = usePickerImport();
+	if (session === undefined) {
+		return null;
+	}
+	return <PickerPanel key={count} session={session} />;
+}
+
+function PickerPanel({ session }: Readonly<{ session: PickerSession }>) {
 	const [labels, setLabels] = useState<ArtistLabels>(new Map());
 	const [activeName, setActiveName] = useState<string | undefined>();
 	const [appliedPlan, setAppliedPlan] = useState<RelinkPlan>(new Map());
 
 	useEffect(() => {
-		setLabels(new Map());
-		setActiveName(undefined);
-		setAppliedPlan(new Map());
-	}, [session]);
-
-	useEffect(() => {
-		if (session === undefined || activeName === undefined) {
+		if (activeName === undefined) {
 			return undefined;
 		}
 		return watchArtistResultClicks((assocId) => {
@@ -129,10 +142,6 @@ function ArtistLinkPicker() {
 			continueArtistSearch(nextName);
 		});
 	}, [session, labels, activeName]);
-
-	if (session === undefined) {
-		return null;
-	}
 
 	const handleLink = (name: string) => {
 		setActiveName(name);

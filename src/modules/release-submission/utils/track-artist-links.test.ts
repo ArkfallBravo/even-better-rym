@@ -11,7 +11,6 @@
 import { describe, expect, test } from "vitest";
 
 import {
-	buildLinkedTitle,
 	buildRelinkPlan,
 	getDistinctTrackArtists,
 	relinkTracklistLines,
@@ -50,28 +49,6 @@ describe("getDistinctTrackArtists", () => {
 
 	test("returns nothing when no track has artists", () => {
 		expect(getDistinctTrackArtists([{}])).toEqual([]);
-	});
-});
-
-describe("buildLinkedTitle", () => {
-	const tests: [string[], string][] = [
-		[["[Artist1]"], "[Artist1] - Title"],
-		[["[Artist1]", "[Artist2]"], "[Artist1] & [Artist2] - Title"],
-		[
-			["[Artist1]", "Plain Name", "[Artist3]"],
-			"[Artist1], Plain Name & [Artist3] - Title",
-		],
-	];
-
-	test.each(tests)("prefixes %j", (labels, expected) => {
-		expect(buildLinkedTitle("Title", labels)).toBe(expected);
-	});
-
-	test("leaves the caller's labels untouched", () => {
-		const labels = ["[Artist1]", "[Artist2]", "[Artist3]"];
-		buildLinkedTitle("Title", labels);
-
-		expect(labels).toEqual(["[Artist1]", "[Artist2]", "[Artist3]"]);
 	});
 });
 

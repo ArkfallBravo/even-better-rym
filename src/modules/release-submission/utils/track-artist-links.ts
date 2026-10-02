@@ -10,9 +10,8 @@
 // ----------------------------------------------------------------------- //
 
 import type { Track } from "~/shared/services/types";
-import { arrayToArtists } from "~/shared/utils/string";
 
-import { ARTIST_SEPARATOR } from "./artist-shortcuts";
+import { buildLinkedTitle } from "./artist-shortcuts";
 
 const TRACKLIST_LINE_SEPARATOR = "\n";
 const TRACKLIST_FIELD_SEPARATOR = "|";
@@ -41,10 +40,6 @@ export const getDistinctTrackArtists = (tracks: Track[]): string[] => [
 	...new Set(tracks.flatMap((track) => track.artists ?? [])),
 ];
 
-// Returns the title prefixed with its artist labels, joined RYM-style.
-export const buildLinkedTitle = (title: string, labels: string[]): string =>
-	`${arrayToArtists([...labels])}${ARTIST_SEPARATOR}${title}`;
-
 // Builds each track's position-to-labels entry from the picked labels.
 export const buildRelinkPlan = (
 	tracks: Track[],
@@ -70,46 +65,38 @@ export const removeLinkedPrefix = (title: string, labels: string[]): string => {
 
 type TitleRewrite = (title: string, labels: string[]) => string;
 
-// Returns one advanced-tracklist line with its title rewritten, if planned.
-const rewriteTracklistLine = (
-	line: string,
-	plan: RelinkPlan,
-	rewrite: TitleRewrite,
-): string => {
-	const fields = line.split(TRACKLIST_FIELD_SEPARATOR);
-	if (fields.length < 2) {
-		return line;
-	}
-	const labels = plan.get(fields[0].trim());
-	if (labels === undefined) {
-		return line;
-	}
-	fields[1] = rewrite(fields[1], labels);
-	return fields.join(TRACKLIST_FIELD_SEPARATOR);
+// Returns a function rewriting one advanced-tracklist line's title, if
+// planned.
+const rewriteTracklistLine =
+	(rewrite: TitleRewrite) =>
+	(line: string, plan: RelinkPlan): string => {
+		const fields = line.split(TRACKLIST_FIELD_SEPARATOR);
+		if (fields.length < 2) {
+			return line;
+		}
+		const labels = plan.get(fields[0].trim());
+		if (labels === undefined) {
+			return line;
+		}
+		fields[1] = rewrite(fields[1], labels);
+		return fields.join(TRACKLIST_FIELD_SEPARATOR);
+	};
+
+// Returns a function rewriting each planned track's title in advanced
+// tracklist text.
+const rewriteTracklistTitles = (rewrite: TitleRewrite) => {
+	const rewriteLine = rewriteTracklistLine(rewrite);
+	return (advancedText: string, plan: RelinkPlan): string =>
+		advancedText
+			.split(TRACKLIST_LINE_SEPARATOR)
+			.map((line) => rewriteLine(line, plan))
+			.join(TRACKLIST_LINE_SEPARATOR);
 };
 
 // Returns the advanced tracklist text with each planned track's title
-// rewritten.
-const rewriteTracklistTitles = (
-	advancedText: string,
-	plan: RelinkPlan,
-	rewrite: TitleRewrite,
-): string =>
-	advancedText
-		.split(TRACKLIST_LINE_SEPARATOR)
-		.map((line) => rewriteTracklistLine(line, plan, rewrite))
-		.join(TRACKLIST_LINE_SEPARATOR);
-
-// Returns the advanced tracklist text with each planned track's title
 // prefixed by its artist labels.
-export const relinkTracklistLines = (
-	advancedText: string,
-	plan: RelinkPlan,
-): string => rewriteTracklistTitles(advancedText, plan, buildLinkedTitle);
+export const relinkTracklistLines = rewriteTracklistTitles(buildLinkedTitle);
 
 // Returns the advanced tracklist text with each planned track's artist-label
 // prefix removed.
-export const unlinkTracklistLines = (
-	advancedText: string,
-	plan: RelinkPlan,
-): string => rewriteTracklistTitles(advancedText, plan, removeLinkedPrefix);
+export const unlinkTracklistLines = rewriteTracklistTitles(removeLinkedPrefix);
