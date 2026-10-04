@@ -40,9 +40,8 @@ export const waitForOptionalElement = <E extends Element>(
 		if (existing) return resolve(existing);
 		if (isDocumentReady()) return resolve(undefined);
 
-		let observer: MutationObserver | undefined;
 		const finish = (element: E | undefined) => {
-			observer?.disconnect();
+			observer.disconnect();
 			document.removeEventListener("DOMContentLoaded", check);
 			resolve(element);
 		};
@@ -52,7 +51,7 @@ export const waitForOptionalElement = <E extends Element>(
 			else if (isDocumentReady()) finish(undefined);
 		};
 
-		observer = new MutationObserver(check);
+		const observer = new MutationObserver(check);
 		observer.observe(document, { childList: true, subtree: true });
 		document.addEventListener("DOMContentLoaded", check, { once: true });
 		check();

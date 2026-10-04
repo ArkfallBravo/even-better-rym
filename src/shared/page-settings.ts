@@ -4,27 +4,14 @@ import * as storage from "./utils/storage";
 const defaultPageEnabled: Partial<Record<PageKey, boolean>> = {
 	hideReviews: false,
 	hideCommentBoxes: false,
+	whoSampled: true,
+	wikipedia: true,
 	discogsCarousel: true,
 };
-
-const legacyGenreChartControlKeys = [
-	"filmChartGenreLinks",
-	"filmGenreChartButton",
-	"genrePageChartControls",
-] as const;
-
-const getLegacyGenreChartControlsEnabled = (
-	values: Record<string, unknown>,
-): boolean =>
-	legacyGenreChartControlKeys.every((key) => values[`pages.${key}`] !== false);
 
 export const getPageEnabled = async (key: PageKey): Promise<boolean> => {
 	const enabled = await storage.get<boolean>(`pages.${key}`);
 	if (enabled !== undefined) return enabled;
-
-	if (key === "genreChartControls") {
-		return getLegacyGenreChartControlsEnabled(await storage.getAll());
-	}
 
 	return defaultPageEnabled[key] ?? true;
 };
@@ -38,9 +25,6 @@ export const getAllPageEnabled = async (): Promise<
 		(Object.keys(pages) as PageKey[]).map((key) => {
 			const enabled = values[`pages.${key}`];
 			if (typeof enabled === "boolean") return [key, enabled];
-			if (key === "genreChartControls") {
-				return [key, getLegacyGenreChartControlsEnabled(values)];
-			}
 			return [key, defaultPageEnabled[key] ?? true];
 		}),
 	) as Record<PageKey, boolean>;

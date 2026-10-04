@@ -18,9 +18,9 @@ describe("preloadImageUrls", () => {
 
 	test("reports an error when none of the images can be loaded", async () => {
 		await expect(
-			preloadImageUrls(["broken.jpg"], async () => {
-				throw new Error("offline");
-			}),
+			preloadImageUrls(["broken.jpg"], () =>
+				Promise.reject(new Error("offline")),
+			),
 		).rejects.toThrow("Could not load Discogs images.");
 	});
 });

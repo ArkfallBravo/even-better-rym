@@ -28,6 +28,18 @@ Download cover art from a supported service with a pasted link. The artwork sour
 
 ---
 
+### WhoSampled Link
+
+Adds a direct WhoSampled album link for the current release.
+
+---
+
+### Wikipedia Search
+
+Adds a button to the right of the release title that searches Wikipedia using the album and artist names.
+
+---
+
 ### Discogs Release Image Carousel
 
 On music release pages, looks up the selected release issue on Discogs using its catalogue number and displays the matching secondary release images in a navigable carousel. The feature is enabled by default and can be disabled from the extension popup. Requests use Discogs' public API; releases without matching secondary images show an empty state.
