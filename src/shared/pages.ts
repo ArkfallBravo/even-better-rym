@@ -4,6 +4,7 @@ export const pages = {
 	trackTime: "/release/",
 	releaseSubmission: "/releases/ac",
 	coverArt: "/images/upload",
+	userReception: "/release/",
 	whoSampled: "/release/",
 	wikipedia: "/release/",
 	discogsCarousel: "/release/",
@@ -35,6 +36,7 @@ export const pageLabels: Record<PageKey, string> = {
 	trackTime: "Release Length to Hours Conversion",
 	releaseSubmission: "Release Submission Helper",
 	coverArt: "Cover Art Submission Helper",
+	userReception: "User Reception",
 	whoSampled: "WhoSampled Link",
 	wikipedia: "Wikipedia Search",
 	discogsCarousel: "Discogs Release Image Carousel",
@@ -82,6 +84,7 @@ export const featureGroups: readonly (readonly [string, readonly PageKey[]])[] =
 				"streamLinkSubmission",
 			],
 		],
+		["Release insights", ["userReception"]],
 		["External reference links", ["whoSampled", "wikipedia"]],
 		[
 			"Library and user profiles",
@@ -111,6 +114,8 @@ export const pageHints: Record<PageKey, string> = {
 	releaseSubmission:
 		"Pre-fills the release submission form with data found on the provided page.",
 	coverArt: "Adds download controls to the cover art upload page.",
+	userReception:
+		"Summarizes the release's rating distribution into a user reception meter and ranked categories.",
 	whoSampled: "Adds a direct WhoSampled album link for the current release.",
 	wikipedia: "Adds a button to search for the current release on Wikipedia.",
 	discogsCarousel:

@@ -1,7 +1,6 @@
 import { runModule } from "~/shared/page-settings";
 
 import { main } from "./app";
+import "./user-reception.css";
 
-await runModule("hideVotes", async () => {
-	await main();
-});
+void runModule("userReception", main);
