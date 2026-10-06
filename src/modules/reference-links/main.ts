@@ -1,22 +1,15 @@
 import { runModule } from "~/shared/page-settings";
 import { getReleaseTitleData } from "~/shared/release-title";
 import { waitForDocumentReady } from "~/shared/utils/dom";
-import type { FetchRequest, FetchResponse } from "~/shared/utils/messaging";
+import type {
+	WikipediaSearchRequest,
+	WikipediaSearchResponse,
+} from "~/shared/utils/messaging";
 import { sendBackgroundMessage } from "~/shared/utils/messaging";
 import whoSampledLogo from "./assets/whosampled.svg";
 import wikipediaLogo from "./assets/wikipedia.svg";
-import {
-	findBestWikipediaResult,
-	getWikipediaArticleUrl,
-	toSlug,
-} from "./helpers";
+import { toSlug } from "./helpers";
 import "./reference-links.css";
-
-type SearchResponse = {
-	query?: {
-		search?: { title: string; snippet?: string }[];
-	};
-};
 
 const getReferenceContainer = (titleElement: HTMLElement): HTMLDivElement => {
 	const existing = document.querySelector<HTMLDivElement>(
@@ -63,39 +56,6 @@ const appendWhoSampledLink = (
 	container.append(whoSampled);
 };
 
-const searchWikipedia = async (
-	artistName: string,
-	albumTitle: string,
-): Promise<string | undefined> => {
-	const query = `"${albumTitle}" OR "${albumTitle} album" OR "${albumTitle}" "${artistName}"`;
-	const response = await sendBackgroundMessage<FetchRequest, FetchResponse>({
-		type: "fetch",
-		data: {
-			url: "https://en.wikipedia.org/w/api.php",
-			urlParameters: {
-				action: "query",
-				format: "json",
-				list: "search",
-				origin: "*",
-				srnamespace: "0",
-				srlimit: "10",
-				srsearch: query,
-			},
-			headers: { Accept: "application/json" },
-		},
-	});
-	if (response.data.status < 200 || response.data.status >= 300) {
-		throw new Error("Wikipedia search failed.");
-	}
-
-	const results = response.data.body
-		? ((JSON.parse(response.data.body) as SearchResponse).query?.search ?? [])
-		: [];
-	const result = findBestWikipediaResult(results, albumTitle);
-
-	return result ? getWikipediaArticleUrl(result.title) : undefined;
-};
-
 const appendWikipediaButton = (
 	titleElement: HTMLElement,
 	release: ReturnType<typeof getReleaseTitleData>,
@@ -120,36 +80,25 @@ const appendWikipediaButton = (
 	label.textContent = "Search Wikipedia";
 	wikipedia.append(logo, separator, label);
 	wikipedia.addEventListener("click", () => {
-		const articleWindow = window.open("about:blank", "_blank");
-		if (articleWindow) articleWindow.opener = null;
-
 		const previous = label.textContent;
 		wikipedia.disabled = true;
 		label.textContent = "Searching Wikipedia…";
-		void searchWikipedia(release.artistName, release.albumTitle)
-			.then((url) => {
-				if (!url) {
-					articleWindow?.close();
+		void sendBackgroundMessage<WikipediaSearchRequest, WikipediaSearchResponse>(
+			{
+				type: "wikipediaSearch",
+				data: {
+					artistName: release.artistName,
+					albumTitle: release.albumTitle,
+				},
+			},
+		)
+			.then((response) => {
+				if (response.data.error) throw new Error(response.data.error);
+				if (!response.data.url) {
 					label.textContent = "No Wikipedia article found";
-					return;
 				}
-
-				if (articleWindow && !articleWindow.closed) {
-					articleWindow.location.replace(url);
-					return;
-				}
-
-				const fallbackLink = document.createElement("a");
-				fallbackLink.className = wikipedia.className;
-				fallbackLink.href = url;
-				fallbackLink.target = "_blank";
-				fallbackLink.rel = "noreferrer";
-				fallbackLink.append(...wikipedia.childNodes);
-				label.textContent = "Open Wikipedia article";
-				wikipedia.replaceWith(fallbackLink);
 			})
 			.catch(() => {
-				articleWindow?.close();
 				label.textContent = "Wikipedia search failed";
 			})
 			.finally(() => {

@@ -95,6 +95,7 @@ describe("title caps", () => {
 			"Take A Walk (Neo-Romantic Dima Remix)",
 			"Take a Walk (Neo-Romantic Dima Remix)",
 		],
+		["67-й калибр", "67-й Калибр"],
 		"Everything Else Is Secondary (1-800 Girls Remix)",
 		"Malum Veneficus Viriditas Chronicles II (Part I)",
 		"Malum Veneficus Viriditas Chronicles II (Part II)",
@@ -119,6 +120,7 @@ describe("sentence caps", () => {
 		["One Is For", "One is for"],
 		["Grand Theft Auto IV", "Grand theft auto IV"],
 		["The Band - The Song", "The band - The song"],
+		["67-й калибр", "67-й калибр"],
 		["This LP Is an EP", "This LP is an EP"],
 	];
 
