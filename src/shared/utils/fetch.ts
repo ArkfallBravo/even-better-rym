@@ -48,6 +48,7 @@ export const fetchInPage = async (
 	data: FetchRequest["data"],
 ): Promise<string> => {
 	const requestId = crypto.randomUUID();
+	const origin = globalThis.location.origin;
 
 	return new Promise<string>((resolve) => {
 		const listener = (
@@ -55,6 +56,7 @@ export const fetchInPage = async (
 		) => {
 			if (
 				event.source === window &&
+				event.origin === origin &&
 				event.data?.type === "PAGE_FETCH_RESULT" &&
 				event.data.id === requestId
 			) {
@@ -105,13 +107,13 @@ export const fetchInPage = async (
               type: 'PAGE_FETCH_RESULT',
               id: ${JSON.stringify(requestId)},
               body,
-            }, '*');
+            }, window.location.origin);
           } catch (e) {
             window.postMessage({
               type: 'PAGE_FETCH_RESULT',
               id: ${JSON.stringify(requestId)},
               body: '',
-            }, '*');
+            }, window.location.origin);
           }
         })();`,
 			},

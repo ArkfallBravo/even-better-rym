@@ -41,6 +41,36 @@ export const styles = {
 		lineHeight: 1.3,
 	} satisfies CSSProperties,
 
+	reloadNotice: {
+		position: "fixed",
+		right: 10,
+		bottom: 10,
+		left: 10,
+		zIndex: 10,
+		display: "flex",
+		alignItems: "center",
+		gap: 8,
+		padding: "8px 10px",
+		background: "#fff7db",
+		border: "1px solid #ead38a",
+		borderRadius: 6,
+		boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18)",
+		color: "#625016",
+		fontSize: 11,
+		lineHeight: 1.35,
+	} satisfies CSSProperties,
+
+	reloadNoticeDismiss: {
+		flexShrink: 0,
+		border: 0,
+		background: "transparent",
+		color: "#625016",
+		cursor: "pointer",
+		fontSize: 16,
+		lineHeight: 1,
+		padding: 0,
+	} satisfies CSSProperties,
+
 	list: {
 		display: "flex",
 		flexDirection: "column",
@@ -60,6 +90,11 @@ export const styles = {
 	} satisfies CSSProperties,
 
 	groupHeader: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		width: "100%",
+		border: 0,
 		padding: "7px 12px 6px",
 		fontSize: 10,
 		fontWeight: 700,
@@ -68,6 +103,8 @@ export const styles = {
 		color: "#4286c4",
 		background: "#f0f6fc",
 		borderBottom: "1px solid #d8eaf7",
+		cursor: "pointer",
+		textAlign: "left",
 	} satisfies CSSProperties,
 
 	row: {
@@ -78,6 +115,23 @@ export const styles = {
 		padding: "10px 12px",
 		cursor: "pointer",
 		userSelect: "none" as const,
+	} satisfies CSSProperties,
+
+	selectRow: {
+		display: "flex",
+		flexDirection: "column",
+		gap: 6,
+		padding: "10px 12px",
+	} satisfies CSSProperties,
+
+	select: {
+		width: "100%",
+		padding: "6px 8px",
+		border: "1px solid #d0d0d0",
+		borderRadius: 4,
+		background: "#fff",
+		color: "#2a2a2a",
+		fontSize: 12,
 	} satisfies CSSProperties,
 
 	rowDivider: {
@@ -92,6 +146,10 @@ export const styles = {
 	} satisfies CSSProperties,
 
 	loading: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 8,
 		padding: "20px 16px",
 		color: "#999",
 		textAlign: "center" as const,

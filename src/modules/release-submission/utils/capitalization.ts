@@ -45,14 +45,25 @@ const ENG_DO_NOT_CAPITALIZE = new Set([
 // Don't capitalize even if it's the first or last word
 const ENG_DO_NOT_CAPITALIZE_FORCE = new Set(["etc", "etc."]);
 
+const RELEASE_FORMATS = new Set(["ep", "lp"]);
+
 const isWord = ({ type }: Token) => type === "word" || type === "romanNumeral";
+
+const isAfterHyphen = (phrase: Phrase, index: number) =>
+	phrase.slice(0, index).findLast((token) => token.type !== "whitespace")
+		?.text === "-";
+
+const isReleaseFormat = (token: Token) =>
+	RELEASE_FORMATS.has(token.text.toLowerCase());
 
 // Checks whether tokens of this type are always written in uppercase.
 const isAlwaysUppercase = (type: Token["type"]) =>
 	type === "romanNumeral" || type === "emoticon";
 
-const toTitleCase = ({ text, type }: Token) => {
+const toTitleCase = (token: Token) => {
+	const { text, type } = token;
 	if (!text[0]) return text;
+	if (isReleaseFormat(token)) return text.toUpperCase();
 	if (isAlwaysUppercase(type)) return text.toUpperCase();
 	return text[0].toUpperCase() + text.slice(1).toLowerCase();
 };
@@ -77,9 +88,12 @@ const capitalizePhrase =
 			? pipe(
 					phrase
 						.map((token, index) => {
+							if (isReleaseFormat(token)) return token.text.toUpperCase();
 							if (index === firstWordIndex) return toTitleCase(token);
 							if (isAlwaysUppercase(token.type))
 								return token.text.toUpperCase();
+							if (token.type === "word" && isAfterHyphen(phrase, index))
+								return toTitleCase(token);
 							return token.text.toLowerCase();
 						})
 						.join(""),
@@ -93,6 +107,11 @@ const capitalizePhrase =
 									token.text.toLowerCase(),
 								);
 								return isForced ? token.text.toLowerCase() : toTitleCase(token);
+							} else if (
+								token.type === "word" &&
+								isAfterHyphen(phrase, index)
+							) {
+								return toTitleCase(token);
 							} else if (ENG_DO_NOT_CAPITALIZE.has(token.text.toLowerCase())) {
 								return token.text.toLowerCase();
 							} else {

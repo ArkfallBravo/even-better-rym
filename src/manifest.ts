@@ -30,6 +30,8 @@ const hostsArray = [
 	"https://www.googleapis.com/*",
 	"https://*.livemixtapes.com/*",
 	"https://livemixtapes.com/*",
+	"https://*.metal-archives.com/*",
+	"https://metal-archives.com/*",
 ];
 
 const sharedManifest = {
@@ -47,6 +49,25 @@ const sharedManifest = {
 		{
 			js: ["src/modules/search-bar/main.ts"],
 			matches: ["*://*.rateyourmusic.com/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/hide-ratings/main.ts"],
+			css: ["src/shared/visibility/bootstrap.css"],
+			matches: ["*://*.rateyourmusic.com/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/hide-reviews/main.ts"],
+			matches: ["*://*.rateyourmusic.com/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/hide-comment-boxes/main.ts"],
+			matches: [
+				"*://*.rateyourmusic.com/release/*",
+				"*://*.rateyourmusic.com/film/*",
+			],
 			run_at: "document_start",
 		},
 		{
@@ -71,12 +92,18 @@ const sharedManifest = {
 		},
 		{
 			js: ["src/modules/timeline/main.ts"],
-			css: ["src/modules/timeline/timeline.css"],
+			css: ["src/modules/timeline/timeline.css", "src/modules/map/map.css"],
 			matches: ["*://*.rateyourmusic.com/artist/*"],
 			run_at: "document_start",
 		},
 		{
 			js: ["src/modules/stream-links/main.ts"],
+			matches: ["*://*.rateyourmusic.com/release/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/discogs-carousel/main.tsx"],
+			css: ["src/modules/discogs-carousel/discogs-carousel.css"],
 			matches: ["*://*.rateyourmusic.com/release/*"],
 			run_at: "document_start",
 		},
@@ -95,7 +122,10 @@ const sharedManifest = {
 		},
 		{
 			js: ["src/modules/vote-history/genres.ts"],
-			matches: ["*://*.rateyourmusic.com/rgenre/vote_history*"],
+			matches: [
+				"*://*.rateyourmusic.com/rgenre/vote_history*",
+				"*://*.rateyourmusic.com/rgenre/film_vote_history*",
+			],
 			run_at: "document_start",
 		},
 		{
@@ -104,13 +134,16 @@ const sharedManifest = {
 			run_at: "document_start",
 		},
 		{
-			js: ["src/modules/film-genre/chart.ts"],
-			matches: ["*://*.rateyourmusic.com/charts/*/film/*"],
-			run_at: "document_start",
-		},
-		{
-			js: ["src/modules/film-genre/film-genre.ts"],
-			matches: ["*://*.rateyourmusic.com/film_genre/*"],
+			js: ["src/modules/genre-chart-controls/main.ts"],
+			css: [
+				"src/modules/genre-chart-controls/film-controls.css",
+				"src/modules/genre-chart-controls/music-genre-controls.css",
+			],
+			matches: [
+				"*://*.rateyourmusic.com/charts/*/film/*",
+				"*://*.rateyourmusic.com/film_genre/*",
+				"*://*.rateyourmusic.com/genre/*",
+			],
 			run_at: "document_start",
 		},
 		{
@@ -122,8 +155,21 @@ const sharedManifest = {
 			run_at: "document_idle",
 		},
 		{
+			js: ["src/modules/switch-genre-descriptor/main.ts"],
+			matches: [
+				"*://*.rateyourmusic.com/rgenre/*",
+				"*://*.rateyourmusic.com/rdescriptor/*",
+			],
+			run_at: "document_idle",
+		},
+		{
 			js: ["src/modules/chart-shortcuts/main.ts"],
 			matches: ["*://*.rateyourmusic.com/charts/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/image-cropper/main.ts"],
+			matches: ["*://*.rateyourmusic.com/admin/imaq/crop*"],
 			run_at: "document_start",
 		},
 	],

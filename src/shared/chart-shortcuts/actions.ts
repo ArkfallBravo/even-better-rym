@@ -281,6 +281,6 @@ export const CHART_SHORTCUT_ACTIONS: readonly ChartShortcutAction[] = [
 		// event.code distinguishes the main Enter key from the numpad one - the
 		// original event.key-based handler matched both, so both are kept here
 		// to avoid a silent regression for numpad-Enter users.
-		defaultBindings: ["ctrl+Enter", "ctrl+Space", "ctrl+NumpadEnter"],
+		defaultBindings: ["ctrl+Enter", "ctrl+NumpadEnter"],
 	},
 ];

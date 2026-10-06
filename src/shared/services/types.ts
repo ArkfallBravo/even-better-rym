@@ -13,6 +13,7 @@ export const SERVICE_IDS = [
 	"tidal",
 	"deezer",
 	"livemixtapes",
+	"metal-archives",
 ] as const;
 
 export type ServiceId = (typeof SERVICE_IDS)[number];
@@ -27,6 +28,7 @@ export type Icon = FunctionComponent<SVGAttributes<SVGSVGElement>>;
 export type SearchFunction = (metadata: {
 	artist: string;
 	title: string;
+	serviceRegions?: Partial<Record<ServiceId, string>>;
 }) => Promise<string | undefined>;
 export type Searchable = {
 	search: SearchFunction;
@@ -64,7 +66,8 @@ export type ReleaseType =
 	| "music video"
 	| "dj mix"
 	| "bootleg"
-	| "video";
+	| "video"
+	| "additional releases";
 
 export type ReleaseFormat =
 	| "digital file"
@@ -133,6 +136,7 @@ export type ReleaseAttribute =
 	| "collector's edition"
 	| "deluxe edition"
 	| "demo"
+	| "promotional demo"
 	| "exclusive"
 	| "fan club release"
 	| "limited edition"

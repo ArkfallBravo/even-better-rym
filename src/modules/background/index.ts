@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-
+import { resolvePageEnabled } from "~/shared/page-enabled";
 import type { PageKey } from "~/shared/pages";
 import { globalPageKeys, pages } from "~/shared/pages";
 import type {
@@ -97,6 +97,16 @@ const setSetting = async (key: PageKey, value: boolean): Promise<void> => {
 };
 
 void ensureSettings();
+
+const CHANGELOG_PATH = "changelog.html";
+
+browser.runtime.onInstalled.addListener((details) => {
+	if (details.reason !== "update") return;
+
+	void browser.tabs.create({
+		url: browser.runtime.getURL(CHANGELOG_PATH),
+	});
+});
 
 const getResponse = (
 	message: unknown,
@@ -232,7 +242,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				respond({
 					id: "",
 					type: "fetch",
-					data: { body: "", error: String(err) },
+					data: { body: "", status: 0, statusText: "", error: String(err) },
 				}),
 			);
 		return true; // keep channel open until sendResponse is called
@@ -276,7 +286,9 @@ browser.tabs.onUpdated.addListener((id, _changeInfo, tab) => {
 	// Reads settingsCache directly rather than going through getPageEnabled,
 	// which would round-trip a sendMessage back to this same script.
 	void ensureSettings().then(() => {
-		const enabled = matchingKeys.some((key) => settingsCache[key] ?? true);
+		const enabled = matchingKeys.some((key) =>
+			resolvePageEnabled(settingsCache, key),
+		);
 		setTabIcon(id, enabled);
 		void browser.action.enable(id);
 	});

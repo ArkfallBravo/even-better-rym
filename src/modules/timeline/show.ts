@@ -30,7 +30,7 @@ function getShowDateSpan(item: HTMLElement): HTMLElement | null {
 	const spans = Array.from(item.querySelectorAll<HTMLElement>("span"));
 
 	for (const span of spans) {
-		const style = span.getAttribute("style") || "";
+		const style = span.getAttribute("style") ?? "";
 
 		if (style.includes("width") && style.includes("10em")) {
 			return span;
@@ -38,7 +38,7 @@ function getShowDateSpan(item: HTMLElement): HTMLElement | null {
 	}
 
 	for (const span of spans) {
-		const text = span.textContent?.trim() || "";
+		const text = span.textContent?.trim() ?? "";
 
 		if (/\b(19|20)\d{2}\b/.test(text)) {
 			return span;
@@ -79,13 +79,6 @@ function clickPastShowsButton(): void {
 	if (expandButton.offsetParent === null) return;
 
 	expandButton.click();
-	expandButton.dispatchEvent(
-		new MouseEvent("click", {
-			bubbles: true,
-			cancelable: true,
-			view: window,
-		}),
-	);
 }
 
 async function waitForPastShowsLoaded(timeoutMs = 3000): Promise<void> {
@@ -105,7 +98,7 @@ async function waitForPastShowsLoaded(timeoutMs = 3000): Promise<void> {
 
 		const expandButton = document.getElementById("disco_expand_prev");
 
-		if (expandButton?.offsetParent === null) {
+		if (!expandButton?.offsetParent) {
 			resolve();
 			return;
 		}
@@ -114,7 +107,7 @@ async function waitForPastShowsLoaded(timeoutMs = 3000): Promise<void> {
 			const expandButtonInner = document.getElementById("disco_expand_prev");
 			const currentItemCount = showsContainer.querySelectorAll("li").length;
 
-			if (!expandButtonInner) {
+			if (expandButtonInner == null) {
 				observer.disconnect();
 				resolve();
 				return;

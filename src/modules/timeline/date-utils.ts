@@ -1,21 +1,6 @@
-const MONTHS = [
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December",
-] as const;
+import { MONTH_NAMES, MONTHS } from "~/shared/utils/datetime";
 
-export const MONTH_NAMES: Readonly<Record<string, number>> = Object.fromEntries(
-	MONTHS.map((month, index) => [month.toLowerCase(), index + 1]),
-);
+export { MONTH_NAMES };
 
 function getShortMonthName(month: number): string {
 	return MONTHS[month - 1].slice(0, 3);

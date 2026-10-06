@@ -17,6 +17,7 @@ import {
 import type { FillData } from "../dom";
 import type { CapitalizationType } from "./capitalization";
 import { capitalize } from "./capitalization";
+import { formatTracks, getTrackDurations } from "./tracklist";
 import type { ReleaseOptions } from "./types";
 
 export async function fill(
@@ -62,7 +63,11 @@ async function fillExtraFields(
 		fillAttributes(data.attributes);
 	}
 	if (data.tracks != null && options.fillFields.tracks) {
-		await fillTracks(data.tracks, options.capitalization);
+		await fillTracks(
+			data.tracks,
+			options.capitalization,
+			options.preserveTrackLengths,
+		);
 	}
 	if (data.url !== undefined) {
 		fillSource(data.url);
@@ -224,33 +229,21 @@ function fillAttribute(attribute: ReleaseAttribute) {
 	).checked = true;
 }
 
-async function fillTracks(tracks: Track[], capitalization: CapitalizationType) {
-	const tracksString = tracks
-		.map((track, index) => {
-			const position = track.position ?? index + 1;
-
-			let title = track.title ?? "";
-
-			title =
-				title.toLowerCase() === "untitled"
-					? "[untitled]"
-					: capitalize(title, capitalization);
-
-			if (track.header) {
-				title = `[b]${title}[/b]`;
-			}
-
-			const duration = track.duration ?? "";
-
-			return `${position}|${title}|${duration}`;
-		})
-		.join("\n");
-
+async function fillTracks(
+	tracks: Track[],
+	capitalization: CapitalizationType,
+	preserveTrackLengths: boolean,
+) {
 	// Use runScript (page world) to click the javascript: href buttons - calling
 	// .click() directly in a content script is blocked by CSP.
 	await runScript(`document.querySelector('#goAdvancedBtn').click()`);
-	forceQuerySelector<HTMLTextAreaElement>(document)("#track_advanced").value =
-		tracksString;
+	const trackInput =
+		forceQuerySelector<HTMLTextAreaElement>(document)("#track_advanced");
+	const existingDurations = preserveTrackLengths
+		? getTrackDurations(trackInput.value)
+		: undefined;
+
+	trackInput.value = formatTracks(tracks, capitalization, existingDurations);
 	await runScript(`document.querySelector('#goSimpleBtn').click()`);
 }
 
@@ -273,6 +266,7 @@ const TYPE_IDS: Record<ReleaseType, string> = {
 	"dj mix": "j",
 	bootleg: "b",
 	video: "d",
+	"additional releases": "x",
 };
 
 const FORMAT_IDS: Record<ReleaseFormat, number> = {
@@ -343,7 +337,8 @@ const ATTRIBUTE_IDS: Record<ReleaseAttribute, number> = {
 	"box set": 12,
 	"collector's edition": 49,
 	"deluxe edition": 59,
-	demo: 18,
+	demo: 129,
+	"promotional demo": 18,
 	exclusive: 72,
 	"fan club release": 38,
 	"limited edition": 16,

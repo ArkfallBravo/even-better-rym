@@ -1,6 +1,6 @@
 {
 	"name": "even-better-rym",
-	"version": "2.3.0",
+	"version": "2.7.0",
 	"displayName": "EvenBetterRYM",
 	"author": "kknq",
 	"description": "Improvements for RateYourMusic",
@@ -11,8 +11,8 @@
 		"build:safari:debug": "MANIFEST_VERSION=2 EXTENSION_DISPLAY_NAME=\"EvenBetterRYM for Safari\" VITE_DEBUG_TOOLS=true vite build",
 		"watch": "vite build --watch --mode development --minify false",
 		"dev": "vite",
-		"serve:firefox": "web-ext run --start-url \"https://rateyourmusic.com/release/album/swans/filth/\"  --source-dir ./dist/",
-		"serve:chrome": "web-ext run -t chromium --start-url \"https://rateyourmusic.com/release/album/swans/filth/\" --source-dir ./dist",
+		"serve:firefox": "web-ext run --start-url \"https://rateyourmusic.com/\"  --source-dir ./dist/",
+		"serve:chrome": "web-ext run -t chromium --start-url \"https://rateyourmusic.com/\" --source-dir ./dist",
 		"test": "vitest",
 		"test:e2e:safari": "node e2e/import-check.mjs",
 		"lint": "biome check . && tsc --noEmit && eslint .",
@@ -30,6 +30,9 @@
 		"webextension-polyfill": "^0.12.0"
 	},
 	"overrides": {
+		"addons-linter": {
+			"image-size": "^2.0.4"
+		},
 		"content-security-policy-parser": "^0.6.0",
 		"esbuild": "^0.25.0",
 		"vite": "^7.3.1"
@@ -52,6 +55,6 @@
 		"typescript-eslint": "^8.57.0",
 		"vite": "^7.3.1",
 		"vitest": "^4.0.18",
-		"web-ext": "^10.3.0"
+		"web-ext": "^10.6.0"
 	}
 }

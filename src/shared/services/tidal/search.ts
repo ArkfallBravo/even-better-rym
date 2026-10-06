@@ -19,7 +19,11 @@ type TidalSearchResponse = {
 	data?: TidalSearchResult[];
 };
 
-export const search: SearchFunction = async ({ artist, title }) => {
+export const search: SearchFunction = async ({
+	artist,
+	title,
+	serviceRegions,
+}) => {
 	const token = await requestToken();
 	const searchQuery = `${artist} ${title}`;
 	const response = await fetch({
@@ -33,7 +37,7 @@ export const search: SearchFunction = async ({ artist, title }) => {
 		urlParameters: {
 			"filter[query]": searchQuery,
 			explicitFilter: "INCLUDE",
-			countryCode: "US",
+			countryCode: serviceRegions?.tidal ?? "US",
 			include: "albums",
 		},
 	});

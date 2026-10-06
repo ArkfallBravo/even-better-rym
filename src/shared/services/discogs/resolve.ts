@@ -423,12 +423,12 @@ const resolveRelease = async (id: string): Promise<ResolveData> => {
 		duration: track.duration,
 		header: track.type_ === "heading",
 	}));
-	const type = getReleaseType(tracks.length);
+	const type = getReleaseType(title, tracks.length);
 	const coverArt = (response.images ?? [])
 		.map((image) => image.resource_url)
 		.filter((url) => url.length > 0);
 	const label: ReleaseLabel = response.labels[0];
-	if (label.catno === "none") label.catno = undefined;
+	if (label.catno === "none") label.catno = "n/a";
 	const countries = response.country
 		? parseCountries(response.country)
 		: undefined;
