@@ -19,9 +19,22 @@
     kknq's `tracklist-controls.tsx`, which calls `.click()` directly.
     `fillers.ts`' comment says CSP blocks that. Sharing one helper means
     touching kknq's code, so ask first.
+    In the upstream picker port (2026-10-06) this also affects ordering:
+    tracklist-picker applies go through a module-level queue, but kknq's
+    `fillTracks` does its own switch outside it, so an import's fill and a
+    picker apply could overlap. Asked the user whether to change
+    `fillTracks` in that PR; no answer yet.
   - kknq's `arrayToArtists` (`shared/utils/string.ts`) mutates its input
     with `pop()`, so `buildLinkedTitle` has to copy the list first. Making
     it non-mutating also means touching kknq's code.
+
+- Possible upstream PR (idea, not requested): upstream's image download
+  doesn't work in Safari, because `background/download.ts` only calls
+  `browser.downloads.download`. The fork's fallback (fetch in the
+  background, then save through a data-URL link injected into the page)
+  could go upstream the way the Apple Music fix did (#144). Seen
+  2026-10-06 while testing the picker port; the cause is inferred from the
+  code, not confirmed in Safari.
 
 - Follow-up candidates surfaced but explicitly skipped by the 2026-09-06
   `/simplify` pass (see `docs/plan.md` for why each was held back — none

@@ -1203,6 +1203,11 @@
     reach the picker.
   - `shortcut-popup.test.ts` mocks `~/shared/utils/dom`, mirroring
     `applemusic/search.test.ts`.
+  - The user's Safari test of the upstream build is still pending. After
+    the simplify pass, steps 2 (tracklist auto-apply), 3 (quick successive
+    picks) and 5 (VA) need testing against the rebuilt build, since the
+    queues changed. Image download spinning in that build is upstream's
+    missing Safari fallback (see `CLAUDE.md`), not the port.
   - Port simplify pass (2026-10-06): fixes folded into the two commits, no
     separate `simplify:` commit. Skipped: batching the filed-under edits
     into one `runScript` (unknown whether RYM renumbers entries after a
