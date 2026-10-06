@@ -25,7 +25,7 @@ export async function fill(
 	options: ReleaseOptions,
 ): Promise<void> {
 	await fillCoreFields(data, options);
-	await fillExtraFields(data, options);
+	fillExtraFields(data, options);
 }
 
 async function fillCoreFields(
@@ -49,10 +49,7 @@ async function fillCoreFields(
 	}
 }
 
-async function fillExtraFields(
-	data: ResolveData,
-	options: ReleaseOptions,
-): Promise<void> {
+function fillExtraFields(data: ResolveData, options: ReleaseOptions): void {
 	if (data.discSize != null && options.fillFields.discSize) {
 		fillDiscSize(data.discSize);
 	}
@@ -63,7 +60,7 @@ async function fillExtraFields(
 		fillAttributes(data.attributes);
 	}
 	if (data.tracks != null && options.fillFields.tracks) {
-		await fillTracks(
+		fillTracks(
 			data.tracks,
 			options.capitalization,
 			options.preserveTrackLengths,
@@ -229,14 +226,14 @@ function fillAttribute(attribute: ReleaseAttribute) {
 	).checked = true;
 }
 
-async function fillTracks(
+function fillTracks(
 	tracks: Track[],
 	capitalization: CapitalizationType,
 	preserveTrackLengths: boolean,
 ) {
 	// Use runScript (page world) to click the javascript: href buttons - calling
 	// .click() directly in a content script is blocked by CSP.
-	await runScript(`document.querySelector('#goAdvancedBtn').click()`);
+	runScript(`document.querySelector('#goAdvancedBtn').click()`);
 	const trackInput =
 		forceQuerySelector<HTMLTextAreaElement>(document)("#track_advanced");
 	const existingDurations = preserveTrackLengths
@@ -244,7 +241,7 @@ async function fillTracks(
 		: undefined;
 
 	trackInput.value = formatTracks(tracks, capitalization, existingDurations);
-	await runScript(`document.querySelector('#goSimpleBtn').click()`);
+	runScript(`document.querySelector('#goSimpleBtn').click()`);
 }
 
 function fillSource(url: string) {

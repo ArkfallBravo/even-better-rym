@@ -51,10 +51,12 @@ export const insertGlobalRatingButton = (): void => {
 		button.setAttribute("title", label);
 	};
 
-	void update();
-	button.addEventListener("click", async () => {
+	const toggle = async () => {
 		await setPageEnabled("hideRatings", !(await getPageEnabled("hideRatings")));
 		globalThis.location.reload();
-	});
+	};
+
+	void update();
+	button.addEventListener("click", () => void toggle());
 	document.body.appendChild(button);
 };

@@ -28,6 +28,12 @@ export default [
 	{
 		rules: {
 			"@typescript-eslint/unbound-method": "off",
+			// Destructuring a key next to a rest element is how a key gets
+			// omitted from a copy, so that key is never read.
+			"@typescript-eslint/no-unused-vars": [
+				"error",
+				{ ignoreRestSiblings: true },
+			],
 			"@typescript-eslint/consistent-type-definitions": ["error", "type"],
 			"@typescript-eslint/consistent-type-imports": [
 				"error",
