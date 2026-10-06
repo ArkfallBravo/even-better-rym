@@ -1161,20 +1161,21 @@
   fast-forwarded to `upstream/main` `187349a` (it had no commits of its own),
   then the stash applied cleanly (the stash entry is still in the list).
   - Two commits, each checked on its own: Biome, tsc and ESLint on the
-    changed paths, plus vitest. Commit 1 (tracklist picker) is 259 tests;
-    commit 2 (release picker) is 276.
+    changed paths, plus vitest. Commit 1 (tracklist picker) is 261 tests;
+    commit 2 (release picker) is 278.
     - Commit 1: the stash, plus `hasSameMembers`/`hasDifferingTrackArtists`,
       `picker-row.tsx`, a fresh panel per import (`usePickerImport` with a
-      `key`), and the lint fix.
+      `key`), the shared `createSerialQueue` helper
+      (`src/shared/utils/serial-queue.ts`, tested), and the lint fix.
     - Commit 2: `release-artist-links.ts` and its tests, `filed-under.ts`,
       `release-artist-picker.tsx`, `mergeArtistLabels`, the
       release-label prefill and auto-apply, the `dom.d.ts` events, the
       `fillers.ts` change, and registration in `app.tsx`.
-  - Commit 1's exact tree is saved as tree `8f42f43`, kept reachable by
+  - Commit 1's exact tree is saved as tree `7b9f297`, kept reachable by
     `refs/ebr/picker-port-commit1-tree`. The working tree holds commit 2's
     state, uncommitted. To commit after the test, without the pre-commit
     hook's restaging mixing the two:
-    1. `git commit-tree 8f42f43 -p HEAD`, with commit 1's message.
+    1. `git commit-tree 7b9f297 -p HEAD`, with commit 1's message.
     2. `git reset --soft` to that commit, then `git add -A src` and commit
        normally.
     3. Delete the ref, drop the stash, rebuild the fork for Safari
@@ -1183,11 +1184,15 @@
        so, after showing the body.
   - Differences from the tested fork code, all because upstream's
     `runScript` is async (see `CLAUDE.md`):
-    - every filed-under add, remove and reorder is awaited, and the panel
-      queues syncs (`pendingSync`);
+    - every filed-under add, remove and reorder is awaited, and
+      `syncFiledUnderEntries`/`clearFiledUnderEntries` run through one
+      module-level queue in `filed-under.ts`, since the list is page-wide
+      (a per-panel queue, the first version, missed the VA clear and a
+      remounted panel's first sync);
     - the tracklist Apply awaits the advanced/simple switches
       (`showAdvancedTracklist`/`showSimpleTracklist` now return their
-      promise) and queues applies (`pendingApply`);
+      promise) and applies run through a module-level queue in
+      `artist-link-picker.tsx`;
     - `fill` stays async, with only `fillCoreFields` made synchronous, so
       kknq's `import-controls.tsx` stays untouched. The release picker's
       synchronous label publish still happens before `importEvent`, because
@@ -1198,6 +1203,14 @@
     reach the picker.
   - `shortcut-popup.test.ts` mocks `~/shared/utils/dom`, mirroring
     `applemusic/search.test.ts`.
+  - Port simplify pass (2026-10-06): fixes folded into the two commits, no
+    separate `simplify:` commit. Skipped: batching the filed-under edits
+    into one `runScript` (unknown whether RYM renumbers entries after a
+    delete); skipping an apply whose plan is unchanged (minor); keeping
+    `injectArtistLinkFormatting()` inside `Promise.all` (trips ESLint's
+    `await-thenable`). Asked the user: whether kknq's `fillTracks` should
+    use `showAdvancedTracklist`/`showSimpleTracklist` and the tracklist
+    queue, since it does the same switch inline.
   - Things the user's test should cover: single-artist release; Vholume
     prefill and auto-apply; an issue with inherit pairing and leftover
     removal; quick successive release picks (the new queue); a VA release.
