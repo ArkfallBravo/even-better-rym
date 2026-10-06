@@ -3,7 +3,7 @@ import { fetch } from "~/shared/utils/fetch";
 import type { SearchFunction } from "../types";
 import type { SearchObject } from "./codec";
 
-export const toGeoAppleMusicUrl = (
+export const toRegionalAppleMusicUrl = (
 	collectionViewUrl: string,
 	appleMusicRegion: string,
 ) => {
@@ -13,7 +13,6 @@ export const toGeoAppleMusicUrl = (
 	const path = url.pathname.split("/");
 	if (path.length < 3) return collectionViewUrl;
 
-	url.hostname = "geo.music.apple.com";
 	path[1] = appleMusicRegion;
 	url.pathname = path.join("/");
 	return url.toString();
@@ -40,5 +39,5 @@ export const search: SearchFunction = async ({
 
 	const collectionViewUrl = response.results[0]?.collectionViewUrl;
 	if (!collectionViewUrl || !appleMusicRegion) return collectionViewUrl;
-	return toGeoAppleMusicUrl(collectionViewUrl, appleMusicRegion);
+	return toRegionalAppleMusicUrl(collectionViewUrl, appleMusicRegion);
 };
