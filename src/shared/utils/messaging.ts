@@ -70,6 +70,21 @@ export type SpotifySearchResponse = {
 	data: { url?: string; error?: string };
 };
 
+export type WikipediaSearchRequest = {
+	id: string;
+	type: "wikipediaSearch";
+	data: {
+		artistName: string;
+		albumTitle: string;
+	};
+};
+
+export type WikipediaSearchResponse = {
+	id: string;
+	type: "wikipediaSearch";
+	data: { url?: string; error?: string };
+};
+
 // One-way messages (not a request/response pair, no `id`) for broadcasting a
 // chart-shortcut rebind to any already-open chart page, so it takes effect
 // without a refresh. Popup -> background -> matching tabs.
@@ -107,12 +122,14 @@ export type BackgroundRequest =
 	| FetchRequest
 	| DownloadRequest
 	| ScriptRequest
-	| SpotifySearchRequest;
+	| SpotifySearchRequest
+	| WikipediaSearchRequest;
 export type BackgroundResponse =
 	| FetchResponse
 	| DownloadResponse
 	| ScriptResponse
-	| SpotifySearchResponse;
+	| SpotifySearchResponse
+	| WikipediaSearchResponse;
 
 export const isBackgroundRequest = (o: unknown): o is BackgroundRequest =>
 	typeof o === "object" && o !== null && "id" in o && "type" in o;
