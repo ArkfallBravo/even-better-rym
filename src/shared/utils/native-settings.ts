@@ -1,3 +1,13 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : native-settings.ts
+//
+// PURPOSE : Native messages to the Safari app's settings store
+//
+// CREATED : 7/22/2026
+//
+// ----------------------------------------------------------------------- //
+
 import browser from "webextension-polyfill";
 
 import type { PageKey } from "~/shared/pages";
@@ -15,11 +25,11 @@ type NativeGetAllResponse =
 
 type NativeSetOneResponse = { ok: true } | { ok: false; error: string };
 
-type NativeKeybindingsGetResponse =
+type NativeJsonGetResponse =
 	| { ok: true; value: string | null }
 	| { ok: false; error: string };
 
-type NativeKeybindingsSetResponse = { ok: true } | { ok: false; error: string };
+type NativeJsonSetResponse = { ok: true } | { ok: false; error: string };
 
 function assertNativeOk<T extends { ok: boolean; error?: string }>(
 	response: T,
@@ -52,21 +62,26 @@ export const nativeSetOneSetting = async (
 	assertNativeOk(response, "settings.setOne");
 };
 
-export const nativeGetKeybindings = async (): Promise<string | null> => {
+export const nativeGetJsonSetting = async (
+	key: string,
+): Promise<string | null> => {
 	const response = (await browser.runtime.sendNativeMessage(
 		nativeApplicationName,
-		{ type: "keybindings.get" },
-	)) as NativeKeybindingsGetResponse;
+		{ type: "json.get", key },
+	)) as NativeJsonGetResponse;
 
-	assertNativeOk(response, "keybindings.get");
+	assertNativeOk(response, "json.get");
 	return response.value;
 };
 
-export const nativeSetKeybindings = async (value: string): Promise<void> => {
+export const nativeSetJsonSetting = async (
+	key: string,
+	value: string,
+): Promise<void> => {
 	const response = (await browser.runtime.sendNativeMessage(
 		nativeApplicationName,
-		{ type: "keybindings.setAll", value },
-	)) as NativeKeybindingsSetResponse;
+		{ type: "json.set", key, value },
+	)) as NativeJsonSetResponse;
 
-	assertNativeOk(response, "keybindings.setAll");
+	assertNativeOk(response, "json.set");
 };

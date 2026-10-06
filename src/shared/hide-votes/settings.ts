@@ -23,15 +23,15 @@ export const mergeVoteVisibilitySettings = (
 
 export const getVoteVisibilitySettings =
 	async (): Promise<VoteVisibilitySettings> => {
-		const storage = await import("~/shared/utils/storage");
+		const { getStoredSetting } = await import("~/shared/utils/stored-settings");
 		return mergeVoteVisibilitySettings(
-			await storage.get<VoteVisibilitySettingsOverrides>(STORAGE_KEY),
+			await getStoredSetting<VoteVisibilitySettingsOverrides>(STORAGE_KEY),
 		);
 	};
 
 export const setVoteVisibilitySettings = async (
 	settings: VoteVisibilitySettings,
 ): Promise<void> => {
-	const storage = await import("~/shared/utils/storage");
-	await storage.set(STORAGE_KEY, settings);
+	const { setStoredSetting } = await import("~/shared/utils/stored-settings");
+	await setStoredSetting(STORAGE_KEY, settings);
 };

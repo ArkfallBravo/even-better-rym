@@ -150,29 +150,29 @@ export function mergeReviewSettings(
 }
 
 export const getRatingSettings = async (): Promise<RatingSettings> => {
-	const storage = await import("~/shared/utils/storage");
+	const { getStoredSetting } = await import("~/shared/utils/stored-settings");
 	return mergeRatingSettings(
-		await storage.get<RatingSettingsOverrides>(RATINGS_STORAGE_KEY),
+		await getStoredSetting<RatingSettingsOverrides>(RATINGS_STORAGE_KEY),
 	);
 };
 
 export const setRatingSettings = async (
 	settings: RatingSettings,
 ): Promise<void> => {
-	const storage = await import("~/shared/utils/storage");
-	await storage.set(RATINGS_STORAGE_KEY, settings);
+	const { setStoredSetting } = await import("~/shared/utils/stored-settings");
+	await setStoredSetting(RATINGS_STORAGE_KEY, settings);
 };
 
 export const getReviewSettings = async (): Promise<ReviewSettings> => {
-	const storage = await import("~/shared/utils/storage");
+	const { getStoredSetting } = await import("~/shared/utils/stored-settings");
 	return mergeReviewSettings(
-		await storage.get<ReviewSettingsOverrides>(REVIEWS_STORAGE_KEY),
+		await getStoredSetting<ReviewSettingsOverrides>(REVIEWS_STORAGE_KEY),
 	);
 };
 
 export const setReviewSettings = async (
 	settings: ReviewSettings,
 ): Promise<void> => {
-	const storage = await import("~/shared/utils/storage");
-	await storage.set(REVIEWS_STORAGE_KEY, settings);
+	const { setStoredSetting } = await import("~/shared/utils/stored-settings");
+	await setStoredSetting(REVIEWS_STORAGE_KEY, settings);
 };

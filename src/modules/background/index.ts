@@ -4,11 +4,11 @@ import type { PageKey } from "~/shared/pages";
 import { globalPageKeys, pages } from "~/shared/pages";
 import type {
 	BackgroundResponse,
-	KeybindingsGetRequest,
-	KeybindingsGetResponse,
-	KeybindingsSetRequest,
-	KeybindingsSetResponse,
-	KeybindingsUpdatedMessage,
+	JsonSettingGetRequest,
+	JsonSettingGetResponse,
+	JsonSettingSetRequest,
+	JsonSettingSetResponse,
+	JsonSettingUpdatedMessage,
 	SettingsGetAllRequest,
 	SettingsGetAllResponse,
 	SettingsSetRequest,
@@ -20,8 +20,8 @@ import { isBackgroundRequest } from "~/shared/utils/messaging";
 import type { SettingsDict } from "~/shared/utils/native-settings";
 import {
 	nativeGetAllSettings,
-	nativeGetKeybindings,
-	nativeSetKeybindings,
+	nativeGetJsonSetting,
+	nativeSetJsonSetting,
 	nativeSetOneSetting,
 } from "~/shared/utils/native-settings";
 import * as storage from "~/shared/utils/storage";
@@ -135,22 +135,23 @@ const getSettingsSetResponse = async (
 	return { id: message.id, type: "settingsSet" };
 };
 
-const getKeybindingsGetResponse = async (
-	message: KeybindingsGetRequest,
-): Promise<KeybindingsGetResponse> => ({
+const getJsonSettingGetResponse = async (
+	message: JsonSettingGetRequest,
+): Promise<JsonSettingGetResponse> => ({
 	id: message.id,
-	type: "keybindingsGet",
-	data: await nativeGetKeybindings(),
+	type: "jsonSettingGet",
+	data: await nativeGetJsonSetting(message.data.key),
 });
 
-// Matches this content script's own manifest.ts content_scripts registration.
-const CHART_SHORTCUTS_MATCH_PATTERN = "*://*.rateyourmusic.com/charts/*";
+const RYM_MATCH_PATTERN = "*://*.rateyourmusic.com/*";
 
 // browser.storage.onChanged doesn't reliably reach a content script's
-// context from a popup write on Safari, so an already-open chart page needs
-// to be told about a binding change explicitly instead.
-const broadcastKeybindingsChanged = async (value: string): Promise<void> => {
-	const tabs = await browser.tabs.query({ url: CHART_SHORTCUTS_MATCH_PATTERN });
+// context from a popup write on Safari, so open RYM pages need to be told
+// about a setting change explicitly instead.
+const broadcastJsonSettingChanged = async (
+	data: JsonSettingUpdatedMessage["data"],
+): Promise<void> => {
+	const tabs = await browser.tabs.query({ url: RYM_MATCH_PATTERN });
 	await Promise.all(
 		tabs
 			.map((tab) => tab.id)
@@ -158,9 +159,9 @@ const broadcastKeybindingsChanged = async (value: string): Promise<void> => {
 			.map((id) =>
 				browser.tabs
 					.sendMessage(id, {
-						type: "keybindingsUpdated",
-						data: { value },
-					} satisfies KeybindingsUpdatedMessage)
+						type: "jsonSettingUpdated",
+						data,
+					} satisfies JsonSettingUpdatedMessage)
 					.catch(() => {
 						// No content script listening in this tab (e.g. mid-navigation) - fine to drop.
 					}),
@@ -168,16 +169,16 @@ const broadcastKeybindingsChanged = async (value: string): Promise<void> => {
 	);
 };
 
-const getKeybindingsSetResponse = async (
-	message: KeybindingsSetRequest,
-): Promise<KeybindingsSetResponse> => {
-	await broadcastKeybindingsChanged(message.data.value);
-	await nativeSetKeybindings(message.data.value);
-	return { id: message.id, type: "keybindingsSet" };
+const getJsonSettingSetResponse = async (
+	message: JsonSettingSetRequest,
+): Promise<JsonSettingSetResponse> => {
+	await broadcastJsonSettingChanged(message.data);
+	await nativeSetJsonSetting(message.data.key, message.data.value);
+	return { id: message.id, type: "jsonSettingSet" };
 };
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-	// storageSet/settingsGetAll/settingsSet/keybindingsGet/keybindingsSet have
+	// storageSet/settingsGetAll/settingsSet/jsonSettingGet/jsonSettingSet have
 	// no associated tab (e.g. sent from the popup), so they're handled before
 	// the tab-scoped messages below. Each has a .catch fallback: without one,
 	// a rejected native call means sendResponse is never called and the
@@ -215,18 +216,20 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			});
 		}
 
-		if (message.type === "keybindingsGet") {
-			return respondFrom(getKeybindingsGetResponse(message), {
+		if (message.type === "jsonSettingGet") {
+			return respondFrom(getJsonSettingGetResponse(message), {
 				id: message.id,
-				type: "keybindingsGet",
+				type: "jsonSettingGet",
 				data: null,
+				error: "native settings call failed",
 			});
 		}
 
-		if (message.type === "keybindingsSet") {
-			return respondFrom(getKeybindingsSetResponse(message), {
+		if (message.type === "jsonSettingSet") {
+			return respondFrom(getJsonSettingSetResponse(message), {
 				id: message.id,
-				type: "keybindingsSet",
+				type: "jsonSettingSet",
+				error: "native settings call failed",
 			});
 		}
 	}

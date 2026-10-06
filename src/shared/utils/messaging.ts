@@ -96,49 +96,56 @@ export type SettingsSetResponse = {
 	type: "settingsSet";
 };
 
-export type KeybindingsGetRequest = {
+export type JsonSettingGetRequest = {
 	id: string;
-	type: "keybindingsGet";
-};
-
-export type KeybindingsGetResponse = {
-	id: string;
-	type: "keybindingsGet";
-	data: string | null;
-};
-
-export type KeybindingsSetRequest = {
-	id: string;
-	type: "keybindingsSet";
+	type: "jsonSettingGet";
 	data: {
+		key: string;
+	};
+};
+
+export type JsonSettingGetResponse = {
+	id: string;
+	type: "jsonSettingGet";
+	data: string | null;
+	error?: string;
+};
+
+export type JsonSettingSetRequest = {
+	id: string;
+	type: "jsonSettingSet";
+	data: {
+		key: string;
 		value: string;
 	};
 };
 
-export type KeybindingsSetResponse = {
+export type JsonSettingSetResponse = {
 	id: string;
-	type: "keybindingsSet";
+	type: "jsonSettingSet";
+	error?: string;
 };
 
 // Background -> tab broadcast (not a request/response pair, no `id`): tells
-// an already-open chart page's content script to pick up a binding change
-// made in the popup without a refresh. Needed because browser.storage.onChanged
+// an already-open page's content script about a setting change made
+// elsewhere without a refresh. Needed because browser.storage.onChanged
 // doesn't reliably reach a content script's context from a popup write on
 // Safari, unlike Chrome/Firefox.
-export type KeybindingsUpdatedMessage = {
-	type: "keybindingsUpdated";
+export type JsonSettingUpdatedMessage = {
+	type: "jsonSettingUpdated";
 	data: {
+		key: string;
 		value: string;
 	};
 };
 
-export const isKeybindingsUpdatedMessage = (
+export const isJsonSettingUpdatedMessage = (
 	o: unknown,
-): o is KeybindingsUpdatedMessage =>
+): o is JsonSettingUpdatedMessage =>
 	typeof o === "object" &&
 	o !== null &&
 	"type" in o &&
-	o.type === "keybindingsUpdated";
+	o.type === "jsonSettingUpdated";
 
 export type BackgroundRequest =
 	| FetchRequest
@@ -147,8 +154,8 @@ export type BackgroundRequest =
 	| StorageSetRequest
 	| SettingsGetAllRequest
 	| SettingsSetRequest
-	| KeybindingsGetRequest
-	| KeybindingsSetRequest;
+	| JsonSettingGetRequest
+	| JsonSettingSetRequest;
 export type BackgroundResponse =
 	| FetchResponse
 	| DownloadResponse
@@ -156,8 +163,8 @@ export type BackgroundResponse =
 	| StorageSetResponse
 	| SettingsGetAllResponse
 	| SettingsSetResponse
-	| KeybindingsGetResponse
-	| KeybindingsSetResponse;
+	| JsonSettingGetResponse
+	| JsonSettingSetResponse;
 
 export const isBackgroundRequest = (o: unknown): o is BackgroundRequest =>
 	typeof o === "object" && o !== null && "id" in o && "type" in o;
