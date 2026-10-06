@@ -217,6 +217,14 @@ The tracklist artist-link picker (`release-submission/use-cases/artist-link-pick
 - Each result row is `<div onclick="window.parent.createShortcut('a', 'NNN');return false;">`. **In the user's Safari these inline handlers never run, even in RYM's own popup with the extension's picker uninvolved.** The suspected cause is RYM's CSP blocking `unsafe-inline`, though AdGuard or the userscript manager, both of which inject into the frame, haven't been ruled out. So the picker reads the id from the clicked row's `onclick` attribute text with a capture-phase listener on the frame's document, re-attached on every frame `load` (`watchArtistResultClicks`). Don't rely on `createShortcut` running or on `patchCreateShortcut`'s `EbrArtistShortcutInsertedEvent` for this popup.
 - On the release-edit page, `createShortcut` doesn't close the popup, so the picker closes it itself.
 
+### RYM's "File under performer" list (release-edit page)
+
+The release-artist picker (`release-submission/use-cases/release-artist-picker.tsx`) edits this list through RYM's own functions. Internals, from the saved `Release Editing - Rate Your Music.html` and confirmed in Safari on 2026-10-06:
+- Each artist is an `li.sortable_filed_under_performer` (id `filed_under_performer_N`) inside `#filed_under_performerx`, holding an input whose value is `[ArtistNNN]` and a `.filed_under_artist_preview` with the name. RYM credits the artists in list order, and `addFiledUnder` always appends, so after adding, reorder the `li`s and call `updateFiledUnderOrder('performer')` (`utils/filed-under.ts`).
+- Add and remove with the page-world `addFiledUnder('performer', id, name)` and `deleteFiledUnder(N, 'performer')` through `runScript`. Don't use `selectShortcut(..., "filedunder")` for this: its `label` parameter defaults to `''`, so it calls `addFiledUnder('', ...)`. The delete links are `javascript:` hrefs, which CSP blocks when clicked from the content script.
+- On an issue, RYM copies the parent's artists into the list, and `updateFiledUnderCoalesce` hides all of `#section_filed_under` while "credited in the same manner as the parent issue" (`#filed_under_same_as_parent_yes`) is selected. Anything that must stay visible in that mode has to sit outside that section.
+- Unlike the shortcut popup, clicking a result in this section's own search list (`/go/searchcredits` in `#filed_underperformerlist`) does add the artist in the user's Safari.
+
 Apple Music's album page has one `"subtitleLinks"` entry per distinct artist on each track, and it's empty on tracks by the album artists. The album header is the first `subtitleLinks` in the track-lockup script (`getAlbumHeaderArtists`). Never search the whole script for "Various Artists": recommended albums further down the page carry their own `subtitleLinks`, and one of them once marked a non-VA release as Various Artists.
 
 ### Page key registry (`src/shared/pages.ts`)
