@@ -30,7 +30,7 @@ Husky runs lint on pre-commit (see `prepare` script) — don't bypass it. The ho
 
 `src/manifest.ts` generates both Manifest V2 (`getManifest(2, ...)`) and V3 (`getManifest(3, ...)`, the default) from one shared definition (`sharedManifest`). Which one gets built is controlled by the `MANIFEST_VERSION` env var read in `vite.config.ts`.
 
-The Safari native app (`EvenBetterRYM/EvenBetterRYM.xcodeproj`) does **not** have its own build step — its iOS and macOS Safari Web Extension targets both reference `dist/manifest.json`, `dist/assets`, `dist/src`, `dist/background.html`, and `dist/icons` directly via `../../dist/...` path references in `project.pbxproj`. Running `npm run build:safari` regenerates `dist/` and is picked up by both platforms simultaneously — there is no separate iOS vs. macOS JS build. After running it, re-archive/reload in Xcode to see the change.
+The Safari native app (`EvenBetterRYM/EvenBetterRYM.xcodeproj`) does **not** have its own build step — its iOS and macOS Safari Web Extension targets both reference `dist/manifest.json`, `dist/assets`, `dist/src`, `dist/background.html`, `dist/changelog.html`, `dist/changelog.css`, and `dist/icons` directly via `../../dist/...` path references in `project.pbxproj`. Running `npm run build:safari` regenerates `dist/` and is picked up by both platforms simultaneously — there is no separate iOS vs. macOS JS build. After running it, re-archive/reload in Xcode to see the change.
 
 V2 (Safari) uses a persistent-page background (`background.scripts` + `persistent: false` — Safari on iOS/iPadOS requires `persistent: false` whenever `background.page`/`scripts` is used instead of `service_worker`, or App Store validation fails). V3 uses `background.service_worker`.
 
