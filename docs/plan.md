@@ -1066,6 +1066,80 @@
   `artist-link-formatting.tsx` (the user's own PR #82 code, already on
   `upstream/main`, also present on the fork) by dropping its `async`.
 
+  Next change, 2026-10-06 (**built on branch `artist-pickers` off
+  `sync-upstream`; the user confirmed everything works in Safari and it is
+  committed there, not pushed. Next: port both pickers to
+  `tracklist-artist-links-upstream` as two commits**): a
+  **release-artist ("filed under") picker** plus
+  changes to the tracklist picker, shipped upstream as one PR with two
+  commits (tracklist picker, then release picker), since the tracklist
+  prefill reads the release picks. Origin of the problem: upstream's
+  `fillArtist` (Jake Cheek, `dd6095c`, 2021) searches each imported release
+  artist and clicks RYM's top result unchecked, on every import (single- or
+  multi-artist), unless the "Artists" import field is unticked. Decisions
+  (user, 2026-10-06):
+  - Tracklist picker shows only if some track's artists differ from the
+    release's, compared per artist: a track differs if it has an artist
+    not on the release or lacks one of the release's artists (so a track
+    by A alone on an A & B release differs). Empty track artists count as
+    matching. RYM's docs say an all-matching release lists no track
+    artists. When it shows, every
+    track still gets a prefix, as before.
+  - A track artist spelled identically (case-sensitive) to an imported
+    release artist is prefilled with that release row's result: the link
+    if linked or inherited, plain text if skipped. This copies the user's
+    own pick, so it doesn't conflict with "no preselection" above.
+  - When every tracklist row is filled, the picker auto-applies; it stays
+    usable and Apply still works afterwards. A later release-picker change
+    updates prefilled rows and re-applies, except rows the user changed in
+    the tracklist picker.
+  - Release picker rows: Link / Skip / Inherit from parent. Parent
+    (inherited) filed-under artists auto-pair one-to-one with imported
+    names by loose exact match (ignoring case, accents, punctuation,
+    spacing; rejected: an edit-distance similarity score, which can pair
+    the wrong artist). Inherit can be toggled on any row, with a dropdown
+    of unused parent artists, and toggled off again. Parent artists no row inherits are removed.
+  - Link uses RYM's own filed-under search box and result list; the pick
+    is read from the new `#filed_under_performerx` entry. Clicking a result
+    there does add the artist in the user's Safari (confirmed 2026-10-06),
+    unlike the shortcut popup's inline handlers.
+  - In the fork this replaces `7e3edd0`'s `filedUnderPerformersMatch`
+    logic; work on a new branch off `sync-upstream`, then port.
+  Implementation (compiles; Biome, tsc, ESLint and 286 tests pass):
+  - `fillers.ts`'s `fillArtists` no longer searches. For VA it ticks VA
+    and clears the list as before; otherwise it dispatches
+    `releaseArtistsEvent` with the names, or with `[]` when the "Artists"
+    import field is off, so the pickers never keep the previous import's
+    artists. `fill` is now synchronous (so `import-controls.tsx`, upstream
+    code, calls it without `await`).
+  - `utils/release-artist-links.ts` (pure, tested): loose name matching,
+    one-to-one inherit pairing, the filed-under add/remove plan (only
+    removes ids the picker manages: the parent's plus ones it linked), and
+    the name-to-label map.
+  - `utils/filed-under.ts`: reads entries from
+    `li.sortable_filed_under_performer` and edits the list through RYM's
+    own `addFiledUnder`/`deleteFiledUnder` via `runScript` (RYM's own
+    `selectShortcut(..., "filedunder")` passes an empty label, so it isn't
+    used). New picks are read with a `MutationObserver`.
+  - `use-cases/release-artist-picker.tsx`: panel placed just before
+    `#section_filed_under`, because RYM's `updateFiledUnderCoalesce` hides
+    that section while "same as parent" is selected (when every artist is
+    inherited, the form stays in that mode, and Inherit must still be
+    reachable). Every choice change reconciles the filed-under list,
+    reorders it to row order (RYM credits artists in list order, and new
+    entries are appended at the end) via `updateFiledUnderOrder`, switches off "same as parent" whenever the chosen artists differ
+    from the parent's, and publishes `releaseArtistLabelsEvent`. The
+    starting labels are published synchronously from the
+    `releaseArtistsEvent` listener, before `importEvent`, so the tracklist
+    panel never mounts with the previous import's labels.
+  - Tracklist picker: hidden unless `hasDifferingTrackArtists`; labels are
+    the release labels overridden by the user's own picks
+    (`mergeArtistLabels`); auto-applies on every release-label change that
+    leaves all rows labelled. Row markup shared in `use-cases/picker-row.tsx`.
+  - Known quirk: importing twice on the same page treats the first import's
+    linked artists as parent entries, so they show as "inherited from
+    parent". The result is still correct.
+
 - Upstream sync (started 2026-10-02, branch `sync-upstream`): merging all
   32 `upstream/main` commits not yet on the fork (last sync was `25ce505`,
   2026-07-25) up to `167255d` (#124). Status: done and committed (see the
