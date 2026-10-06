@@ -8,33 +8,27 @@ import type {
 	ResolveData,
 	Track,
 } from "~/shared/services/types";
-import {
-	forceQuerySelector,
-	runScript,
-	waitForResult,
-} from "~/shared/utils/dom";
+import { forceQuerySelector, runScript } from "~/shared/utils/dom";
 
 import type { FillData } from "../dom";
 import type { CapitalizationType } from "./capitalization";
 import { capitalize } from "./capitalization";
+import {
+	clearFiledUnderEntries,
+	switchAwayFromSameAsParent,
+} from "./filed-under";
 import { formatTracks, getTrackDurations } from "./tracklist";
 import type { ReleaseOptions } from "./types";
 
-export async function fill(
-	data: ResolveData,
-	options: ReleaseOptions,
-): Promise<void> {
-	await fillCoreFields(data, options);
+export function fill(data: ResolveData, options: ReleaseOptions): void {
+	fillCoreFields(data, options);
 	fillExtraFields(data, options);
 }
 
-async function fillCoreFields(
-	data: ResolveData,
-	options: ReleaseOptions,
-): Promise<void> {
-	if (data.artists != null && options.fillFields.artists) {
-		await fillArtists(data.artists);
-	}
+function fillCoreFields(data: ResolveData, options: ReleaseOptions): void {
+	// Always runs, so the release-artist picker drops the previous import's
+	// artists even when this import fills none.
+	fillArtists(options.fillFields.artists ? (data.artists ?? []) : []);
 	if (data.type != null && options.fillFields.type) {
 		fillType(data.type);
 	}
@@ -74,77 +68,20 @@ function fillExtraFields(data: ResolveData, options: ReleaseOptions): void {
 	}
 }
 
-async function fillArtists(artists: string[]) {
-	if (artists[0]?.toLowerCase() === "various artists") {
+// Ticks "Various Artists" for a VA release; otherwise hands the artists to
+// the release-artist picker.
+function fillArtists(artists: string[]) {
+	const isVariousArtists = artists[0]?.toLowerCase() === "various artists";
+	if (isVariousArtists) {
 		forceQuerySelector<HTMLInputElement>(document)("#cat_va").click();
 		switchAwayFromSameAsParent();
-		clearFiledUnderPerformers();
-		return;
+		clearFiledUnderEntries();
 	}
-
-	if (filedUnderPerformersMatch(artists)) return;
-
-	switchAwayFromSameAsParent();
-	clearFiledUnderPerformers();
-	for (const artist of artists) await fillArtist(artist);
-}
-
-function getFiledUnderPerformerNames(): string[] {
-	return [...document.querySelectorAll(".sortable_filed_under_performer")].map(
-		(entry) =>
-			entry
-				.querySelector(".filed_under_artist_preview .rendered_text")
-				?.textContent?.trim() ?? "",
+	document.dispatchEvent(
+		new CustomEvent<string[]>("releaseArtistsEvent", {
+			detail: isVariousArtists ? [] : artists,
+		}),
 	);
-}
-
-function filedUnderPerformersMatch(artists: string[]): boolean {
-	const current = getFiledUnderPerformerNames();
-	if (current.length !== artists.length) return false;
-
-	const normalize = (names: string[]) =>
-		names.map((name) => name.toLowerCase()).sort();
-	const normalizedCurrent = normalize(current);
-	const normalizedArtists = normalize(artists);
-	return normalizedCurrent.every(
-		(name, index) => name === normalizedArtists[index],
-	);
-}
-
-function switchAwayFromSameAsParent() {
-	document
-		.querySelector<HTMLInputElement>("#filed_under_same_as_parent_no")
-		?.click();
-}
-
-function clearFiledUnderPerformers() {
-	for (const link of document.querySelectorAll<HTMLAnchorElement>(
-		"#filed_under_performerx .filed_under_delete a",
-	)) {
-		link.click();
-	}
-}
-
-async function fillArtist(artist: string) {
-	// Enter search term
-	forceQuerySelector<HTMLInputElement>(document)(
-		"#filed_under_searchterm",
-	).value = artist;
-
-	// Click search button
-	forceQuerySelector<HTMLInputElement>(document)(
-		"#section_filed_under .gosearch input[type=button]",
-	).click();
-
-	// Wait for results
-	const topResult = await waitForResult(
-		forceQuerySelector<HTMLIFrameElement>(document)(
-			"#filed_underperformerlist",
-		),
-	);
-
-	// Click the top result if there is one
-	topResult?.click();
 }
 
 function fillType(type: ReleaseType) {

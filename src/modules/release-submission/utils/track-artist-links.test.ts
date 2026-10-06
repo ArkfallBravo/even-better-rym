@@ -13,6 +13,8 @@ import { describe, expect, test } from "vitest";
 import {
 	buildRelinkPlan,
 	getDistinctTrackArtists,
+	hasDifferingTrackArtists,
+	mergeArtistLabels,
 	relinkTracklistLines,
 	removeLinkedPrefix,
 	unlinkTracklistLines,
@@ -33,6 +35,54 @@ describe("withReleaseArtistFallback", () => {
 		const tracks = [{ position: "1", artists: ["C"] }];
 
 		expect(withReleaseArtistFallback(tracks, ["A"])).toEqual(tracks);
+	});
+});
+
+describe("hasDifferingTrackArtists", () => {
+	test("is false when every track has the release's artists or none", () => {
+		const tracks = [
+			{ artists: ["A", "B"] },
+			{ artists: ["B", "A"] },
+			{ artists: [] },
+			{},
+		];
+
+		expect(hasDifferingTrackArtists(tracks, ["A", "B"])).toBe(false);
+	});
+
+	test("is true when a track has an artist not on the release", () => {
+		const tracks = [{ artists: ["A"] }, { artists: ["A", "C"] }];
+
+		expect(hasDifferingTrackArtists(tracks, ["A"])).toBe(true);
+	});
+
+	test("is true when a track lacks one of the release's artists", () => {
+		const tracks = [{ artists: ["A"] }];
+
+		expect(hasDifferingTrackArtists(tracks, ["A", "B"])).toBe(true);
+	});
+
+	test("compares names exactly", () => {
+		const tracks = [{ artists: ["tom schley"] }];
+
+		expect(hasDifferingTrackArtists(tracks, ["Tom Schley"])).toBe(true);
+	});
+});
+
+describe("mergeArtistLabels", () => {
+	test("lets the user's picks override the release labels", () => {
+		const releaseLabels = new Map([
+			["A", "[Artist1]"],
+			["B", "B"],
+		]);
+		const pickedLabels = new Map([["A", "[Artist2]"]]);
+
+		expect(mergeArtistLabels(releaseLabels, pickedLabels)).toEqual(
+			new Map([
+				["A", "[Artist2]"],
+				["B", "B"],
+			]),
+		);
 	});
 });
 

@@ -35,6 +35,36 @@ export const withReleaseArtistFallback = (
 			: track,
 	);
 
+// Checks whether the set of artists has the same members as the release's.
+const isSameArtistSet = (artists: string[], releaseArtists: Set<string>) => {
+	const trackArtists = new Set(artists);
+	return (
+		trackArtists.size === releaseArtists.size &&
+		[...trackArtists].every((artist) => releaseArtists.has(artist))
+	);
+};
+
+// Checks whether any track lists artists other than exactly the release's.
+// A track with no artists of its own counts as the release's.
+export const hasDifferingTrackArtists = (
+	tracks: Track[],
+	releaseArtists: string[],
+): boolean => {
+	const releaseArtistSet = new Set(releaseArtists);
+	return tracks.some(
+		(track) =>
+			track.artists !== undefined &&
+			track.artists.length > 0 &&
+			!isSameArtistSet(track.artists, releaseArtistSet),
+	);
+};
+
+// Returns the release artists' labels overridden by the user's own picks.
+export const mergeArtistLabels = (
+	releaseLabels: ArtistLabels,
+	pickedLabels: ArtistLabels,
+): ArtistLabels => new Map([...releaseLabels, ...pickedLabels]);
+
 // Returns each track artist name once, in order of first appearance.
 export const getDistinctTrackArtists = (tracks: Track[]): string[] => [
 	...new Set(tracks.flatMap((track) => track.artists ?? [])),

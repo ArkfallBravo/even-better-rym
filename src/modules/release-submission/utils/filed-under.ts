@@ -1,0 +1,143 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : filed-under.ts
+//
+// PURPOSE : Reading and editing RYM's "filed under performer" list
+//
+// CREATED : 10/6/2026
+//
+// ----------------------------------------------------------------------- //
+
+import { forceQuerySelector, runScript } from "~/shared/utils/dom";
+
+import type { FiledUnderEntry } from "./release-artist-links";
+import { parseArtistTokenId } from "./release-artist-links";
+
+const LIST_SELECTOR = "#filed_under_performerx";
+const ENTRY_SELECTOR = "li.sortable_filed_under_performer";
+const ENTRY_TOKEN_SELECTOR = 'input[id^="filed_under_performer_artist_"]';
+const ENTRY_NAME_SELECTOR = ".filed_under_artist_preview";
+const ENTRY_NUMBER_PATTERN = /^filed_under_performer_(\d+)$/;
+const SEARCH_INPUT_SELECTOR = "#filed_under_searchterm";
+const SEARCH_BUTTON_SELECTOR =
+	"#section_filed_under .gosearch input[type=button]";
+const NOT_SAME_AS_PARENT_SELECTOR = "#filed_under_same_as_parent_no";
+const FILED_UNDER_LABEL = "performer";
+
+// Returns the entry an element of the filed-under list holds, if it is one.
+const parseEntryElement = (element: Element): FiledUnderEntry | undefined => {
+	const token =
+		element.querySelector<HTMLInputElement>(ENTRY_TOKEN_SELECTOR)?.value ?? "";
+	const id = parseArtistTokenId(token);
+	if (id === undefined) {
+		return undefined;
+	}
+	const name =
+		element.querySelector(ENTRY_NAME_SELECTOR)?.textContent?.trim() ?? "";
+	return { id, name };
+};
+
+const getEntryElements = (): Element[] => [
+	...document.querySelectorAll(ENTRY_SELECTOR),
+];
+
+// Returns the artists currently in the filed-under list, in order.
+export const readFiledUnderEntries = (): FiledUnderEntry[] =>
+	getEntryElements()
+		.map(parseEntryElement)
+		.filter((entry) => entry !== undefined);
+
+// Returns RYM's row number for the entry with the given artist id.
+const findEntryNumber = (id: string): string | undefined => {
+	const element = getEntryElements().find(
+		(candidate) => parseEntryElement(candidate)?.id === id,
+	);
+	return ENTRY_NUMBER_PATTERN.exec(element?.id ?? "")?.[1];
+};
+
+// Removes the entry with the given artist id from the filed-under list.
+export const removeFiledUnderEntry = (id: string): void => {
+	const entryNumber = findEntryNumber(id);
+	if (entryNumber === undefined) {
+		return;
+	}
+	runScript(
+		`deleteFiledUnder(${entryNumber}, ${JSON.stringify(FILED_UNDER_LABEL)});`,
+	);
+};
+
+// Adds the artist to the end of the filed-under list.
+export const addFiledUnderEntry = (entry: FiledUnderEntry): void =>
+	runScript(
+		`addFiledUnder(${JSON.stringify(FILED_UNDER_LABEL)}, ${JSON.stringify(entry.id)}, ${JSON.stringify(entry.name)});`,
+	);
+
+// Moves the entries into the given artist id order and has RYM update the
+// credited name to match.
+export const reorderFiledUnderEntries = (ids: string[]): void => {
+	const list = document.querySelector(LIST_SELECTOR);
+	if (list === null) {
+		return;
+	}
+	for (const id of ids) {
+		const element = getEntryElements().find(
+			(candidate) => parseEntryElement(candidate)?.id === id,
+		);
+		if (element !== undefined) {
+			list.append(element);
+		}
+	}
+	runScript(`updateFiledUnderOrder(${JSON.stringify(FILED_UNDER_LABEL)});`);
+};
+
+// Removes every artist from the filed-under list.
+export const clearFiledUnderEntries = (): void => {
+	for (const entry of readFiledUnderEntries()) {
+		removeFiledUnderEntry(entry.id);
+	}
+};
+
+// Runs RYM's filed-under artist search for name.
+export const searchFiledUnder = (name: string): void => {
+	forceQuerySelector<HTMLInputElement>(document)(SEARCH_INPUT_SELECTOR).value =
+		name;
+	forceQuerySelector<HTMLInputElement>(document)(
+		SEARCH_BUTTON_SELECTOR,
+	).click();
+};
+
+// Switches an issue's form from "credited in the same manner as the parent
+// issue" to editing its own filed-under list.
+export const switchAwayFromSameAsParent = (): void =>
+	document
+		.querySelector<HTMLInputElement>(NOT_SAME_AS_PARENT_SELECTOR)
+		?.click();
+
+// Returns the filed-under entries the mutation records added.
+const getAddedEntries = (records: MutationRecord[]): FiledUnderEntry[] =>
+	records
+		.flatMap((record) => [...record.addedNodes])
+		.filter(
+			(node): node is Element =>
+				node instanceof Element && node.matches(ENTRY_SELECTOR),
+		)
+		.map(parseEntryElement)
+		.filter((entry) => entry !== undefined);
+
+// Calls onAdd with each entry added to the filed-under list until the
+// returned function is called.
+export const watchFiledUnderAdditions = (
+	onAdd: (entry: FiledUnderEntry) => void,
+): (() => void) => {
+	const list = document.querySelector(LIST_SELECTOR);
+	if (list === null) {
+		return () => undefined;
+	}
+	const observer = new MutationObserver((records) => {
+		for (const entry of getAddedEntries(records)) {
+			onAdd(entry);
+		}
+	});
+	observer.observe(list, { childList: true, subtree: true });
+	return () => observer.disconnect();
+};

@@ -30,7 +30,7 @@ function Import() {
 		async (url: string, service: Service & Resolvable) => {
 			const resolvedInfo = await fetchInfo(url, service);
 			if (isComplete(resolvedInfo)) {
-				await fill(resolvedInfo.data, formOptions);
+				fill(resolvedInfo.data, formOptions);
 				setInfo(resolvedInfo);
 
 				// emit import event

@@ -6,6 +6,7 @@ import injectDateControls from "./use-cases/date-controls";
 import injectFileUnderControls from "./use-cases/file-under-controls";
 import injectImportControls from "./use-cases/import-controls";
 import injectLabelControls from "./use-cases/label-controls";
+import injectReleaseArtistPicker from "./use-cases/release-artist-picker";
 import injectTracklistControls from "./use-cases/tracklist-controls";
 
 export const main = () => {
@@ -14,6 +15,7 @@ export const main = () => {
 		injectImportControls(),
 		injectTracklistControls(),
 		injectArtistLinkPicker(),
+		injectReleaseArtistPicker(),
 		injectFileUnderControls(),
 		injectCreditsControls(),
 		injectLabelControls(),
