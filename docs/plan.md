@@ -1061,10 +1061,11 @@
   `main`); the popup's position beside the panel; and a band name
   containing `&` arriving as one Apple Music entry.
 
-  Upstream PR to `kknq/even-better-rym` (on hold at the user's request,
-  2026-10-02): branch `tracklist-artist-links-upstream`, created from
-  `upstream/main`, with its uncommitted port saved in `git stash` ("picker
-  port (uncommitted)"). Upstream has no per-track Apple Music artists (PR
+  Upstream PR to `kknq/even-better-rym` (first port 2026-10-02, now being
+  finished together with the release picker; see the next entry's "Upstream
+  port" status): branch `tracklist-artist-links-upstream`, created from
+  `upstream/main`, with the first uncommitted port saved in `git stash`
+  ("picker port (uncommitted)"). Upstream has no per-track Apple Music artists (PR
   #65 was closed unmerged), so the port carries `Track.artists` and
   `track-artists.ts` (without `getAlbumHeaderArtists`, since upstream has no
   VA detection). It also carries the four new `page-functions.ts`
@@ -1075,16 +1076,16 @@
   `git push` would target kknq's repo. Push it with
   `git push -u origin tracklist-artist-links-upstream`. To test it in
   Safari, see `CLAUDE.md` ("Testing an upstream-based branch in Safari").
-  Open questions for the user: keep or
-  strip the file headers on the new files (upstream files have none), and
-  whether to fix the `require-await` ESLint error in
-  `artist-link-formatting.tsx` (the user's own PR #82 code, already on
-  `upstream/main`, also present on the fork) by dropping its `async`.
+  Decided by the user (2026-10-06): strip the file headers on the upstream
+  copies, and fix the `require-await` error in `artist-link-formatting.tsx`
+  (the user's own PR #82 code) in this PR by dropping its `async` and
+  calling it outside `Promise.all` in `app.tsx` (as the fork's `44a8bcb`
+  does; otherwise `await-thenable` fires).
 
   Next change, 2026-10-06 (**built on branch `artist-pickers` off
   `sync-upstream`; the user confirmed everything works in Safari and it is
-  committed there, not pushed. Next: port both pickers to
-  `tracklist-artist-links-upstream` as two commits**): a
+  committed there, not pushed. Upstream port built but not committed; see
+  "Upstream port" at the end of this entry**): a
   **release-artist ("filed under") picker** plus
   changes to the tracklist picker, shipped upstream as one PR with two
   commits (tracklist picker, then release picker), since the tracklist
@@ -1154,6 +1155,55 @@
   - Known quirk: importing twice on the same page treats the first import's
     linked artists as parent entries, so they show as "inherited from
     parent". The result is still correct.
+
+  Upstream port (2026-10-06, **built, not committed; waiting on the user's
+  Safari test of the upstream build**). On `tracklist-artist-links-upstream`,
+  fast-forwarded to `upstream/main` `187349a` (it had no commits of its own),
+  then the stash applied cleanly (the stash entry is still in the list).
+  - Two commits, each checked on its own: Biome, tsc and ESLint on the
+    changed paths, plus vitest. Commit 1 (tracklist picker) is 259 tests;
+    commit 2 (release picker) is 276.
+    - Commit 1: the stash, plus `hasSameMembers`/`hasDifferingTrackArtists`,
+      `picker-row.tsx`, a fresh panel per import (`usePickerImport` with a
+      `key`), and the lint fix.
+    - Commit 2: `release-artist-links.ts` and its tests, `filed-under.ts`,
+      `release-artist-picker.tsx`, `mergeArtistLabels`, the
+      release-label prefill and auto-apply, the `dom.d.ts` events, the
+      `fillers.ts` change, and registration in `app.tsx`.
+  - Commit 1's exact tree is saved as tree `8f42f43`, kept reachable by
+    `refs/ebr/picker-port-commit1-tree`. The working tree holds commit 2's
+    state, uncommitted. To commit after the test, without the pre-commit
+    hook's restaging mixing the two:
+    1. `git commit-tree 8f42f43 -p HEAD`, with commit 1's message.
+    2. `git reset --soft` to that commit, then `git add -A src` and commit
+       normally.
+    3. Delete the ref, drop the stash, rebuild the fork for Safari
+       (`npm run build:safari` + `xcodebuild`).
+    4. Push with `git push -u origin`; open the PR only when the user says
+       so, after showing the body.
+  - Differences from the tested fork code, all because upstream's
+    `runScript` is async (see `CLAUDE.md`):
+    - every filed-under add, remove and reorder is awaited, and the panel
+      queues syncs (`pendingSync`);
+    - the tracklist Apply awaits the advanced/simple switches
+      (`showAdvancedTracklist`/`showSimpleTracklist` now return their
+      promise) and queues applies (`pendingApply`);
+    - `fill` stays async, with only `fillCoreFields` made synchronous, so
+      kknq's `import-controls.tsx` stays untouched. The release picker's
+      synchronous label publish still happens before `importEvent`, because
+      `import-controls` calls `void fill(...)` first and `fillArtists` runs
+      before any `await`.
+  - Upstream's own early return when the filed-under list already has
+    entries was dropped, since otherwise issues under a parent would never
+    reach the picker.
+  - `shortcut-popup.test.ts` mocks `~/shared/utils/dom`, mirroring
+    `applemusic/search.test.ts`.
+  - Things the user's test should cover: single-artist release; Vholume
+    prefill and auto-apply; an issue with inherit pairing and leftover
+    removal; quick successive release picks (the new queue); a VA release.
+    Also upstream's new "[unknown artist]" button (`file-under-controls.tsx`,
+    added after #124): clicking it while a release row is active records
+    it as that row's link. Ask whether that is wanted.
 
 - Upstream sync (started 2026-10-02, branch `sync-upstream`): merging all
   32 `upstream/main` commits not yet on the fork (last sync was `25ce505`,
