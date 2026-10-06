@@ -22,7 +22,7 @@ npm test                 # vitest
 
 Run a single test file/case with vitest directly, e.g. `npx vitest run path/to/file.test.ts` or `npx vitest -t "test name"`.
 
-Husky runs lint on pre-commit (see `prepare` script) — don't bypass it.
+Husky runs lint on pre-commit (see `prepare` script) — don't bypass it. The hook (`.husky/pre-commit.sh`) runs Biome with `--write` on every staged `.ts`/`.tsx` file and then `git add`s those files again, which stages their **working-tree** content. So if a staged TS file also has unstaged edits, those edits silently land in the commit (this put half of a later feature into the 2026-10-06 upstream merge commit). To split work across commits, make sure no staged TS file has unstaged changes (check `git status` for `MM`), or build the commit with `git commit-tree` from a temporary index.
 
 `.env` needs `VITE_SPOTIFY_ID`, `VITE_SPOTIFY_SECRET`, `VITE_TIDAL_ID`, `VITE_TIDAL_SECRET`, `VITE_YOUTUBE_KEY` for those services' features to work (Discogs works keyless).
 

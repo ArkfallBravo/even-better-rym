@@ -44,11 +44,10 @@
   `search()` directly — see `CLAUDE.md`'s "`src/modules/import-check/` debug
   page" section for the full design (shared `check-runner.ts` runner,
   caching caveat, `.env` key dependency for Spotify/Tidal/YouTube).
-  Build/lint/typecheck all verified clean; **not yet manually tested** —
-  needs an Xcode rebuild + re-granting "Allow on Every Website" in Safari
-  (extension UUID changes per rebuild, resetting that grant per the
-  Beatport/Melon/LiveMixtapes investigation below) before results are
-  trustworthy. Not committed yet, pending that manual confirmation.
+  Build/lint/typecheck verified clean, committed as `6b301ca`. Results
+  are only trustworthy after an Xcode rebuild + re-granting "Allow on
+  Every Website" in Safari (extension UUID changes per rebuild, resetting
+  that grant per the Beatport/Melon/LiveMixtapes investigation below).
 
   Follow-on (same day): the user also asked to auto-print the debug page's
   `safari-web-extension://` URL to the background console (so it doesn't
@@ -1069,10 +1068,9 @@
 
 - Upstream sync (started 2026-10-02, branch `sync-upstream`): merging all
   32 `upstream/main` commits not yet on the fork (last sync was `25ce505`,
-  2026-07-25) up to `167255d` (#124). Status: every conflict is resolved
-  and staged, but the merge is **not committed**. It waits on the user's
-  Safari test. `tsc`, Biome, 258 tests and `npm run build:safari` pass, and
-  the macOS app was rebuilt with `xcodebuild`.
+  2026-07-25) up to `167255d` (#124). Status: done and committed (see the
+  status paragraph at the end of this entry); only merging into `main`
+  remains.
 
   How it was resolved, so a later sync can follow the same reasoning:
   - Three upstream commits are the user's own PRs, which kknq squashed
@@ -1126,7 +1124,7 @@
     Bundle Resources phases (same `../../dist/...` references as
     `background.html`), and show up in the built `.appex`.
 
-  Done on top of the merge, left **unstaged** so the merge commit stays a
+  Done on top of the merge as separate commits, so the merge commit stays a
   pure resolution (decided 2026-10-02, the user asked for both):
   - ESLint is clean on all of `src` (`main` had 17 errors, the merge 9).
     Fixes: `dom.ts`'s observer became a `const` declared after the closures
