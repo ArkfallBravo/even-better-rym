@@ -1,5 +1,20 @@
 # Plan / open work
 
+- Apple Music links without a blank tab (2026-10-06): opening a
+  `geo.music.apple.com` link from Safari leaves an `about:blank` tab behind
+  after the Music app takes over; plain `music.apple.com` links don't. The
+  fork fixed RYM's own release-page links in `e6bfdbb` (May 2026, never sent
+  upstream), but upstream's region-preference change (#127, `297cb57`, synced
+  in `bb428e9`) brought the problem back for auto-found links by rewriting them
+  to `geo.`. Fixed in the fork as `cfafc1d` (keeps the region in the path,
+  drops only the host; `toGeoAppleMusicUrl` renamed `toRegionalAppleMusicUrl`,
+  plus a regression test), confirmed in Safari. Both places were sent upstream
+  as one commit on `fix/apple-music-geo-links` (off `upstream/main` at
+  `187349a`): kknq/even-better-rym#144, open. Upstream had since added a
+  second lookup step to the Apple Music search, so the port kept their code and
+  applied only the rename and host change. Once #144 merges and is synced,
+  drop this entry.
+
 - App Store v1.1 submission prep (started 2026-08-14): tagged the exact
   commit that was on `main` when the v1.0 build was submitted for review
   (`app-store-v1.0-submission` on `5d776223`, pushed to origin — see
