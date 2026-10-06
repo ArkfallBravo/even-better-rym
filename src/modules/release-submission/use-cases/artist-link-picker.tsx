@@ -56,10 +56,11 @@ export default async function injectArtistLinkPicker() {
 // artists are the release's, which RYM lists without track artists.
 function getPickerSession(data: ResolveData): PickerSession | undefined {
 	const releaseArtists = data.artists ?? [];
-	if (!hasDifferingTrackArtists(data.tracks ?? [], releaseArtists)) {
+	const importedTracks = data.tracks ?? [];
+	if (!hasDifferingTrackArtists(importedTracks, releaseArtists)) {
 		return undefined;
 	}
-	const tracks = withReleaseArtistFallback(data.tracks ?? [], releaseArtists);
+	const tracks = withReleaseArtistFallback(importedTracks, releaseArtists);
 	const names = getDistinctTrackArtists(tracks);
 	if (names.length === 0) {
 		return undefined;

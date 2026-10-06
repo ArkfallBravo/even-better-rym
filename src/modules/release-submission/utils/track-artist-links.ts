@@ -35,12 +35,16 @@ export const withReleaseArtistFallback = (
 			: track,
 	);
 
-// Checks whether the set of artists has the same members as the release's.
-const isSameArtistSet = (artists: string[], releaseArtists: Set<string>) => {
-	const trackArtists = new Set(artists);
+// Checks whether both collections hold the same members, in any order.
+export const hasSameMembers = <T>(
+	items: Iterable<T>,
+	otherItems: Iterable<T>,
+): boolean => {
+	const members = new Set(items);
+	const otherMembers = new Set(otherItems);
 	return (
-		trackArtists.size === releaseArtists.size &&
-		[...trackArtists].every((artist) => releaseArtists.has(artist))
+		members.size === otherMembers.size &&
+		[...members].every((member) => otherMembers.has(member))
 	);
 };
 
@@ -49,15 +53,13 @@ const isSameArtistSet = (artists: string[], releaseArtists: Set<string>) => {
 export const hasDifferingTrackArtists = (
 	tracks: Track[],
 	releaseArtists: string[],
-): boolean => {
-	const releaseArtistSet = new Set(releaseArtists);
-	return tracks.some(
+): boolean =>
+	tracks.some(
 		(track) =>
 			track.artists !== undefined &&
 			track.artists.length > 0 &&
-			!isSameArtistSet(track.artists, releaseArtistSet),
+			!hasSameMembers(track.artists, releaseArtists),
 	);
-};
 
 // Returns the release artists' labels overridden by the user's own picks.
 export const mergeArtistLabels = (

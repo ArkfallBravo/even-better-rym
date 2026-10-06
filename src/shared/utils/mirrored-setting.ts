@@ -18,7 +18,7 @@ export type SettingStores = {
 	writeLocal: (key: string, value: unknown) => Promise<void>;
 };
 
-export type MirroredSettings = {
+type MirroredSettings = {
 	read: (key: string) => Promise<unknown>;
 	write: (key: string, value: unknown) => Promise<void>;
 };

@@ -11,6 +11,7 @@
 
 import { buildArtistToken } from "./artist-shortcuts";
 import type { ArtistLabels } from "./track-artist-links";
+import { hasSameMembers } from "./track-artist-links";
 
 const ARTIST_TOKEN_ID_PATTERN = /^\[Artist(\d+)]$/;
 const DIACRITIC_PATTERN = /\p{M}/gu;
@@ -108,11 +109,11 @@ export const getChosenEntries = (
 export const hasSameEntries = (
 	entries: FiledUnderEntry[],
 	otherEntries: FiledUnderEntry[],
-): boolean => {
-	const ids = new Set(entries.map((entry) => entry.id));
-	const otherIds = new Set(otherEntries.map((entry) => entry.id));
-	return ids.size === otherIds.size && [...ids].every((id) => otherIds.has(id));
-};
+): boolean =>
+	hasSameMembers(
+		entries.map((entry) => entry.id),
+		otherEntries.map((entry) => entry.id),
+	);
 
 // Returns the changes that make the filed-under list hold the chosen
 // entries, removing only entries whose ids are in managedIds.

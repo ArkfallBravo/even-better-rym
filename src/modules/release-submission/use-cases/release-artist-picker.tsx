@@ -12,20 +12,16 @@
 import { render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import { equals } from "~/shared/utils/array";
 import { waitForElement } from "~/shared/utils/dom";
 
 import {
-	addFiledUnderEntry,
 	readFiledUnderEntries,
-	removeFiledUnderEntry,
-	reorderFiledUnderEntries,
 	searchFiledUnder,
 	switchAwayFromSameAsParent,
+	syncFiledUnderEntries,
 	watchFiledUnderAdditions,
 } from "../utils/filed-under";
 import type {
-	FiledUnderChanges,
 	FiledUnderEntry,
 	ReleaseArtistChoice,
 	ReleaseArtistChoices,
@@ -35,9 +31,7 @@ import {
 	getInheritableEntries,
 	getReleaseArtistLabels,
 	hasSameEntries,
-	orderFiledUnderIds,
 	pairInheritedArtists,
-	planFiledUnderChanges,
 } from "../utils/release-artist-links";
 import type { ArtistLabels } from "../utils/track-artist-links";
 import { PickerButton, PickerRow } from "./picker-row";
@@ -84,29 +78,6 @@ function getReleasePickerSession(
 	const parentEntries = readFiledUnderEntries();
 	const initialChoices = pairInheritedArtists(names, parentEntries);
 	return { names, parentEntries, initialChoices };
-}
-
-// Applies the changes to the filed-under list.
-function applyFiledUnderChanges(changes: FiledUnderChanges): void {
-	for (const id of changes.remove) {
-		removeFiledUnderEntry(id);
-	}
-	for (const entry of changes.add) {
-		addFiledUnderEntry(entry);
-	}
-}
-
-// Reorders the filed-under list so the chosen artists come first, in row
-// order, which is the order RYM credits them in.
-function keepChosenOrder(chosenEntries: FiledUnderEntry[]): void {
-	const currentIds = readFiledUnderEntries().map((entry) => entry.id);
-	const orderedIds = orderFiledUnderIds(
-		currentIds,
-		chosenEntries.map((entry) => entry.id),
-	);
-	if (!equals(orderedIds, currentIds)) {
-		reorderFiledUnderEntries(orderedIds);
-	}
 }
 
 // Tracks the picker session started by the most recent import, numbered so
@@ -162,14 +133,11 @@ function ReleasePickerPanel({
 		if (!hasSameEntries(chosenEntries, session.parentEntries)) {
 			switchAwayFromSameAsParent();
 		}
-		applyFiledUnderChanges(
-			planFiledUnderChanges(readFiledUnderEntries(), {
-				entries: chosenEntries,
-				managedIds: managedIds.current,
-			}),
-		);
-		keepChosenOrder(chosenEntries);
-		publishReleaseArtistLabels(getReleaseArtistLabels(choices));
+		syncFiledUnderEntries(chosenEntries, managedIds.current);
+		// The import listener already published the starting choices.
+		if (choices !== session.initialChoices) {
+			publishReleaseArtistLabels(getReleaseArtistLabels(choices));
+		}
 	}, [session, choices]);
 
 	useEffect(() => {

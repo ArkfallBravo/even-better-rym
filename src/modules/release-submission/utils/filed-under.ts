@@ -8,10 +8,18 @@
 //
 // ----------------------------------------------------------------------- //
 
+import { equals } from "~/shared/utils/array";
 import { forceQuerySelector, runScript } from "~/shared/utils/dom";
 
-import type { FiledUnderEntry } from "./release-artist-links";
-import { parseArtistTokenId } from "./release-artist-links";
+import type {
+	FiledUnderChanges,
+	FiledUnderEntry,
+} from "./release-artist-links";
+import {
+	orderFiledUnderIds,
+	parseArtistTokenId,
+	planFiledUnderChanges,
+} from "./release-artist-links";
 
 const LIST_SELECTOR = "#filed_under_performerx";
 const ENTRY_SELECTOR = "li.sortable_filed_under_performer";
@@ -47,13 +55,15 @@ export const readFiledUnderEntries = (): FiledUnderEntry[] =>
 		.map(parseEntryElement)
 		.filter((entry) => entry !== undefined);
 
-// Returns RYM's row number for the entry with the given artist id.
-const findEntryNumber = (id: string): string | undefined => {
-	const element = getEntryElements().find(
+// Returns the list element holding the artist with the given id.
+const findEntryElement = (id: string): Element | undefined =>
+	getEntryElements().find(
 		(candidate) => parseEntryElement(candidate)?.id === id,
 	);
-	return ENTRY_NUMBER_PATTERN.exec(element?.id ?? "")?.[1];
-};
+
+// Returns RYM's row number for the entry with the given artist id.
+const findEntryNumber = (id: string): string | undefined =>
+	ENTRY_NUMBER_PATTERN.exec(findEntryElement(id)?.id ?? "")?.[1];
 
 // Removes the entry with the given artist id from the filed-under list.
 export const removeFiledUnderEntry = (id: string): void => {
@@ -80,14 +90,50 @@ export const reorderFiledUnderEntries = (ids: string[]): void => {
 		return;
 	}
 	for (const id of ids) {
-		const element = getEntryElements().find(
-			(candidate) => parseEntryElement(candidate)?.id === id,
-		);
+		const element = findEntryElement(id);
 		if (element !== undefined) {
 			list.append(element);
 		}
 	}
 	runScript(`updateFiledUnderOrder(${JSON.stringify(FILED_UNDER_LABEL)});`);
+};
+
+// Applies the changes to the filed-under list.
+const applyFiledUnderChanges = (changes: FiledUnderChanges): void => {
+	for (const id of changes.remove) {
+		removeFiledUnderEntry(id);
+	}
+	for (const entry of changes.add) {
+		addFiledUnderEntry(entry);
+	}
+};
+
+// Reorders the filed-under list so the chosen artists come first, in their
+// chosen order, which is the order RYM credits them in.
+const keepChosenOrder = (chosenEntries: FiledUnderEntry[]): void => {
+	const currentIds = readFiledUnderEntries().map((entry) => entry.id);
+	const orderedIds = orderFiledUnderIds(
+		currentIds,
+		chosenEntries.map((entry) => entry.id),
+	);
+	if (!equals(orderedIds, currentIds)) {
+		reorderFiledUnderEntries(orderedIds);
+	}
+};
+
+// Makes the filed-under list hold the chosen entries first, in order,
+// removing only entries whose ids are in managedIds.
+export const syncFiledUnderEntries = (
+	chosenEntries: FiledUnderEntry[],
+	managedIds: Set<string>,
+): void => {
+	applyFiledUnderChanges(
+		planFiledUnderChanges(readFiledUnderEntries(), {
+			entries: chosenEntries,
+			managedIds,
+		}),
+	);
+	keepChosenOrder(chosenEntries);
 };
 
 // Removes every artist from the filed-under list.

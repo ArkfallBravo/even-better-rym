@@ -14,6 +14,7 @@ import {
 	buildRelinkPlan,
 	getDistinctTrackArtists,
 	hasDifferingTrackArtists,
+	hasSameMembers,
 	mergeArtistLabels,
 	relinkTracklistLines,
 	removeLinkedPrefix,
@@ -35,6 +36,17 @@ describe("withReleaseArtistFallback", () => {
 		const tracks = [{ position: "1", artists: ["C"] }];
 
 		expect(withReleaseArtistFallback(tracks, ["A"])).toEqual(tracks);
+	});
+});
+
+describe("hasSameMembers", () => {
+	test("ignores order and repeats", () => {
+		expect(hasSameMembers(["A", "B", "A"], ["B", "A"])).toBe(true);
+	});
+
+	test("notices a missing or extra member", () => {
+		expect(hasSameMembers(["A"], ["A", "B"])).toBe(false);
+		expect(hasSameMembers(["A", "C"], ["A"])).toBe(false);
 	});
 });
 
