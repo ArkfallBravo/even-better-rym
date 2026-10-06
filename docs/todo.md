@@ -1,5 +1,28 @@
 # Todo
 
+- Follow-ups the 2026-10-02 `/simplify` pass (`4e319a7`) skipped. None
+  are urgent:
+  - The artist-link picker loads RYM's search frame up to three times per
+    artist: `openShortcut`, then `prefillArtistSearch` resetting
+    `frame.src`, then the form submit. Waiting for `openShortcut`'s own
+    load, or loading the results URL directly, would save one or two page
+    requests. Skipped because it could cause a timing bug in the popup;
+    needs a Safari test.
+  - `tokenize.ts` defines "emoticon" two ways: the tokenizer's anchored
+    `EMOTICON_REGEX` versus `splitPhrases`' `matchEmoticonAt`, which also
+    requires whitespace or the start of the text before it (":P" right
+    after "(" counts for one, not the other). Unifying them changes
+    behavior.
+  - The "switch to advanced, write `#track_advanced`, switch back"
+    sequence exists three times: the fork's `showAdvancedTracklist`/
+    `showSimpleTracklist` (used by the picker), kknq's `fillers.ts`, and
+    kknq's `tracklist-controls.tsx`, which calls `.click()` directly.
+    `fillers.ts`' comment says CSP blocks that. Sharing one helper means
+    touching kknq's code, so ask first.
+  - kknq's `arrayToArtists` (`shared/utils/string.ts`) mutates its input
+    with `pop()`, so `buildLinkedTitle` has to copy the list first. Making
+    it non-mutating also means touching kknq's code.
+
 - Follow-up candidates surfaced but explicitly skipped by the 2026-09-06
   `/simplify` pass (see `docs/plan.md` for why each was held back — none
   are urgent, listed here so they aren't lost):
@@ -64,30 +87,6 @@
   capture the console output on the exact reproduction — ideally noting the
   specific descriptor typed and any browsing done earlier in that page
   session.
-
-- **Bug found and fixed (2026-08-22)**: rebinding a shortcut in the popup
-  (adding or removing a combo) did not take effect on an already-open chart
-  page — the old shortcut kept firing (or the new one didn't) until a full
-  page reload. Root cause, confirmed with temporary logging: `setChartShortcutBindings`
-  wrote to `storage.local` correctly (confirmed by reload always picking up
-  the change), but `subscribeToChartShortcutBindings`'s
-  `browser.storage.onChanged` listener never fired in the content script's
-  context for a write made from the popup, on this Safari build — a
-  cross-context propagation gap, same class of problem the native-settings
-  mirror (`native-settings.ts`) already exists to work around elsewhere.
-  Fixed by replacing the `storage.onChanged`-based subscription with an
-  explicit background-mediated broadcast: `background/index.ts`'s
-  `getKeybindingsSetResponse` now calls a new `broadcastKeybindingsChanged`
-  (queries tabs matching `*://*.rateyourmusic.com/charts/*` — the
-  chart-shortcuts content script's own manifest pattern — and
-  `browser.tabs.sendMessage`s each one) before mirroring to native, and
-  `subscribeToChartShortcutBindings` now listens for that message via
-  `browser.runtime.onMessage` instead of `storage.onChanged`. New
-  `KeybindingsUpdatedMessage` type + `isKeybindingsUpdatedMessage` guard
-  added to `messaging.ts` for this one-way background→tab broadcast (no
-  `id`, not part of the existing request/response `BackgroundRequest` union).
-  User confirmed live-updating now works for both add and remove, with the
-  chart page left open and not reloaded.
 
 - Finish manual Safari testing for the `chart-shortcuts-customization`
   branch before treating it as done (see `docs/plan.md` for the full
@@ -191,11 +190,6 @@
   it still comes in as Various Artists. The VA check was narrowed to the
   album header on 2026-10-01 (see the picker entry in `docs/plan.md`) and
   hasn't been tried on a VA page since.
-
-- Check who wrote `fillers.ts` lines 251 and 254 (`git blame -e`), which
-  ESLint flags with `@typescript-eslint/await-thenable` on the fork's
-  `main`, before deciding whether to fix them. The file is mostly upstream
-  (kknq) code.
 
 - Decide the macOS deployment target for v1.3. `EvenBetterRYM/project.pbxproj`
   has an uncommitted change (2026-10-01, source unconfirmed, probably Xcode's
