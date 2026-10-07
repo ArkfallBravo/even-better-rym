@@ -1156,8 +1156,14 @@
     linked artists as parent entries, so they show as "inherited from
     parent". The result is still correct.
 
-  Upstream port (2026-10-06, **built, not committed; waiting on the user's
-  Safari test of the upstream build**). On `tracklist-artist-links-upstream`,
+  Upstream port (2026-10-06, **built, not committed; on hold while the
+  tracklist-picker additions below are built on the fork**). The port's
+  commit-2 state is stashed (`git stash list`: "upstream picker port,
+  commit 2 state"); commit 1's tree is still `refs/ebr/picker-port-commit1-tree`.
+  To resume: `git switch tracklist-artist-links-upstream`, then
+  `git stash pop` that entry (it holds untracked files too). The older
+  "picker port (uncommitted)" stash is the original pre-port stash; drop it
+  only once the port is committed. On `tracklist-artist-links-upstream`,
   fast-forwarded to `upstream/main` `187349a` (it had no commits of its own),
   then the stash applied cleanly (the stash entry is still in the list).
   - Two commits, each checked on its own: Biome, tsc and ESLint on the
@@ -1212,7 +1218,12 @@
     reach the picker.
   - `shortcut-popup.test.ts` mocks `~/shared/utils/dom`, mirroring
     `applemusic/search.test.ts`.
-  - The user's Safari test of the upstream build is still pending. After
+  - Upstream-build test results (2026-10-07): 1 (tracklist import, with
+    and without preserved lengths, "Tracks" unticked) and 2 (single
+    artist) pass. 3 found the manual-edit bug and led to the additions
+    below. 4 to 7 not run yet; the "[unknown artist]" question is still
+    unanswered.
+  - Earlier note: the user's Safari test of the upstream build was pending. After
     the simplify pass, steps 2 (tracklist auto-apply), 3 (quick successive
     picks) and 5 (VA) need testing against the rebuilt build, since the
     queues changed, and so does an import's own tracklist fill (with and
@@ -1231,6 +1242,53 @@
     Also upstream's new "[unknown artist]" button (`file-under-controls.tsx`,
     added after #124): clicking it while a release row is active records
     it as that row's link. Ask whether that is wanted.
+
+- Tracklist-picker additions (started 2026-10-07, **design stage, no code
+  yet; plan not yet approved**). Requested by the user after test 3 of the
+  upstream build. Built on the fork (`artist-pickers`) first, then ported
+  again (user's choice; the port's async queue and `editAdvancedTracklist`
+  code will need the same additions).
+  1. **Manual title edits untether a track.** Bug today: typing into a
+     track's title, then changing a release pick, re-prefixes the user's
+     text. Cause (from the code, not reproduced): `replaceArtistLinks`/
+     `unlinkTracklistLines` only strips the old prefix when the title still
+     starts with it, then `relinkTracklistLines` adds the new prefix in
+     front of whatever is there. Fix direction: remember the title the
+     picker last wrote per position and skip positions whose title differs.
+     User decision: only **title** edits count (the picker never touches
+     positions or durations).
+  2. **Reset button** to the right of the duration field on each manually
+     changed track, which puts the track back under the picker's control.
+  3. **"Inherit from filed under..." dropdown** on each tracklist-picker
+     row. User decision: it lists the **release picker's artists**; picking
+     one makes the track artist follow that release row's label (so it
+     updates when the release pick changes), even when the names are
+     spelled differently. Likely model: replace `pickedLabels`
+     (name to label) with a choice type like `ReleaseArtistChoice`
+     (linked token / skipped / follows a release name), resolved to labels
+     by a pure, tested function; the identical-spelling prefill becomes a
+     default "follows same name".
+  4. **Undo/redo buttons** in the tracklist picker. User decision: cover
+     **every tracklist change**, including the user's own typing, not just
+     picker actions. Likely shape: a pure history module (push/undo/redo,
+     tested) of snapshots holding the tracklist text plus the picker state;
+     history resets per import. Open details for the plan: what counts as
+     one step for typing (the `change` event, which fires on blur/Enter, is
+     the likely boundary), and RYM's own add/delete-row buttons.
+  RYM's simple tracklist DOM, from the saved page `Release Editing - Rate
+  Your Music.html` (line ~550 script, ~2497 markup):
+  - Rows are `<tr id="track_N">` cloned from `#track_base` inside
+    `#tracks_simp`, with inputs `track_track_numberN`,
+    `track_track_titleN`, `track_track_lengthN` (plus a delete-row button
+    cell first). A reset button would go in a new cell after the length.
+  - `goAdvanced()` builds `#track_advanced` from those inputs; `goSimple()`
+    calls `clearAllRows('track_')` and rebuilds every row from the text. So
+    any injected cells are wiped on each advanced/simple round trip (every
+    apply) and must be re-added, e.g. from a `MutationObserver` on
+    `#tracks_simp`. A delegated `input`/`change` listener on `#tracks_simp`
+    survives the rebuilds.
+  - In simple mode the inputs are the source of truth, so a single-title
+    change (e.g. Reset) could set the input directly without a mode switch.
 
 - Upstream sync (started 2026-10-02, branch `sync-upstream`): merging all
   32 `upstream/main` commits not yet on the fork (last sync was `25ce505`,
