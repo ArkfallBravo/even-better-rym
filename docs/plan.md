@@ -1161,8 +1161,8 @@
   fast-forwarded to `upstream/main` `187349a` (it had no commits of its own),
   then the stash applied cleanly (the stash entry is still in the list).
   - Two commits, each checked on its own: Biome, tsc and ESLint on the
-    changed paths, plus vitest. Commit 1 (tracklist picker) is 261 tests;
-    commit 2 (release picker) is 278.
+    changed paths, plus vitest. Commit 1 (tracklist picker) is 262 tests;
+    commit 2 (release picker) is 279.
     - Commit 1: the stash, plus `hasSameMembers`/`hasDifferingTrackArtists`,
       `picker-row.tsx`, a fresh panel per import (`usePickerImport` with a
       `key`), the shared `createSerialQueue` helper
@@ -1171,11 +1171,11 @@
       `release-artist-picker.tsx`, `mergeArtistLabels`, the
       release-label prefill and auto-apply, the `dom.d.ts` events, the
       `fillers.ts` change, and registration in `app.tsx`.
-  - Commit 1's exact tree is saved as tree `7b9f297`, kept reachable by
+  - Commit 1's exact tree is saved as tree `47fa285`, kept reachable by
     `refs/ebr/picker-port-commit1-tree`. The working tree holds commit 2's
     state, uncommitted. To commit after the test, without the pre-commit
     hook's restaging mixing the two:
-    1. `git commit-tree 7b9f297 -p HEAD`, with commit 1's message.
+    1. `git commit-tree 47fa285 -p HEAD`, with commit 1's message.
     2. `git reset --soft` to that commit, then `git add -A src` and commit
        normally.
     3. Delete the ref, drop the stash, rebuild the fork for Safari
@@ -1189,10 +1189,19 @@
       module-level queue in `filed-under.ts`, since the list is page-wide
       (a per-panel queue, the first version, missed the VA clear and a
       remounted panel's first sync);
-    - the tracklist Apply awaits the advanced/simple switches
-      (`showAdvancedTracklist`/`showSimpleTracklist` now return their
-      promise) and applies run through a module-level queue in
-      `artist-link-picker.tsx`;
+    - every advanced-tracklist edit goes through
+      `editAdvancedTracklist` (`utils/tracklist-editor.ts`, commit 1): it
+      waits its turn in one queue, switches to advanced, applies a text
+      transform, and switches back. Both the picker (`replaceArtistLinks`)
+      and kknq's `fillTracks` use it (user approved touching `fillTracks`,
+      2026-10-07). Rejected: having the picker call `fillTracks` itself,
+      which would rewrite the whole tracklist from the import (losing the
+      user's edits), recapitalize plain artist names, need the import
+      options, and ignore the "Tracks" checkbox. `fill` reaches
+      `fillTracks` without an earlier `await`, so the import's write is
+      queued before `importEvent` and always lands before a picker apply.
+      kknq's `tracklist-controls.tsx` still clicks the switch buttons
+      directly (a user toggle, not a text edit; left alone);
     - `fill` stays async, with only `fillCoreFields` made synchronous, so
       kknq's `import-controls.tsx` stays untouched. The release picker's
       synchronous label publish still happens before `importEvent`, because
@@ -1206,16 +1215,16 @@
   - The user's Safari test of the upstream build is still pending. After
     the simplify pass, steps 2 (tracklist auto-apply), 3 (quick successive
     picks) and 5 (VA) need testing against the rebuilt build, since the
-    queues changed. Image download spinning in that build is upstream's
+    queues changed, and so does an import's own tracklist fill (with and
+    without "preserve track lengths"), since `fillTracks` changed. Image download spinning in that build is upstream's
     missing Safari fallback (see `CLAUDE.md`), not the port.
   - Port simplify pass (2026-10-06): fixes folded into the two commits, no
     separate `simplify:` commit. Skipped: batching the filed-under edits
     into one `runScript` (unknown whether RYM renumbers entries after a
     delete); skipping an apply whose plan is unchanged (minor); keeping
     `injectArtistLinkFormatting()` inside `Promise.all` (trips ESLint's
-    `await-thenable`). Asked the user: whether kknq's `fillTracks` should
-    use `showAdvancedTracklist`/`showSimpleTracklist` and the tracklist
-    queue, since it does the same switch inline.
+    `await-thenable`). The user then chose to route kknq's
+    `fillTracks` through the shared tracklist editor (above).
   - Things the user's test should cover: single-artist release; Vholume
     prefill and auto-apply; an issue with inherit pairing and leftover
     removal; quick successive release picks (the new queue); a VA release.

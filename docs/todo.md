@@ -19,11 +19,10 @@
     kknq's `tracklist-controls.tsx`, which calls `.click()` directly.
     `fillers.ts`' comment says CSP blocks that. Sharing one helper means
     touching kknq's code, so ask first.
-    In the upstream picker port (2026-10-06) this also affects ordering:
-    tracklist-picker applies go through a module-level queue, but kknq's
-    `fillTracks` does its own switch outside it, so an import's fill and a
-    picker apply could overlap. Asked the user whether to change
-    `fillTracks` in that PR; no answer yet.
+    The upstream picker port (2026-10-07) shares it through
+    `editAdvancedTracklist` (`utils/tracklist-editor.ts`), used by the
+    picker and kknq's `fillTracks`; the fork still has the three copies
+    until that port is merged and synced back.
   - kknq's `arrayToArtists` (`shared/utils/string.ts`) mutates its input
     with `pop()`, so `buildLinkedTitle` has to copy the list first. Making
     it non-mutating also means touching kknq's code.
