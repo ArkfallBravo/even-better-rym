@@ -1243,8 +1243,9 @@
     added after #124): clicking it while a release row is active records
     it as that row's link. Ask whether that is wanted.
 
-- Tracklist-picker additions (started 2026-10-07, **design stage, no code
-  yet; plan not yet approved**). Requested by the user after test 3 of the
+- Tracklist-picker additions (started 2026-10-07, **implemented on
+  `artist-pickers`, uncommitted, waiting for the user's Safari test**; plan
+  approved 2026-10-07). Requested by the user after test 3 of the
   upstream build. Built on the fork (`artist-pickers`) first, then ported
   again (user's choice; the port's async queue and `editAdvancedTracklist`
   code will need the same additions).
@@ -1253,28 +1254,34 @@
      text. Cause (from the code, not reproduced): `replaceArtistLinks`/
      `unlinkTracklistLines` only strips the old prefix when the title still
      starts with it, then `relinkTracklistLines` adds the new prefix in
-     front of whatever is there. Fix direction: remember the title the
-     picker last wrote per position and skip positions whose title differs.
+     front of whatever is there. Fixed by remembering the title the picker
+     last wrote per track key and skipping tracks whose title differs.
      User decision: only **title** edits count (the picker never touches
-     positions or durations).
+     positions or durations). Tracks are keyed by position, not title, so
+     same-titled tracks are independent; a repeated position is keyed by
+     occurrence (`1#1`, `1#2`), answering the user's question about
+     duplicates.
   2. **Reset button** to the right of the duration field on each manually
      changed track, which puts the track back under the picker's control.
+     User clarification: Reset must immediately give the track every
+     automatic change it missed while untethered, i.e. its base title
+     prefixed with the labels last applied to the tethered tracks.
   3. **"Inherit from filed under..." dropdown** on each tracklist-picker
      row. User decision: it lists the **release picker's artists**; picking
      one makes the track artist follow that release row's label (so it
      updates when the release pick changes), even when the names are
-     spelled differently. Likely model: replace `pickedLabels`
-     (name to label) with a choice type like `ReleaseArtistChoice`
-     (linked token / skipped / follows a release name), resolved to labels
-     by a pure, tested function; the identical-spelling prefill becomes a
-     default "follows same name".
+     spelled differently. Built as `TrackArtistChoice` (linked token /
+     skipped / following a release name) replacing `pickedLabels`; the
+     identical-spelling prefill is the initial "following same name". User
+     confirmed: a track artist can follow a release artist that isn't
+     picked yet; it counts as unpicked until that release artist is picked,
+     then updates automatically.
   4. **Undo/redo buttons** in the tracklist picker. User decision: cover
      **every tracklist change**, including the user's own typing, not just
-     picker actions. Likely shape: a pure history module (push/undo/redo,
-     tested) of snapshots holding the tracklist text plus the picker state;
-     history resets per import. Open details for the plan: what counts as
-     one step for typing (the `change` event, which fires on blur/Enter, is
-     the likely boundary), and RYM's own add/delete-row buttons.
+     picker actions, but (later answer) **only the user's changes, never
+     automatic re-applies**; see "Implementation" below. A typing step ends
+     on the `change` event (blur/Enter); RYM's add/delete/clear-all/Copy
+     Tracks are steps via the row observer. History resets per import.
   RYM's simple tracklist DOM, from the saved page `Release Editing - Rate
   Your Music.html` (line ~550 script, ~2497 markup):
   - Rows are `<tr id="track_N">` cloned from `#track_base` inside
@@ -1287,8 +1294,88 @@
     apply) and must be re-added, e.g. from a `MutationObserver` on
     `#tracks_simp`. A delegated `input`/`change` listener on `#tracks_simp`
     survives the rebuilds.
+  Next steps: the user's Safari test, built and installed 2026-10-07
+  (`release-submission/main-2IxOEb3j.js`): typing keeps text and shows
+  Reset; Reset restores current links; dropdown follows a differently
+  spelled release artist; undo/redo across typing, Link, Skip, RYM
+  add/delete row and Reset; undo after a release-pick change keeps the
+  automatic update; a release with a repeated track number; whether the
+  Reset column disturbs the table layout. The user may veto the
+  "choices apply immediately" behaviour change. Then commit (the
+  `EvenBetterRYM/` pbxproj deployment-target change and `xcshareddata/`
+  stay uncommitted), add a `CLAUDE.md` note on RYM's tracklist row DOM,
+  and re-port to `tracklist-artist-links-upstream` (see the port caveat
+  below).
   - In simple mode the inputs are the source of truth, so a single-title
     change (e.g. Reset) could set the input directly without a mode switch.
+  - Row helpers live in RYM's `cdn.sonemic.net/dist/rym25/js/legacy/basereq.js`
+    (read 2026-10-07): `divClone` deep-clones `#track_base`, increments the
+    global `counter` and inserts the row **before `#track_base` in its
+    parent** (the table's implicit `tbody`). `deleteRow` removes `track_N`.
+    `clearAllRows` deletes `track_0..counter` and resets `counter` to 0.
+    So rows are the `tr[id^="track_"]` siblings of `#track_base`, ids can
+    have gaps, and the position field (not `track_N`) is the stable key.
+  - `goSimple` trims each field, so a title the picker wrote must be
+    compared with the trimmed input value.
+  Implementation (2026-10-07), as approved:
+  - Pure modules: `utils/track-artist-links.ts` (track keys are position
+    plus occurrence, e.g. `1#2`, so repeated positions stay apart; tether
+    state of base and last-written title per key; `applyTrackTitles`,
+    `getUntetheredKeys`, `resetTrackTitle`; the old
+    `unlinkTracklistLines`/`relinkTracklistLines`/`removeLinkedPrefix` and
+    `mergeArtistLabels` are gone), `utils/track-artist-choices.ts` (linked /
+    skipped / following a release artist), `utils/edit-history.ts`,
+    `utils/tracklist-picker-state.ts` (the undo snapshot and
+    `applyChoices`/`resetTrack`). DOM: `utils/simple-tracklist.ts`. Hook:
+    `use-cases/tracklist-history.ts`.
+  - **Undo/redo covers only the user's changes** (user's answer when asked
+    whether release picks should be undoable). A release-label change
+    replaces the current snapshot instead of adding a step, and undo/redo
+    re-applies the *current* release labels to the restored snapshot's
+    tethered tracks, so an undo never reverses an automatic update.
+  - Apply leaves untethered tracks alone; no keyboard shortcuts (user's
+    answers).
+  - Behaviour change, not in the user's request: a tracklist-picker choice
+    change (Link, Skip, dropdown) now re-applies straight away once every
+    artist has a label, instead of waiting for Apply. Restoring an undo
+    step has to re-apply its choices, so choices and the written tracklist
+    can't be allowed to diverge. Apply still works and closes the popup.
+  - `writeTracklistText` writes titles straight into the row inputs when
+    only titles change in the simple editor (no rebuild, so focus and reset
+    cells survive); anything else goes through one advanced/simple round
+    trip (`writeThroughAdvanced`). After a write the snapshot re-reads the
+    page, since `goSimple` trims fields.
+  - **Port caveat:** with upstream's async `runScript`, swapping
+    `editAdvancedTracklist` into `writeThroughAdvanced` is not enough.
+    `showCurrent` would re-read the page before the round trip finishes,
+    and the row observer could see the rebuilt rows before the picker's
+    commit and record the picker's own write as a user step. The port has
+    to commit the expected text before awaiting the write, then await it
+    before re-reading.
+  - The pure undo pieces (`recordUserChange`, `reapplyReleaseLabels`) live
+    in `tracklist-picker-state.ts` and are tested, including "undoing typing
+    keeps a later automatic update".
+  - The release picker's `releaseArtistLabelsEvent` now carries
+    `{ names, labels }` (`ReleaseArtistLabels`), so the dropdown lists
+    unpicked release artists. `InheritSelect` moved to `picker-row.tsx`.
+  - Checks: 312 tests, Biome, tsc, ESLint, `build:safari` and `xcodebuild`
+    pass. Not yet tested in Safari.
+  Design points settled while drafting the plan (2026-10-07):
+  - **One rule records undo steps.** On any title/position/length `change`,
+    row add/delete mutation (childList on `#track_base`'s parent only, so
+    injected reset cells don't retrigger it) or advanced-textarea `change`,
+    read the tracklist text and push a step only if it differs from the
+    current snapshot. The picker pushes its own writes straight away, so the
+    observer's later read matches and is dropped. A "writing now" flag
+    can't work: the fork's `runScript` is synchronous, but observer
+    callbacks arrive as a microtask after the flag is cleared. This rule
+    covers add/delete/clear-all/Copy Tracks without special cases.
+  - **Snapshots hold the tracklist text, the tracklist-picker choices and
+    each position's base and last-written title**, so undo can't leave
+    untethered status out of step with the titles.
+  - **Reset needs the base title as it is on the page**, not `Track.title`:
+    `fillTracks` capitalizes and turns "untitled" into `[untitled]`. Capture
+    each position's unprefixed title from the page at the first apply.
 
 - Upstream sync (started 2026-10-02, branch `sync-upstream`): merging all
   32 `upstream/main` commits not yet on the fork (last sync was `25ce505`,
