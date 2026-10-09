@@ -14,8 +14,10 @@ import { forceQuerySelector, runScript } from "~/shared/utils/dom";
 import type {
 	FiledUnderChanges,
 	FiledUnderEntry,
+	FiledUnderListChange,
 } from "./release-artist-links";
 import {
+	getRepeatedIndexes,
 	orderFiledUnderIds,
 	parseArtistTokenId,
 	planFiledUnderChanges,
@@ -61,19 +63,32 @@ const findEntryElement = (id: string): Element | undefined =>
 		(candidate) => parseEntryElement(candidate)?.id === id,
 	);
 
-// Returns RYM's row number for the entry with the given artist id.
-const findEntryNumber = (id: string): string | undefined =>
-	ENTRY_NUMBER_PATTERN.exec(findEntryElement(id)?.id ?? "")?.[1];
+// Returns RYM's row number for a list element.
+const getEntryNumber = (element: Element | undefined): string | undefined =>
+	ENTRY_NUMBER_PATTERN.exec(element?.id ?? "")?.[1];
 
-// Removes the entry with the given artist id from the filed-under list.
-export const removeFiledUnderEntry = (id: string): void => {
-	const entryNumber = findEntryNumber(id);
+// Removes RYM's row with the given number from the filed-under list.
+const deleteEntryRow = (entryNumber: string | undefined): void => {
 	if (entryNumber === undefined) {
 		return;
 	}
 	runScript(
 		`deleteFiledUnder(${entryNumber}, ${JSON.stringify(FILED_UNDER_LABEL)});`,
 	);
+};
+
+// Removes the entry with the given artist id from the filed-under list.
+export const removeFiledUnderEntry = (id: string): void =>
+	deleteEntryRow(getEntryNumber(findEntryElement(id)));
+
+// Removes every later copy of an artist listed more than once, since RYM
+// adds an artist again when it is picked while already listed.
+export const removeRepeatedFiledUnderEntries = (): void => {
+	const elements = getEntryElements();
+	const ids = elements.map((element) => parseEntryElement(element)?.id);
+	for (const index of getRepeatedIndexes(ids)) {
+		deleteEntryRow(getEntryNumber(elements[index]));
+	}
 };
 
 // Adds the artist to the end of the filed-under list.
@@ -159,30 +174,28 @@ export const switchAwayFromSameAsParent = (): void =>
 		.querySelector<HTMLInputElement>(NOT_SAME_AS_PARENT_SELECTOR)
 		?.click();
 
-// Returns the filed-under entries the mutation records added.
-const getAddedEntries = (records: MutationRecord[]): FiledUnderEntry[] =>
-	records
-		.flatMap((record) => [...record.addedNodes])
-		.filter(
-			(node): node is Element =>
-				node instanceof Element && node.matches(ENTRY_SELECTOR),
-		)
-		.map(parseEntryElement)
-		.filter((entry) => entry !== undefined);
-
-// Calls onAdd with each entry added to the filed-under list until the
-// returned function is called.
-export const watchFiledUnderAdditions = (
-	onAdd: (entry: FiledUnderEntry) => void,
+// Calls onChange after each change to the filed-under list, until the
+// returned function is called. Entries the change only moved don't count as
+// added.
+export const watchFiledUnderChanges = (
+	onChange: (change: FiledUnderListChange) => void,
 ): (() => void) => {
 	const list = document.querySelector(LIST_SELECTOR);
 	if (list === null) {
 		return () => undefined;
 	}
-	const observer = new MutationObserver((records) => {
-		for (const entry of getAddedEntries(records)) {
-			onAdd(entry);
-		}
+	let knownElements = new Set(getEntryElements());
+	const observer = new MutationObserver(() => {
+		const elements = getEntryElements();
+		const added = elements
+			.filter((element) => !knownElements.has(element))
+			.map(parseEntryElement)
+			.filter((entry) => entry !== undefined);
+		knownElements = new Set(elements);
+		const presentIds = new Set(
+			readFiledUnderEntries().map((entry) => entry.id),
+		);
+		onChange({ added, presentIds });
 	});
 	observer.observe(list, { childList: true, subtree: true });
 	return () => observer.disconnect();

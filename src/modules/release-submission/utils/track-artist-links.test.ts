@@ -2,7 +2,7 @@
 //
 // MODULE  : track-artist-links.test.ts
 //
-// PURPOSE : Tests for the artist-link picker's grouping and tracklist rewrite
+// PURPOSE : Tests for the artist-link picker's grouping and title writing
 //
 // CREATED : 10/1/2026
 //
@@ -11,15 +11,19 @@
 import { describe, expect, test } from "vitest";
 
 import {
+	applyTrackTitles,
 	buildRelinkPlan,
+	getChangedTitles,
 	getDistinctTrackArtists,
+	getTrackKeys,
+	getUntetheredKeys,
 	hasDifferingTrackArtists,
 	hasSameMembers,
-	mergeArtistLabels,
-	relinkTracklistLines,
-	removeLinkedPrefix,
-	unlinkTracklistLines,
+	readTrackTitles,
+	resetTrackTitle,
+	tetherTrackTitles,
 	withReleaseArtistFallback,
+	writeTrackTitles,
 } from "./track-artist-links";
 
 describe("withReleaseArtistFallback", () => {
@@ -81,23 +85,6 @@ describe("hasDifferingTrackArtists", () => {
 	});
 });
 
-describe("mergeArtistLabels", () => {
-	test("lets the user's picks override the release labels", () => {
-		const releaseLabels = new Map([
-			["A", "[Artist1]"],
-			["B", "B"],
-		]);
-		const pickedLabels = new Map([["A", "[Artist2]"]]);
-
-		expect(mergeArtistLabels(releaseLabels, pickedLabels)).toEqual(
-			new Map([
-				["A", "[Artist2]"],
-				["B", "B"],
-			]),
-		);
-	});
-});
-
 describe("getDistinctTrackArtists", () => {
 	test("lists each artist once, in first-appearance order", () => {
 		const tracks = [
@@ -114,8 +101,18 @@ describe("getDistinctTrackArtists", () => {
 	});
 });
 
+describe("getTrackKeys", () => {
+	test("numbers repeats of a position", () => {
+		expect(getTrackKeys(["1", "2", "1"])).toEqual(["1#1", "2#1", "1#2"]);
+	});
+
+	test("gives no key where there is no position", () => {
+		expect(getTrackKeys([undefined, "1"])).toEqual([undefined, "1#1"]);
+	});
+});
+
 describe("buildRelinkPlan", () => {
-	test("maps each track's artists to their picked labels in track order", () => {
+	test("maps each track's artists to their labels in track order", () => {
 		const tracks = [
 			{ position: "1", artists: ["A"] },
 			{ position: "2", artists: ["B", "A"] },
@@ -127,8 +124,8 @@ describe("buildRelinkPlan", () => {
 
 		expect(buildRelinkPlan(tracks, labels)).toEqual(
 			new Map([
-				["1", ["[Artist1]"]],
-				["2", ["[Artist2]", "[Artist1]"]],
+				["1#1", ["[Artist1]"]],
+				["2#1", ["[Artist2]", "[Artist1]"]],
 			]),
 		);
 	});
@@ -138,7 +135,21 @@ describe("buildRelinkPlan", () => {
 		const labels = new Map([["A", "[Artist1]"]]);
 
 		expect(buildRelinkPlan(tracks, labels)).toEqual(
-			new Map([["1", ["[Artist1]", "B"]]]),
+			new Map([["1#1", ["[Artist1]", "B"]]]),
+		);
+	});
+
+	test("keeps tracks with a repeated position apart", () => {
+		const tracks = [
+			{ position: "1", artists: ["A"] },
+			{ position: "1", artists: ["B"] },
+		];
+
+		expect(buildRelinkPlan(tracks, new Map())).toEqual(
+			new Map([
+				["1#1", ["A"]],
+				["1#2", ["B"]],
+			]),
 		);
 	});
 
@@ -147,60 +158,132 @@ describe("buildRelinkPlan", () => {
 	});
 });
 
-describe("relinkTracklistLines", () => {
-	test("prefixes only the planned tracks' titles", () => {
-		const text = "1|First|3:00\n2|Second|4:00\n3|Third|";
-		const plan = new Map([
-			["1", ["[Artist1]"]],
-			["3", ["[Artist1]", "Plain"]],
+describe("readTrackTitles", () => {
+	test("reads each track's trimmed title by key", () => {
+		expect(
+			readTrackTitles(" 1 | First |3:00\n\nno separators\n1|Again|"),
+		).toEqual(
+			new Map([
+				["1#1", "First"],
+				["1#2", "Again"],
+			]),
+		);
+	});
+});
+
+describe("writeTrackTitles", () => {
+	test("replaces only the given tracks' titles", () => {
+		const text = "1|First|3:00\n\n2|Second|4:00";
+
+		expect(writeTrackTitles(text, new Map([["2#1", "New"]]))).toBe(
+			"1|First|3:00\n\n2|New|4:00",
+		);
+	});
+});
+
+describe("getChangedTitles", () => {
+	test("returns the titles that differ", () => {
+		expect(getChangedTitles("1|A|3:00\n2|B|", "1|A|3:00\n2|C|")).toEqual(
+			new Map([["2#1", "C"]]),
+		);
+	});
+
+	test("returns undefined when anything besides titles differs", () => {
+		expect(getChangedTitles("1|A|3:00", "1|B|3:01")).toBeUndefined();
+		expect(getChangedTitles("1|A|", "1|A|\n2|B|")).toBeUndefined();
+	});
+});
+
+describe("applyTrackTitles", () => {
+	const plan = new Map([
+		["1#1", ["[Artist1]"]],
+		["2#1", ["[Artist1]", "Plain"]],
+	]);
+
+	test("prefixes planned tracks and remembers their base titles", () => {
+		const applied = applyTrackTitles(
+			"1|First|3:00\n2|Second|\n3|Third|",
+			plan,
+			new Map(),
+		);
+
+		expect(applied.text).toBe(
+			"1|[Artist1] - First|3:00\n2|[Artist1] & Plain - Second|\n3|Third|",
+		);
+		expect(applied.tether.get("1#1")).toEqual({
+			base: "First",
+			written: "[Artist1] - First",
+		});
+	});
+
+	test("rewrites tethered tracks from their base titles", () => {
+		const first = applyTrackTitles("1|First|\n2|Second|", plan, new Map());
+		const newPlan = new Map([
+			["1#1", ["[Artist2]"]],
+			["2#1", ["[Artist2]"]],
 		]);
 
-		expect(relinkTracklistLines(text, plan)).toBe(
-			"1|[Artist1] - First|3:00\n2|Second|4:00\n3|[Artist1] & Plain - Third|",
+		expect(applyTrackTitles(first.text, newPlan, first.tether).text).toBe(
+			"1|[Artist2] - First|\n2|[Artist2] - Second|",
 		);
 	});
 
-	test("leaves blank and malformed lines untouched", () => {
-		const text = "1|First|3:00\n\nno separators\n";
-		const plan = new Map([["1", ["[Artist1]"]]]);
+	test("leaves a track edited by hand alone", () => {
+		const first = applyTrackTitles("1|First|\n2|Second|", plan, new Map());
+		const edited = first.text.replace("[Artist1] - First", "Typed");
+		const newPlan = new Map([["1#1", ["[Artist2]"]]]);
+		const applied = applyTrackTitles(edited, newPlan, first.tether);
 
-		expect(relinkTracklistLines(text, plan)).toBe(
-			"1|[Artist1] - First|3:00\n\nno separators\n",
-		);
+		expect(applied.text).toBe(edited);
+		expect(applied.tether.get("1#1")).toEqual(first.tether.get("1#1"));
+	});
+});
+
+describe("getUntetheredKeys", () => {
+	test("lists tracks whose title differs from the written one", () => {
+		const tether = new Map([
+			["1#1", { base: "First", written: "A - First" }],
+			["2#1", { base: "Second", written: "A - Second" }],
+		]);
+
+		expect(
+			getUntetheredKeys("1|Typed|\n2| A - Second |\n3|Third|", tether),
+		).toEqual(["1#1"]);
+	});
+});
+
+describe("resetTrackTitle", () => {
+	test("writes the base title with the planned labels and tethers it", () => {
+		const applied = {
+			text: "1|Typed|3:00",
+			tether: new Map([["1#1", { base: "First", written: "A - First" }]]),
+		};
+		const plan = new Map([["1#1", ["[Artist2]"]]]);
+		const reset = resetTrackTitle(applied, plan, "1#1");
+
+		expect(reset.text).toBe("1|[Artist2] - First|3:00");
+		expect(reset.tether.get("1#1")).toEqual({
+			base: "First",
+			written: "[Artist2] - First",
+		});
 	});
 
-	test("matches positions with surrounding whitespace", () => {
-		const plan = new Map([["1", ["[Artist1]"]]]);
+	test("leaves a track the picker never wrote unchanged", () => {
+		const applied = { text: "1|Typed|", tether: new Map() };
 
-		expect(relinkTracklistLines(" 1 |First|3:00", plan)).toBe(
-			" 1 |[Artist1] - First|3:00",
+		expect(resetTrackTitle(applied, new Map([["1#1", ["A"]]]), "1#1")).toBe(
+			applied,
 		);
 	});
 });
 
-describe("removeLinkedPrefix", () => {
-	test("removes the labels' exact prefix", () => {
-		expect(
-			removeLinkedPrefix("[Artist1] & Plain - Title", ["[Artist1]", "Plain"]),
-		).toBe("Title");
-	});
-
-	test("leaves a title without that prefix untouched", () => {
-		expect(removeLinkedPrefix("Edited - Title", ["[Artist1]"])).toBe(
-			"Edited - Title",
+describe("tetherTrackTitles", () => {
+	test("ties each track to its current trimmed title", () => {
+		expect(tetherTrackTitles("1| First |\nnot a track\n1|Again|")).toEqual(
+			new Map([
+				["1#1", { base: "First", written: "First" }],
+				["1#2", { base: "Again", written: "Again" }],
+			]),
 		);
-	});
-});
-
-describe("unlinkTracklistLines", () => {
-	test("undoes relinkTracklistLines so a new plan can be applied", () => {
-		const text = "1|First|3:00\n2|Second|4:00";
-		const oldPlan = new Map([["1", ["Plain"]]]);
-		const newPlan = new Map([["1", ["[Artist1]"]]]);
-		const linked = relinkTracklistLines(text, oldPlan);
-
-		expect(
-			relinkTracklistLines(unlinkTracklistLines(linked, oldPlan), newPlan),
-		).toBe("1|[Artist1] - First|3:00\n2|Second|4:00");
 	});
 });

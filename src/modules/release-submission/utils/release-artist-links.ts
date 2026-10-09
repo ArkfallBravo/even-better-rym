@@ -32,6 +32,33 @@ export type ReleaseArtistChoice =
 // Maps an imported release artist name to the user's choice for it.
 export type ReleaseArtistChoices = Map<string, ReleaseArtistChoice>;
 
+// Every imported release artist's name, and the labels of those picked so
+// far.
+export type ReleaseArtistLabels = {
+	names: string[];
+	labels: ArtistLabels;
+};
+
+// The release picker's choices and the row waiting for an artist to be
+// picked in RYM's search, if any.
+export type ReleasePickerState = {
+	choices: ReleaseArtistChoices;
+	activeName: string | undefined;
+};
+
+// The imported release artists and the entries the list held on import.
+export type ReleasePickerArtists = {
+	names: string[];
+	parentEntries: FiledUnderEntry[];
+};
+
+// The entries RYM added to the filed-under list in one change, and the
+// artist ids it lists afterwards.
+export type FiledUnderListChange = {
+	added: FiledUnderEntry[];
+	presentIds: Set<string>;
+};
+
 // Filed-under entries to remove (by id) and to add.
 export type FiledUnderChanges = {
 	remove: string[];
@@ -73,21 +100,6 @@ export const pairInheritedArtists = (
 		choices.set(name, { kind: "inherited", entry });
 	}
 	return choices;
-};
-
-// Returns the parent entries no row other than name inherits.
-export const getInheritableEntries = (
-	parentEntries: FiledUnderEntry[],
-	choices: ReleaseArtistChoices,
-	name: string,
-): FiledUnderEntry[] => {
-	const takenIds = new Set<string>();
-	for (const [otherName, choice] of choices) {
-		if (otherName !== name && choice.kind === "inherited") {
-			takenIds.add(choice.entry.id);
-		}
-	}
-	return parentEntries.filter((entry) => !takenIds.has(entry.id));
 };
 
 // Returns the linked and inherited entries in row order, each id once.
@@ -158,4 +170,100 @@ export const getReleaseArtistLabels = (
 		);
 	}
 	return labels;
+};
+
+// Returns the choices without the linked or inherited ones whose artist is
+// no longer listed, or the same choices if there are none.
+export const clearRemovedChoices = (
+	choices: ReleaseArtistChoices,
+	presentIds: Set<string>,
+): ReleaseArtistChoices => {
+	const removedNames = [...choices]
+		.filter(
+			([, choice]) =>
+				choice.kind !== "skipped" && !presentIds.has(choice.entry.id),
+		)
+		.map(([name]) => name);
+	if (removedNames.length === 0) {
+		return choices;
+	}
+	const remaining = new Map(choices);
+	for (const name of removedNames) {
+		remaining.delete(name);
+	}
+	return remaining;
+};
+
+// Checks whether any choice links or inherits the artist with the given id.
+export const isChosenId = (
+	choices: ReleaseArtistChoices,
+	id: string,
+): boolean =>
+	[...choices.values()].some(
+		(choice) => choice.kind !== "skipped" && choice.entry.id === id,
+	);
+
+// Returns the choice for an artist picked in RYM's search: inherited if it
+// is one of the parent's entries, linked otherwise.
+export const getPickedChoice = (
+	entry: FiledUnderEntry,
+	parentEntries: FiledUnderEntry[],
+): ReleaseArtistChoice => {
+	const parentEntry = parentEntries.find(
+		(candidate) => candidate.id === entry.id,
+	);
+	return parentEntry === undefined
+		? { kind: "linked", entry }
+		: { kind: "inherited", entry: parentEntry };
+};
+
+// Returns the picker state after a change to the filed-under list. Rows
+// whose artist was removed are cleared. The first added artist no other row
+// has chosen goes to the active row, and the next unpicked row becomes
+// active; an artist another row has chosen was added by the picker itself.
+export const applyFiledUnderChange = (
+	state: ReleasePickerState,
+	change: FiledUnderListChange,
+	artists: ReleasePickerArtists,
+): ReleasePickerState => {
+	const choices = clearRemovedChoices(state.choices, change.presentIds);
+	const cleared = choices === state.choices ? state : { ...state, choices };
+	const activeName = state.activeName;
+	if (activeName === undefined) {
+		return cleared;
+	}
+	const otherChoices = new Map(choices);
+	otherChoices.delete(activeName);
+	const picked = change.added.find(
+		(entry) => !isChosenId(otherChoices, entry.id),
+	);
+	if (picked === undefined) {
+		return cleared;
+	}
+	const nextChoices = new Map(choices).set(
+		activeName,
+		getPickedChoice(picked, artists.parentEntries),
+	);
+	return {
+		choices: nextChoices,
+		activeName: artists.names.find((name) => !nextChoices.has(name)),
+	};
+};
+
+// Returns the indexes of ids that repeat an earlier one, ignoring missing
+// ids.
+export const getRepeatedIndexes = (ids: (string | undefined)[]): number[] => {
+	const seen = new Set<string>();
+	const repeated: number[] = [];
+	ids.forEach((id, index) => {
+		if (id === undefined) {
+			return;
+		}
+		if (seen.has(id)) {
+			repeated.push(index);
+		} else {
+			seen.add(id);
+		}
+	});
+	return repeated;
 };

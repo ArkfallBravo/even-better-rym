@@ -11,12 +11,19 @@
 
 import { describe, expect, test } from "vitest";
 
-import type { ReleaseArtistChoices } from "./release-artist-links";
+import type {
+	ReleaseArtistChoices,
+	ReleasePickerState,
+} from "./release-artist-links";
 import {
+	applyFiledUnderChange,
+	clearRemovedChoices,
 	getChosenEntries,
-	getInheritableEntries,
+	getPickedChoice,
 	getReleaseArtistLabels,
+	getRepeatedIndexes,
 	hasSameEntries,
+	isChosenId,
 	normalizeArtistName,
 	orderFiledUnderIds,
 	pairInheritedArtists,
@@ -69,19 +76,6 @@ describe("pairInheritedArtists", () => {
 
 	test("doesn't pair different names", () => {
 		expect(pairInheritedArtists(["Thom Schley"], [ENTRY_C]).size).toBe(0);
-	});
-});
-
-describe("getInheritableEntries", () => {
-	test("leaves out entries inherited by other rows", () => {
-		const choices: ReleaseArtistChoices = new Map([
-			["A", { kind: "inherited", entry: ENTRY_A }],
-			["B", { kind: "inherited", entry: ENTRY_B }],
-		]);
-
-		expect(
-			getInheritableEntries([ENTRY_A, ENTRY_B, ENTRY_C], choices, "A"),
-		).toEqual([ENTRY_A, ENTRY_C]);
 	});
 });
 
@@ -158,5 +152,155 @@ describe("getReleaseArtistLabels", () => {
 				["C", "C"],
 			]),
 		);
+	});
+});
+
+describe("clearRemovedChoices", () => {
+	test("clears linked and inherited rows whose artist is gone", () => {
+		const choices: ReleaseArtistChoices = new Map([
+			["A", { kind: "inherited", entry: ENTRY_A }],
+			["B", { kind: "linked", entry: ENTRY_B }],
+			["C", { kind: "skipped" }],
+		]);
+
+		expect(clearRemovedChoices(choices, new Set(["2"]))).toEqual(
+			new Map([
+				["B", { kind: "linked", entry: ENTRY_B }],
+				["C", { kind: "skipped" }],
+			]),
+		);
+	});
+
+	test("returns the same choices when every artist is still listed", () => {
+		const choices: ReleaseArtistChoices = new Map([
+			["A", { kind: "linked", entry: ENTRY_A }],
+		]);
+
+		expect(clearRemovedChoices(choices, new Set(["1"]))).toBe(choices);
+	});
+});
+
+describe("isChosenId", () => {
+	test("finds linked and inherited artists but not skipped rows", () => {
+		const choices: ReleaseArtistChoices = new Map([
+			["A", { kind: "inherited", entry: ENTRY_A }],
+			["Beyoncé", { kind: "skipped" }],
+		]);
+
+		expect(isChosenId(choices, "1")).toBe(true);
+		expect(isChosenId(choices, "2")).toBe(false);
+	});
+});
+
+describe("getPickedChoice", () => {
+	test("inherits a parent artist and links any other", () => {
+		expect(getPickedChoice({ id: "1", name: "beyonce" }, [ENTRY_A])).toEqual({
+			kind: "inherited",
+			entry: ENTRY_A,
+		});
+		expect(getPickedChoice(ENTRY_B, [ENTRY_A])).toEqual({
+			kind: "linked",
+			entry: ENTRY_B,
+		});
+	});
+});
+
+describe("applyFiledUnderChange", () => {
+	const ARTISTS = { names: ["A", "B", "C"], parentEntries: [ENTRY_A] };
+
+	test("links a new artist to the active row and moves to the next unpicked row", () => {
+		const state: ReleasePickerState = {
+			choices: new Map([["A", { kind: "skipped" }]]),
+			activeName: "B",
+		};
+
+		expect(
+			applyFiledUnderChange(
+				state,
+				{ added: [ENTRY_B], presentIds: new Set(["2"]) },
+				ARTISTS,
+			),
+		).toEqual({
+			choices: new Map([
+				["A", { kind: "skipped" }],
+				["B", { kind: "linked", entry: ENTRY_B }],
+			]),
+			activeName: "C",
+		});
+	});
+
+	test("ignores an artist another row has chosen", () => {
+		const state: ReleasePickerState = {
+			choices: new Map([["A", { kind: "inherited", entry: ENTRY_A }]]),
+			activeName: "B",
+		};
+
+		expect(
+			applyFiledUnderChange(
+				state,
+				{ added: [ENTRY_A], presentIds: new Set(["1"]) },
+				ARTISTS,
+			),
+		).toBe(state);
+	});
+
+	test("lets the active row pick its own artist again", () => {
+		const state: ReleasePickerState = {
+			choices: new Map([["B", { kind: "linked", entry: ENTRY_B }]]),
+			activeName: "B",
+		};
+
+		expect(
+			applyFiledUnderChange(
+				state,
+				{ added: [ENTRY_B], presentIds: new Set(["2"]) },
+				ARTISTS,
+			).activeName,
+		).toBe("A");
+	});
+
+	test("clears a removed artist's row so it can be picked again", () => {
+		const linked: ReleasePickerState = {
+			choices: new Map([["B", { kind: "linked", entry: ENTRY_B }]]),
+			activeName: undefined,
+		};
+		const removed = applyFiledUnderChange(
+			linked,
+			{ added: [], presentIds: new Set() },
+			ARTISTS,
+		);
+		const repicked = applyFiledUnderChange(
+			{ ...removed, activeName: "B" },
+			{ added: [ENTRY_B], presentIds: new Set(["2"]) },
+			ARTISTS,
+		);
+
+		expect(removed.choices).toEqual(new Map());
+		expect(repicked.choices).toEqual(
+			new Map([["B", { kind: "linked", entry: ENTRY_B }]]),
+		);
+	});
+
+	test("ignores additions while no row is active", () => {
+		const state: ReleasePickerState = {
+			choices: new Map(),
+			activeName: undefined,
+		};
+
+		expect(
+			applyFiledUnderChange(
+				state,
+				{ added: [ENTRY_B], presentIds: new Set(["2"]) },
+				ARTISTS,
+			),
+		).toBe(state);
+	});
+});
+
+describe("getRepeatedIndexes", () => {
+	test("finds later copies and skips missing ids", () => {
+		expect(
+			getRepeatedIndexes(["1", undefined, "2", "1", undefined, "2"]),
+		).toEqual([3, 5]);
 	});
 });

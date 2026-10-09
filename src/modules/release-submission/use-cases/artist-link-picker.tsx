@@ -9,40 +9,61 @@
 //
 // ----------------------------------------------------------------------- //
 
-import { render } from "preact";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { Fragment, render } from "preact";
+import { createPortal } from "preact/compat";
+import { useEffect, useState } from "preact/hooks";
 
-import type { ResolveData, Track } from "~/shared/services/types";
-import { forceQuerySelector, waitForElement } from "~/shared/utils/dom";
+import type { ResolveData } from "~/shared/services/types";
+import { waitForElement } from "~/shared/utils/dom";
 
 import { buildArtistToken } from "../utils/artist-shortcuts";
 import {
 	closeShortcutPopup,
 	openArtistLinkPopup,
-	showAdvancedTracklist,
-	showSimpleTracklist,
 } from "../utils/page-functions";
+import type { ReleaseArtistLabels } from "../utils/release-artist-links";
 import {
 	prefillArtistSearch,
 	watchArtistResultClicks,
 } from "../utils/shortcut-popup";
-import type { ArtistLabels, RelinkPlan } from "../utils/track-artist-links";
 import {
-	buildRelinkPlan,
+	ensureResetSlots,
+	watchTracklistEdits,
+} from "../utils/simple-tracklist";
+import type {
+	TrackArtistChoice,
+	TrackArtistChoices,
+} from "../utils/track-artist-choices";
+import {
+	describeTrackChoice,
+	resolveTrackArtistLabels,
+	setTrackChoice,
+} from "../utils/track-artist-choices";
+import type { TrackKey } from "../utils/track-artist-links";
+import {
 	getDistinctTrackArtists,
+	getUntetheredKeys,
 	hasDifferingTrackArtists,
-	mergeArtistLabels,
-	relinkTracklistLines,
-	unlinkTracklistLines,
 	withReleaseArtistFallback,
 } from "../utils/track-artist-links";
-import { PickerButton, PickerRow } from "./picker-row";
+import type { PickerSession } from "../utils/tracklist-picker-state";
+import {
+	getWrittenLabels,
+	hasAllLabels,
+	resetTrack,
+} from "../utils/tracklist-picker-state";
+import {
+	InheritSelect,
+	NOT_INHERITED,
+	PickerButton,
+	PickerRow,
+} from "./picker-row";
+import { useTracklistHistory } from "./tracklist-history";
 
 const PICKER_ID = "ebr-artist-link-picker";
-
-type PickerSession = {
-	tracks: Track[];
-	names: string[];
+const NO_RELEASE_ARTISTS: ReleaseArtistLabels = {
+	names: [],
+	labels: new Map(),
 };
 
 export default async function injectArtistLinkPicker() {
@@ -84,17 +105,6 @@ function continueArtistSearch(nextName: string | undefined): void {
 	startArtistSearch(nextName);
 }
 
-// Replaces the previously applied prefixes in the tracklist's titles with
-// plan's.
-function applyArtistLinks(appliedPlan: RelinkPlan, plan: RelinkPlan): void {
-	showAdvancedTracklist();
-	const advancedInput =
-		forceQuerySelector<HTMLTextAreaElement>(document)("#track_advanced");
-	const unlinkedText = unlinkTracklistLines(advancedInput.value, appliedPlan);
-	advancedInput.value = relinkTracklistLines(unlinkedText, plan);
-	showSimpleTracklist();
-}
-
 type PickerImport = {
 	count: number;
 	session: PickerSession | undefined;
@@ -121,106 +131,98 @@ function usePickerImport(): PickerImport {
 	return pickerImport;
 }
 
-// Tracks the labels the release-artist picker most recently published.
-function useReleaseArtistLabels(): ArtistLabels {
-	const [releaseLabels, setReleaseLabels] = useState<ArtistLabels>(new Map());
+// Tracks the release artists and labels the release-artist picker most
+// recently published.
+function useReleaseArtistLabels(): ReleaseArtistLabels {
+	const [release, setRelease] =
+		useState<ReleaseArtistLabels>(NO_RELEASE_ARTISTS);
 
 	useEffect(() => {
-		const listener = (event: CustomEvent<ArtistLabels>) =>
-			setReleaseLabels(event.detail);
+		const listener = (event: CustomEvent<ReleaseArtistLabels>) =>
+			setRelease(event.detail);
 		document.addEventListener("releaseArtistLabelsEvent", listener);
 		return () =>
 			document.removeEventListener("releaseArtistLabelsEvent", listener);
 	}, []);
 
-	return releaseLabels;
+	return release;
 }
 
-// Returns a function applying labels to the tracklist in place of the ones
-// it applied last.
-function useTracklistApplier(tracks: Track[]): (labels: ArtistLabels) => void {
-	const appliedPlan = useRef<RelinkPlan>(new Map());
-	return useCallback(
-		(labels: ArtistLabels) => {
-			const plan = buildRelinkPlan(tracks, labels);
-			applyArtistLinks(appliedPlan.current, plan);
-			appliedPlan.current = plan;
-		},
-		[tracks],
-	);
-}
+// Tracks each tracklist row's reset slot, re-adding the slots whenever RYM
+// rebuilds the rows.
+function useResetSlots(): Map<TrackKey, HTMLElement> {
+	const [slots, setSlots] = useState(ensureResetSlots);
 
-// Checks whether every artist in the session has a label.
-function hasAllLabels(session: PickerSession, labels: ArtistLabels): boolean {
-	return session.names.every((name) => labels.has(name));
+	useEffect(() => watchTracklistEdits(() => setSlots(ensureResetSlots())), []);
+
+	return slots;
 }
 
 function ArtistLinkPicker() {
 	const { count, session } = usePickerImport();
-	const releaseLabels = useReleaseArtistLabels();
+	const release = useReleaseArtistLabels();
 	if (session === undefined) {
 		return null;
 	}
-	return (
-		<PickerPanel key={count} session={session} releaseLabels={releaseLabels} />
-	);
+	return <PickerPanel key={count} session={session} release={release} />;
 }
 
 type PickerPanelProps = {
 	session: PickerSession;
-	releaseLabels: ArtistLabels;
+	release: ReleaseArtistLabels;
 };
 
-function PickerPanel({ session, releaseLabels }: Readonly<PickerPanelProps>) {
-	// The user's own picks in this panel, which win over the release's.
-	const [pickedLabels, setPickedLabels] = useState<ArtistLabels>(new Map());
+function PickerPanel({ session, release }: Readonly<PickerPanelProps>) {
 	const [activeName, setActiveName] = useState<string | undefined>();
-	const labels = mergeArtistLabels(releaseLabels, pickedLabels);
-	const applyLabels = useTracklistApplier(session.tracks);
-	// Read by the auto-apply effect, which reruns only on release changes.
-	const latestPickedLabels = useRef(pickedLabels);
-	latestPickedLabels.current = pickedLabels;
-
-	// Auto-applies whenever the release's labels leave every artist labelled.
-	useEffect(() => {
-		const nextLabels = mergeArtistLabels(
-			releaseLabels,
-			latestPickedLabels.current,
-		);
-		if (hasAllLabels(session, nextLabels)) {
-			applyLabels(nextLabels);
-		}
-	}, [session, releaseLabels, applyLabels]);
+	const tracklist = useTracklistHistory(session, release);
+	const resetSlots = useResetSlots();
+	const { choices } = tracklist.state;
+	const labels = resolveTrackArtistLabels(choices, release.labels);
+	const { editState } = tracklist;
 
 	useEffect(() => {
 		if (activeName === undefined) {
 			return undefined;
 		}
 		return watchArtistResultClicks((assocId) => {
-			const nextPicked = new Map(pickedLabels);
-			nextPicked.set(activeName, buildArtistToken(assocId));
-			const nextLabels = mergeArtistLabels(releaseLabels, nextPicked);
+			const nextChoices = setTrackChoice(choices, activeName, {
+				kind: "linked",
+				token: buildArtistToken(assocId),
+			});
+			const nextLabels = resolveTrackArtistLabels(nextChoices, release.labels);
 			const nextName = session.names.find((name) => !nextLabels.has(name));
-			setPickedLabels(nextPicked);
+			editState((state) => ({ ...state, choices: nextChoices }));
 			setActiveName(nextName);
 			continueArtistSearch(nextName);
 		});
-	}, [session, releaseLabels, pickedLabels, activeName]);
+	}, [session, release, choices, activeName, editState]);
 
-	const handleLink = (name: string) => {
-		setActiveName(name);
-		startArtistSearch(name);
-	};
-	const handleSkip = (name: string) => {
-		setPickedLabels(new Map(pickedLabels).set(name, name));
+	const setChoice = (name: string, choice: TrackArtistChoice | undefined) => {
+		editState((state) => ({
+			...state,
+			choices: setTrackChoice(state.choices, name, choice),
+		}));
 		if (name === activeName) {
 			setActiveName(undefined);
 		}
 	};
+	const handleLink = (name: string) => {
+		setActiveName(name);
+		startArtistSearch(name);
+	};
+	const handleFollow = (name: string, releaseName: string) =>
+		setChoice(
+			name,
+			releaseName === NOT_INHERITED
+				? undefined
+				: { kind: "following", releaseName },
+		);
 	const handleApply = () => {
-		applyLabels(labels);
+		editState((state) => state);
 		closeShortcutPopup();
 	};
+	const handleReset = (key: TrackKey) =>
+		editState((state) => resetTrack(state, key));
 
 	return (
 		<div id={PICKER_ID} style={{ marginTop: "1em" }}>
@@ -229,28 +231,72 @@ function PickerPanel({ session, releaseLabels }: Readonly<PickerPanelProps>) {
 				<PickerRow
 					key={name}
 					name={name}
-					status={describeLabel(name, labels.get(name))}
+					status={describeTrackChoice(choices.get(name), labels.get(name))}
 					active={name === activeName}
 				>
 					<PickerButton value="Link" onClick={() => handleLink(name)} />
-					<PickerButton value="Skip" onClick={() => handleSkip(name)} />
+					<PickerButton
+						value="Skip"
+						onClick={() => setChoice(name, { kind: "skipped" })}
+					/>
+					{release.names.length > 0 && (
+						<InheritSelect
+							inherited={getFollowedName(choices, name)}
+							options={release.names.map((releaseName) => ({
+								value: releaseName,
+								label: releaseName,
+							}))}
+							onSelect={(releaseName) => handleFollow(name, releaseName)}
+						/>
+					)}
 				</PickerRow>
 			))}
 			<input
 				type="button"
 				className="btn"
 				value="Apply to tracklist"
-				disabled={!hasAllLabels(session, labels)}
+				disabled={
+					!hasAllLabels(
+						session.names,
+						getWrittenLabels(tracklist.state, release.labels),
+					)
+				}
 				onClick={handleApply}
+			/>{" "}
+			<PickerButton
+				value="Undo"
+				disabled={!tracklist.canUndo}
+				onClick={tracklist.undo}
 			/>
+			<PickerButton
+				value="Redo"
+				disabled={!tracklist.canRedo}
+				onClick={tracklist.redo}
+			/>
+			{getUntetheredKeys(tracklist.state.text, tracklist.state.tether).map(
+				(key) => {
+					const slot = resetSlots.get(key);
+					return (
+						slot !== undefined && (
+							<Fragment key={key}>
+								{createPortal(
+									<PickerButton
+										value="Reset"
+										onClick={() => handleReset(key)}
+									/>,
+									slot,
+								)}
+							</Fragment>
+						)
+					);
+				},
+			)}
 		</div>
 	);
 }
 
-// Returns the status text for an artist's picked label.
-function describeLabel(name: string, label: string | undefined): string {
-	if (label === undefined) {
-		return "not picked";
-	}
-	return label === name ? "left unlinked" : label;
+// Returns the release artist name's track artist follows, if any.
+function getFollowedName(choices: TrackArtistChoices, name: string): string {
+	const choice = choices.get(name);
+	return choice?.kind === "following" ? choice.releaseName : NOT_INHERITED;
 }

@@ -10,33 +10,39 @@
 // ----------------------------------------------------------------------- //
 
 import { render } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { waitForElement } from "~/shared/utils/dom";
 
 import {
 	readFiledUnderEntries,
+	removeRepeatedFiledUnderEntries,
 	searchFiledUnder,
 	switchAwayFromSameAsParent,
 	syncFiledUnderEntries,
-	watchFiledUnderAdditions,
+	watchFiledUnderChanges,
 } from "../utils/filed-under";
 import type {
 	FiledUnderEntry,
 	ReleaseArtistChoice,
 	ReleaseArtistChoices,
+	ReleaseArtistLabels,
+	ReleasePickerState,
 } from "../utils/release-artist-links";
 import {
+	applyFiledUnderChange,
 	getChosenEntries,
-	getInheritableEntries,
 	getReleaseArtistLabels,
 	hasSameEntries,
+	isChosenId,
 	pairInheritedArtists,
 } from "../utils/release-artist-links";
-import type { ArtistLabels } from "../utils/track-artist-links";
-import { PickerButton, PickerRow } from "./picker-row";
-
-const NOT_INHERITED = "";
+import {
+	InheritSelect,
+	NOT_INHERITED,
+	PickerButton,
+	PickerRow,
+} from "./picker-row";
 
 type ReleasePickerSession = {
 	names: string[];
@@ -58,11 +64,14 @@ export default async function injectReleaseArtistPicker() {
 	render(<ReleaseArtistPicker />, container);
 }
 
-// Tells the tracklist picker each release artist's current label.
-function publishReleaseArtistLabels(labels: ArtistLabels): void {
+// Tells the tracklist picker the release artists and their current labels.
+function publishReleaseArtistLabels(
+	names: string[],
+	choices: ReleaseArtistChoices,
+): void {
 	document.dispatchEvent(
-		new CustomEvent<ArtistLabels>("releaseArtistLabelsEvent", {
-			detail: labels,
+		new CustomEvent<ReleaseArtistLabels>("releaseArtistLabelsEvent", {
+			detail: { names, labels: getReleaseArtistLabels(choices) },
 		}),
 	);
 }
@@ -93,9 +102,8 @@ function useReleasePickerImport(): ReleasePickerImport {
 		const listener = (event: CustomEvent<string[]>) => {
 			const session = getReleasePickerSession(event.detail);
 			publishReleaseArtistLabels(
-				getReleaseArtistLabels(
-					session?.initialChoices ?? new Map<string, ReleaseArtistChoice>(),
-				),
+				session?.names ?? [],
+				session?.initialChoices ?? new Map<string, ReleaseArtistChoice>(),
 			);
 			setPickerImport((previous) => ({
 				count: previous.count + 1,
@@ -120,47 +128,63 @@ function ReleaseArtistPicker() {
 function ReleasePickerPanel({
 	session,
 }: Readonly<{ session: ReleasePickerSession }>) {
-	const [choices, setChoices] = useState(session.initialChoices);
-	const [activeName, setActiveName] = useState<string | undefined>();
-	// Ids of the entries this picker may remove: the parent's and any it
-	// linked.
+	const [state, setState] = useState<ReleasePickerState>({
+		choices: session.initialChoices,
+		activeName: undefined,
+	});
+	const { choices, activeName } = state;
+	// Read by the filed-under watcher, which outlives renders.
+	const latestState = useRef(state);
+	// Ids of the entries this picker may remove: the parent's and any chosen,
+	// less any the user added back by hand.
 	const managedIds = useRef(
 		new Set(session.parentEntries.map((entry) => entry.id)),
 	);
 
+	const commit = useCallback((next: ReleasePickerState) => {
+		latestState.current = next;
+		setState(next);
+	}, []);
+
 	useEffect(() => {
 		const chosenEntries = getChosenEntries(session.names, choices);
+		for (const entry of chosenEntries) {
+			managedIds.current.add(entry.id);
+		}
 		if (!hasSameEntries(chosenEntries, session.parentEntries)) {
 			switchAwayFromSameAsParent();
 		}
 		syncFiledUnderEntries(chosenEntries, managedIds.current);
 		// The import listener already published the starting choices.
 		if (choices !== session.initialChoices) {
-			publishReleaseArtistLabels(getReleaseArtistLabels(choices));
+			publishReleaseArtistLabels(session.names, choices);
 		}
 	}, [session, choices]);
 
-	useEffect(() => {
-		if (activeName === undefined) {
-			return undefined;
-		}
-		return watchFiledUnderAdditions((entry) => {
-			if (managedIds.current.has(entry.id)) {
-				return;
-			}
-			managedIds.current.add(entry.id);
-			const nextChoices = new Map(choices).set(activeName, {
-				kind: "linked",
-				entry,
-			});
-			const nextName = session.names.find((name) => !nextChoices.has(name));
-			setChoices(nextChoices);
-			setActiveName(nextName);
-			if (nextName !== undefined) {
-				searchFiledUnder(nextName);
-			}
-		});
-	}, [session, choices, activeName]);
+	useEffect(
+		() =>
+			watchFiledUnderChanges((change) => {
+				const previous = latestState.current;
+				const next = applyFiledUnderChange(previous, change, session);
+				// An artist added by hand that no row chose stays the user's.
+				for (const entry of change.added) {
+					if (!isChosenId(next.choices, entry.id)) {
+						managedIds.current.delete(entry.id);
+					}
+				}
+				if (change.added.length > 0) {
+					removeRepeatedFiledUnderEntries();
+				}
+				if (
+					next.activeName !== undefined &&
+					next.activeName !== previous.activeName
+				) {
+					searchFiledUnder(next.activeName);
+				}
+				commit(next);
+			}),
+		[session, commit],
+	);
 
 	const setChoice = (name: string, choice: ReleaseArtistChoice | undefined) => {
 		const nextChoices = new Map(choices);
@@ -169,13 +193,13 @@ function ReleasePickerPanel({
 		} else {
 			nextChoices.set(name, choice);
 		}
-		setChoices(nextChoices);
-		if (name === activeName) {
-			setActiveName(undefined);
-		}
+		commit({
+			choices: nextChoices,
+			activeName: name === activeName ? undefined : activeName,
+		});
 	};
 	const handleLink = (name: string) => {
-		setActiveName(name);
+		commit({ choices, activeName: name });
 		searchFiledUnder(name);
 	};
 	const handleInherit = (name: string, id: string) => {
@@ -205,12 +229,11 @@ function ReleasePickerPanel({
 					/>
 					{session.parentEntries.length > 0 && (
 						<InheritSelect
-							choice={choices.get(name)}
-							entries={getInheritableEntries(
-								session.parentEntries,
-								choices,
-								name,
-							)}
+							inherited={getInheritedId(choices.get(name))}
+							options={session.parentEntries.map((entry) => ({
+								value: entry.id,
+								label: entry.name,
+							}))}
 							onSelect={(id) => handleInherit(name, id)}
 						/>
 					)}
@@ -233,36 +256,7 @@ function describeChoice(choice: ReleaseArtistChoice | undefined): string {
 	return `${verb} ${choice.entry.name}`;
 }
 
-type InheritSelectProps = {
-	choice: ReleaseArtistChoice | undefined;
-	entries: FiledUnderEntry[];
-	onSelect: (id: string) => void;
-};
-
-// Renders the dropdown for inheriting one of the parent's artists, or for
-// turning inheriting off again.
-function InheritSelect({
-	choice,
-	entries,
-	onSelect,
-}: Readonly<InheritSelectProps>) {
-	const inheritedId =
-		choice?.kind === "inherited" ? choice.entry.id : NOT_INHERITED;
-	return (
-		<select
-			value={inheritedId}
-			onChange={(event) => onSelect((event.target as HTMLSelectElement).value)}
-		>
-			<option value={NOT_INHERITED}>
-				{inheritedId === NOT_INHERITED
-					? "Inherit from parent…"
-					: "Don't inherit"}
-			</option>
-			{entries.map((entry) => (
-				<option key={entry.id} value={entry.id}>
-					{entry.name}
-				</option>
-			))}
-		</select>
-	);
+// Returns the id of the parent artist a choice inherits, if any.
+function getInheritedId(choice: ReleaseArtistChoice | undefined): string {
+	return choice?.kind === "inherited" ? choice.entry.id : NOT_INHERITED;
 }

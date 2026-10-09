@@ -1243,9 +1243,9 @@
     added after #124): clicking it while a release row is active records
     it as that row's link. Ask whether that is wanted.
 
-- Tracklist-picker additions (started 2026-10-07, **implemented on
-  `artist-pickers`, uncommitted, waiting for the user's Safari test**; plan
-  approved 2026-10-07). Requested by the user after test 3 of the
+- Tracklist-picker additions (started 2026-10-07, **committed on
+  `artist-pickers` after passing the user's Safari test 2026-10-09; upstream
+  port not started**; plan approved 2026-10-07). Requested by the user after test 3 of the
   upstream build. Built on the fork (`artist-pickers`) first, then ported
   again (user's choice; the port's async queue and `editAdvancedTracklist`
   code will need the same additions).
@@ -1287,25 +1287,27 @@
   - Rows are `<tr id="track_N">` cloned from `#track_base` inside
     `#tracks_simp`, with inputs `track_track_numberN`,
     `track_track_titleN`, `track_track_lengthN` (plus a delete-row button
-    cell first). A reset button would go in a new cell after the length.
+    cell first). The reset button goes in a `span.ebr-track-reset`
+    appended to the length cell and absolutely positioned just past its
+    right edge (`left: 100%`, cell made `position: relative`), so it sits
+    outside the table (user's request, 2026-10-09). An extra `td` added a
+    column; a plain span after the input wrapped under the time.
   - `goAdvanced()` builds `#track_advanced` from those inputs; `goSimple()`
     calls `clearAllRows('track_')` and rebuilds every row from the text. So
     any injected cells are wiped on each advanced/simple round trip (every
     apply) and must be re-added, e.g. from a `MutationObserver` on
     `#tracks_simp`. A delegated `input`/`change` listener on `#tracks_simp`
     survives the rebuilds.
-  Next steps: the user's Safari test, built and installed 2026-10-07
-  (`release-submission/main-2IxOEb3j.js`): typing keeps text and shows
-  Reset; Reset restores current links; dropdown follows a differently
-  spelled release artist; undo/redo across typing, Link, Skip, RYM
-  add/delete row and Reset; undo after a release-pick change keeps the
-  automatic update; a release with a repeated track number; whether the
-  Reset column disturbs the table layout. The user may veto the
-  "choices apply immediately" behaviour change. Then commit (the
-  `EvenBetterRYM/` pbxproj deployment-target change and `xcshareddata/`
-  stay uncommitted), add a `CLAUDE.md` note on RYM's tracklist row DOM,
-  and re-port to `tracklist-artist-links-upstream` (see the port caveat
-  below).
+  Status (2026-10-09): **every Safari check passed on the fork**
+  (`main-CVkCmXX1.js`): typing untethers, Reset gives the imported title
+  with current links and sits outside the table, the dropdown follows a
+  differently spelled release artist, undo/redo and undo-keeps-auto-updates,
+  repeated track numbers, and the release-picker removal, re-pick,
+  duplicate, hand-added and every-parent-artist checks. The user kept the
+  "choices apply immediately" behaviour. Committed on `artist-pickers`.
+  Next step: re-port to `tracklist-artist-links-upstream` (stash@{0}
+  holds the earlier port; see the port caveat below), then re-test
+  upstream items 4-7 and the "[unknown artist]" question.
   - In simple mode the inputs are the source of truth, so a single-title
     change (e.g. Reset) could set the input directly without a mode switch.
   - Row helpers live in RYM's `cdn.sonemic.net/dist/rym25/js/legacy/basereq.js`
@@ -1335,7 +1337,8 @@
     tethered tracks, so an undo never reverses an automatic update.
   - Apply leaves untethered tracks alone; no keyboard shortcuts (user's
     answers).
-  - Behaviour change, not in the user's request: a tracklist-picker choice
+  - Behaviour change, not in the user's request (kept by the user,
+    2026-10-09): a tracklist-picker choice
     change (Link, Skip, dropdown) now re-applies straight away once every
     artist has a label, instead of waiting for Apply. Restoring an undo
     step has to re-apply its choices, so choices and the written tracklist
@@ -1360,10 +1363,59 @@
     unpicked release artists. `InheritSelect` moved to `picker-row.tsx`.
   - Checks: 312 tests, Biome, tsc, ESLint, `build:safari` and `xcodebuild`
     pass. Not yet tested in Safari.
+  - **Release-picker removal bugs (found by the user in Safari,
+    2026-10-07, fixed and uncommitted):** removing an artist from Filed
+    Under left its row "linked"/"inherited" (so the tracklist kept the
+    token, and a removed inherited artist couldn't be re-inherited because
+    the dropdown already showed it), and re-picking a removed artist was
+    ignored forever. Root cause: the picker never watched removals, and
+    its pick watcher skipped any id in `managedIds`, which kept every id it
+    had ever linked. Debug logs also confirmed that RYM adds a second copy
+    when an already-listed artist is picked (its `addFiledUnder` duplicate
+    check compares `[ArtistN]` with a bare `N`, so it never matches).
+    Fix: `watchFiledUnderChanges` reports each list change as the newly
+    created `li` elements (moved ones don't count) plus the ids still
+    listed; the pure `applyFiledUnderChange` clears rows whose artist is
+    gone and gives the first new artist no *other* row has chosen to the
+    active row (the picker's own sync adds are always for chosen ids);
+    a re-picked parent artist counts as inherited.
+    `removeRepeatedFiledUnderEntries` deletes later copies. `managedIds`
+    now only decides what sync may remove (the parent's ids plus any ever
+    chosen), and an added artist no row ends up choosing is dropped from
+    it, so a parent artist the user re-adds by hand isn't deleted by the
+    next sync (found by a side agent, pre-existing; user asked to fix). The panel keeps `{choices, activeName}` in one state read via
+    a ref, so the watcher is set up once per session. Port note: with
+    async `runScript` the watcher may see a change before sync's adds
+    land; untested there.
+  - **Removing a release pick drops the tracklist link** (user's request,
+    2026-10-07): once the picker has written the tracklist
+    (`appliedPlan` non-empty), a track artist following an unpicked
+    release artist is written by its own name, as Skip does
+    (`getWrittenLabels` / `withUnpickedFollowedNames`). Before the first
+    write the old gate stays: such an artist counts as unpicked and Apply
+    is disabled. A row the user set back to "not picked" still blocks
+    automatic updates.
+  - **Reset returns the imported title** (user's report, 2026-10-09: text
+    typed before the first link became the base Reset returned to). Root
+    cause: the base was captured at the picker's first write. Fix:
+    `createPickerState` tethers every track to the tracklist the import
+    wrote (`tetherTrackTitles`), which is on the page before
+    `importEvent` fires because `fill` runs first. So typing before the
+    first link also untethers the track. Regression test: "resets a track
+    typed over before the first write to its imported title".
+  - **Every parent artist is offered in every release row's dropdown**
+    (user's request, 2026-10-07, for edge cases the name matching misses).
+    `getInheritableEntries`, which hid parent artists other rows already
+    inherit, is gone. The import-time loose-name pairing is unchanged. Two
+    rows may now inherit the same parent artist; `getChosenEntries` lists
+    it once. The user accepted this (more control for the user).
+  - The dropdowns' "not inheriting" option now always reads "Don't
+    inherit" (user's request), replacing the "Inherit from parent…" /
+    "Inherit from filed under…" prompts.
   Design points settled while drafting the plan (2026-10-07):
   - **One rule records undo steps.** On any title/position/length `change`,
     row add/delete mutation (childList on `#track_base`'s parent only, so
-    injected reset cells don't retrigger it) or advanced-textarea `change`,
+    injected reset slots don't retrigger it) or advanced-textarea `change`,
     read the tracklist text and push a step only if it differs from the
     current snapshot. The picker pushes its own writes straight away, so the
     observer's later read matches and is dropped. A "writing now" flag
@@ -1375,7 +1427,9 @@
     untethered status out of step with the titles.
   - **Reset needs the base title as it is on the page**, not `Track.title`:
     `fillTracks` capitalizes and turns "untitled" into `[untitled]`. Capture
-    each position's unprefixed title from the page at the first apply.
+    each position's title from the page when the picker opens, right after
+    the import fills the tracklist (originally at the first apply; changed
+    2026-10-09, see "Reset returns the imported title").
 
 - Upstream sync (started 2026-10-02, branch `sync-upstream`): merging all
   32 `upstream/main` commits not yet on the fork (last sync was `25ce505`,
