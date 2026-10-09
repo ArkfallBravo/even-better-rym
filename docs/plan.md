@@ -1418,10 +1418,9 @@
     injected reset slots don't retrigger it) or advanced-textarea `change`,
     read the tracklist text and push a step only if it differs from the
     current snapshot. The picker pushes its own writes straight away, so the
-    observer's later read matches and is dropped. A "writing now" flag
-    can't work: the fork's `runScript` is synchronous, but observer
-    callbacks arrive as a microtask after the flag is cleared. This rule
-    covers add/delete/clear-all/Copy Tracks without special cases.
+    observer's later read matches and is dropped. This rule covers
+    add/delete/clear-all/Copy Tracks without special cases. (Rejected
+    alternatives: `docs/alternatives.md`.)
   - **Snapshots hold the tracklist text, the tracklist-picker choices and
     each position's base and last-written title**, so undo can't leave
     untethered status out of step with the titles.
