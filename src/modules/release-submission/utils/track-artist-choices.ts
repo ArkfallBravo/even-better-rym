@@ -35,11 +35,11 @@ export const getInitialTrackChoices = (
 
 // Returns the choices with name's choice replaced, or removed when choice is
 // undefined.
-export const setTrackChoice = (
-	choices: TrackArtistChoices,
+export const withChoice = <Choice>(
+	choices: Map<string, Choice>,
 	name: string,
-	choice: TrackArtistChoice | undefined,
-): TrackArtistChoices => {
+	choice: Choice | undefined,
+): Map<string, Choice> => {
 	const nextChoices = new Map(choices);
 	if (choice === undefined) {
 		nextChoices.delete(name);

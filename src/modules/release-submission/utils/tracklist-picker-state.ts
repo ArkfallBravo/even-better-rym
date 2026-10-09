@@ -60,10 +60,6 @@ export const createPickerState = (
 	appliedPlan: new Map(),
 });
 
-// Checks whether every artist has a label.
-export const hasAllLabels = (names: string[], labels: ArtistLabels): boolean =>
-	names.every((name) => labels.has(name));
-
 // Returns the labels the picker writes. Once it has written the tracklist,
 // an artist following an unpicked release artist is written by name, so
 // removing a release pick drops that artist's links.
@@ -76,6 +72,18 @@ export const getWrittenLabels = (
 		? labels
 		: withUnpickedFollowedNames(state.choices, labels);
 };
+
+// Checks whether the labels give every artist one.
+const hasAllLabels = (names: string[], labels: ArtistLabels): boolean =>
+	names.every((name) => labels.has(name));
+
+// Checks whether the choices give every artist a label to write.
+export const canApplyChoices = (
+	state: TracklistPickerState,
+	session: PickerSession,
+	releaseLabels: ArtistLabels,
+): boolean =>
+	hasAllLabels(session.names, getWrittenLabels(state, releaseLabels));
 
 // Returns the state with the choices' labels written to the tracks the
 // picker still controls, once every artist has a label.

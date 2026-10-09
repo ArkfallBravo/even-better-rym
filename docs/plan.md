@@ -1305,6 +1305,13 @@
   repeated track numbers, and the release-picker removal, re-pick,
   duplicate, hand-added and every-parent-artist checks. The user kept the
   "choices apply immediately" behaviour. Committed on `artist-pickers`.
+  A `/simplify` pass from `81dc759` (2026-10-09) was **committed at the user's
+  request before its Safari re-test** (`main-D-ANBC5d.js`); the re-test is
+  still to do. It is behaviour-preserving: a
+  shared `useLatestState` hook, a generic `withChoice`, shared separator
+  constants, `getKeyedRows`, `watchTracklistRows` (reset slots no longer
+  re-scan on field edits), one parse per filed-under change,
+  `getUnchosenIds`, `canApplyChoices` and a named `reapply`.
   Next step: re-port to `tracklist-artist-links-upstream` (stash@{0}
   holds the earlier port; see the port caveat below), then re-test
   upstream items 4-7 and the "[unknown artist]" question.

@@ -10,7 +10,7 @@
 // ----------------------------------------------------------------------- //
 
 import { render } from "preact";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import { waitForElement } from "~/shared/utils/dom";
 
@@ -23,30 +23,31 @@ import {
 	watchFiledUnderChanges,
 } from "../utils/filed-under";
 import type {
-	FiledUnderEntry,
+	FiledUnderListChange,
 	ReleaseArtistChoice,
 	ReleaseArtistChoices,
 	ReleaseArtistLabels,
+	ReleasePickerArtists,
 	ReleasePickerState,
 } from "../utils/release-artist-links";
 import {
 	applyFiledUnderChange,
 	getChosenEntries,
 	getReleaseArtistLabels,
+	getUnchosenIds,
 	hasSameEntries,
-	isChosenId,
 	pairInheritedArtists,
 } from "../utils/release-artist-links";
+import { withChoice } from "../utils/track-artist-choices";
 import {
 	InheritSelect,
 	NOT_INHERITED,
 	PickerButton,
 	PickerRow,
 } from "./picker-row";
+import { useLatestState } from "./use-latest-state";
 
-type ReleasePickerSession = {
-	names: string[];
-	parentEntries: FiledUnderEntry[];
+type ReleasePickerSession = ReleasePickerArtists & {
 	initialChoices: ReleaseArtistChoices;
 };
 
@@ -128,23 +129,18 @@ function ReleaseArtistPicker() {
 function ReleasePickerPanel({
 	session,
 }: Readonly<{ session: ReleasePickerSession }>) {
-	const [state, setState] = useState<ReleasePickerState>({
+	// The latest state is read by the filed-under watcher, which outlives
+	// renders.
+	const { state, latest, commit } = useLatestState<ReleasePickerState>(() => ({
 		choices: session.initialChoices,
 		activeName: undefined,
-	});
+	}));
 	const { choices, activeName } = state;
-	// Read by the filed-under watcher, which outlives renders.
-	const latestState = useRef(state);
 	// Ids of the entries this picker may remove: the parent's and any chosen,
 	// less any the user added back by hand.
 	const managedIds = useRef(
 		new Set(session.parentEntries.map((entry) => entry.id)),
 	);
-
-	const commit = useCallback((next: ReleasePickerState) => {
-		latestState.current = next;
-		setState(next);
-	}, []);
 
 	useEffect(() => {
 		const chosenEntries = getChosenEntries(session.names, choices);
@@ -161,43 +157,35 @@ function ReleasePickerPanel({
 		}
 	}, [session, choices]);
 
-	useEffect(
-		() =>
-			watchFiledUnderChanges((change) => {
-				const previous = latestState.current;
-				const next = applyFiledUnderChange(previous, change, session);
-				// An artist added by hand that no row chose stays the user's.
-				for (const entry of change.added) {
-					if (!isChosenId(next.choices, entry.id)) {
-						managedIds.current.delete(entry.id);
-					}
-				}
-				if (change.added.length > 0) {
-					removeRepeatedFiledUnderEntries();
-				}
-				if (
-					next.activeName !== undefined &&
-					next.activeName !== previous.activeName
-				) {
-					searchFiledUnder(next.activeName);
-				}
-				commit(next);
-			}),
-		[session, commit],
-	);
+	useEffect(() => {
+		// Applies a change to the filed-under list and searches for the next
+		// row's artist.
+		const handleListChange = (change: FiledUnderListChange) => {
+			const previous = latest.current;
+			const next = applyFiledUnderChange(previous, change, session);
+			// An artist added by hand that no row chose stays the user's.
+			for (const id of getUnchosenIds(change.added, next.choices)) {
+				managedIds.current.delete(id);
+			}
+			if (change.added.length > 0) {
+				removeRepeatedFiledUnderEntries();
+			}
+			if (
+				next.activeName !== undefined &&
+				next.activeName !== previous.activeName
+			) {
+				searchFiledUnder(next.activeName);
+			}
+			commit(next);
+		};
+		return watchFiledUnderChanges(handleListChange);
+	}, [session, latest, commit]);
 
-	const setChoice = (name: string, choice: ReleaseArtistChoice | undefined) => {
-		const nextChoices = new Map(choices);
-		if (choice === undefined) {
-			nextChoices.delete(name);
-		} else {
-			nextChoices.set(name, choice);
-		}
+	const setChoice = (name: string, choice: ReleaseArtistChoice | undefined) =>
 		commit({
-			choices: nextChoices,
+			choices: withChoice(choices, name, choice),
 			activeName: name === activeName ? undefined : activeName,
 		});
-	};
 	const handleLink = (name: string) => {
 		commit({ choices, activeName: name });
 		searchFiledUnder(name);

@@ -28,7 +28,7 @@ import {
 } from "../utils/shortcut-popup";
 import {
 	ensureResetSlots,
-	watchTracklistEdits,
+	watchTracklistRows,
 } from "../utils/simple-tracklist";
 import type {
 	TrackArtistChoice,
@@ -37,7 +37,7 @@ import type {
 import {
 	describeTrackChoice,
 	resolveTrackArtistLabels,
-	setTrackChoice,
+	withChoice,
 } from "../utils/track-artist-choices";
 import type { TrackKey } from "../utils/track-artist-links";
 import {
@@ -47,11 +47,7 @@ import {
 	withReleaseArtistFallback,
 } from "../utils/track-artist-links";
 import type { PickerSession } from "../utils/tracklist-picker-state";
-import {
-	getWrittenLabels,
-	hasAllLabels,
-	resetTrack,
-} from "../utils/tracklist-picker-state";
+import { canApplyChoices, resetTrack } from "../utils/tracklist-picker-state";
 import {
 	InheritSelect,
 	NOT_INHERITED,
@@ -153,7 +149,7 @@ function useReleaseArtistLabels(): ReleaseArtistLabels {
 function useResetSlots(): Map<TrackKey, HTMLElement> {
 	const [slots, setSlots] = useState(ensureResetSlots);
 
-	useEffect(() => watchTracklistEdits(() => setSlots(ensureResetSlots())), []);
+	useEffect(() => watchTracklistRows(() => setSlots(ensureResetSlots())), []);
 
 	return slots;
 }
@@ -185,7 +181,7 @@ function PickerPanel({ session, release }: Readonly<PickerPanelProps>) {
 			return undefined;
 		}
 		return watchArtistResultClicks((assocId) => {
-			const nextChoices = setTrackChoice(choices, activeName, {
+			const nextChoices = withChoice(choices, activeName, {
 				kind: "linked",
 				token: buildArtistToken(assocId),
 			});
@@ -200,7 +196,7 @@ function PickerPanel({ session, release }: Readonly<PickerPanelProps>) {
 	const setChoice = (name: string, choice: TrackArtistChoice | undefined) => {
 		editState((state) => ({
 			...state,
-			choices: setTrackChoice(state.choices, name, choice),
+			choices: withChoice(state.choices, name, choice),
 		}));
 		if (name === activeName) {
 			setActiveName(undefined);
@@ -218,7 +214,7 @@ function PickerPanel({ session, release }: Readonly<PickerPanelProps>) {
 				: { kind: "following", releaseName },
 		);
 	const handleApply = () => {
-		editState((state) => state);
+		tracklist.reapply();
 		closeShortcutPopup();
 	};
 	const handleReset = (key: TrackKey) =>
@@ -255,12 +251,7 @@ function PickerPanel({ session, release }: Readonly<PickerPanelProps>) {
 				type="button"
 				className="btn"
 				value="Apply to tracklist"
-				disabled={
-					!hasAllLabels(
-						session.names,
-						getWrittenLabels(tracklist.state, release.labels),
-					)
-				}
+				disabled={!canApplyChoices(tracklist.state, session, release.labels)}
 				onClick={handleApply}
 			/>{" "}
 			<PickerButton

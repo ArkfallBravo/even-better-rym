@@ -203,6 +203,13 @@ export const isChosenId = (
 		(choice) => choice.kind !== "skipped" && choice.entry.id === id,
 	);
 
+// Returns the ids of the entries no choice links or inherits.
+export const getUnchosenIds = (
+	entries: FiledUnderEntry[],
+	choices: ReleaseArtistChoices,
+): string[] =>
+	entries.map((entry) => entry.id).filter((id) => !isChosenId(choices, id));
+
 // Returns the choice for an artist picked in RYM's search: inherited if it
 // is one of the parent's entries, linked otherwise.
 export const getPickedChoice = (

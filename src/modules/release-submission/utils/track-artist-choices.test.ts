@@ -15,7 +15,7 @@ import {
 	describeTrackChoice,
 	getInitialTrackChoices,
 	resolveTrackArtistLabels,
-	setTrackChoice,
+	withChoice,
 	withUnpickedFollowedNames,
 } from "./track-artist-choices";
 
@@ -27,12 +27,12 @@ describe("getInitialTrackChoices", () => {
 	});
 });
 
-describe("setTrackChoice", () => {
+describe("withChoice", () => {
 	test("replaces or removes a choice without changing the original", () => {
 		const choices: TrackArtistChoices = new Map([["A", { kind: "skipped" }]]);
 
-		expect(setTrackChoice(choices, "B", { kind: "skipped" }).size).toBe(2);
-		expect(setTrackChoice(choices, "A", undefined)).toEqual(new Map());
+		expect(withChoice(choices, "B", { kind: "skipped" }).size).toBe(2);
+		expect(withChoice(choices, "A", undefined)).toEqual(new Map());
 		expect(choices.size).toBe(1);
 	});
 });

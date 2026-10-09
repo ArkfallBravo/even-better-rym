@@ -174,6 +174,27 @@ export const switchAwayFromSameAsParent = (): void =>
 		.querySelector<HTMLInputElement>(NOT_SAME_AS_PARENT_SELECTOR)
 		?.click();
 
+// Returns the list's entries not among knownElements, and every artist id it
+// lists.
+const getListChange = (
+	elements: Element[],
+	knownElements: Set<Element>,
+): FiledUnderListChange => {
+	const added: FiledUnderEntry[] = [];
+	const presentIds = new Set<string>();
+	for (const element of elements) {
+		const entry = parseEntryElement(element);
+		if (entry === undefined) {
+			continue;
+		}
+		presentIds.add(entry.id);
+		if (!knownElements.has(element)) {
+			added.push(entry);
+		}
+	}
+	return { added, presentIds };
+};
+
 // Calls onChange after each change to the filed-under list, until the
 // returned function is called. Entries the change only moved don't count as
 // added.
@@ -187,15 +208,9 @@ export const watchFiledUnderChanges = (
 	let knownElements = new Set(getEntryElements());
 	const observer = new MutationObserver(() => {
 		const elements = getEntryElements();
-		const added = elements
-			.filter((element) => !knownElements.has(element))
-			.map(parseEntryElement)
-			.filter((entry) => entry !== undefined);
+		const change = getListChange(elements, knownElements);
 		knownElements = new Set(elements);
-		const presentIds = new Set(
-			readFiledUnderEntries().map((entry) => entry.id),
-		);
-		onChange({ added, presentIds });
+		onChange(change);
 	});
 	observer.observe(list, { childList: true, subtree: true });
 	return () => observer.disconnect();

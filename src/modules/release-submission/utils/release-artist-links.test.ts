@@ -22,6 +22,7 @@ import {
 	getPickedChoice,
 	getReleaseArtistLabels,
 	getRepeatedIndexes,
+	getUnchosenIds,
 	hasSameEntries,
 	isChosenId,
 	normalizeArtistName,
@@ -189,6 +190,20 @@ describe("isChosenId", () => {
 
 		expect(isChosenId(choices, "1")).toBe(true);
 		expect(isChosenId(choices, "2")).toBe(false);
+	});
+});
+
+describe("getUnchosenIds", () => {
+	test("returns the entries no linked or inherited row chose", () => {
+		const choices: ReleaseArtistChoices = new Map([
+			["A", { kind: "linked", entry: ENTRY_A }],
+			["AC/DC", { kind: "skipped" }],
+		]);
+
+		expect(getUnchosenIds([ENTRY_A, ENTRY_B, ENTRY_C], choices)).toEqual([
+			"2",
+			"3",
+		]);
 	});
 });
 

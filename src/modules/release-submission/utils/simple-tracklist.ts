@@ -12,7 +12,12 @@ import { forceQuerySelector } from "~/shared/utils/dom";
 
 import { showAdvancedTracklist, showSimpleTracklist } from "./page-functions";
 import type { TrackKey } from "./track-artist-links";
-import { getChangedTitles, getTrackKeys } from "./track-artist-links";
+import {
+	getChangedTitles,
+	getTrackKeys,
+	TRACKLIST_FIELD_SEPARATOR,
+	TRACKLIST_LINE_SEPARATOR,
+} from "./track-artist-links";
 
 const SIMPLE_SELECTOR = "#tracks_simp";
 const ADVANCED_SELECTOR = "#tracks_adv";
@@ -33,8 +38,6 @@ const RESET_SLOT_STYLE: Partial<CSSStyleDeclaration> = {
 	marginLeft: "4px",
 	whiteSpace: "nowrap",
 };
-const FIELD_SEPARATOR = "|";
-const LINE_SEPARATOR = "\n";
 
 const getRows = (): HTMLTableRowElement[] => [
 	...document.querySelectorAll<HTMLTableRowElement>(
@@ -46,11 +49,18 @@ const getRows = (): HTMLTableRowElement[] => [
 const readRowInput = (row: Element, selector: string): string =>
 	row.querySelector<HTMLInputElement>(selector)?.value ?? "";
 
-// Returns each row's track key, from its position field.
-const getRowKeys = (rows: Element[]): (TrackKey | undefined)[] =>
-	getTrackKeys(
+// Returns each row that has a track key, from its position field, with
+// that key.
+const getKeyedRows = (): [TrackKey, HTMLTableRowElement][] => {
+	const rows = getRows();
+	const keys = getTrackKeys(
 		rows.map((row) => readRowInput(row, NUMBER_INPUT_SELECTOR).trim()),
 	);
+	return rows.flatMap((row, index): [TrackKey, HTMLTableRowElement][] => {
+		const key = keys[index];
+		return key === undefined ? [] : [[key, row]];
+	});
+};
 
 // Checks whether the advanced (text) editor is the one showing.
 const isAdvancedShowing = (): boolean =>
@@ -63,9 +73,9 @@ const readSimpleText = (): string =>
 		.map((row) =>
 			[NUMBER_INPUT_SELECTOR, TITLE_INPUT_SELECTOR, LENGTH_INPUT_SELECTOR]
 				.map((selector) => readRowInput(row, selector))
-				.join(FIELD_SEPARATOR),
+				.join(TRACKLIST_FIELD_SEPARATOR),
 		)
-		.join(LINE_SEPARATOR);
+		.join(TRACKLIST_LINE_SEPARATOR);
 
 // Returns the tracklist as advanced text, from whichever editor is showing.
 export const readTracklistText = (): string =>
@@ -77,16 +87,13 @@ export const readTracklistText = (): string =>
 
 // Writes each title into its row's title input.
 const writeRowTitles = (titles: Map<TrackKey, string>): void => {
-	const rows = getRows();
-	const keys = getRowKeys(rows);
-	rows.forEach((row, index) => {
-		const key = keys[index];
-		const title = key === undefined ? undefined : titles.get(key);
+	for (const [key, row] of getKeyedRows()) {
+		const title = titles.get(key);
 		const input = row.querySelector<HTMLInputElement>(TITLE_INPUT_SELECTOR);
 		if (title !== undefined && input !== null) {
 			input.value = title;
 		}
-	});
+	}
 };
 
 // Replaces the tracklist through the advanced editor, leaving the simple
@@ -117,23 +124,33 @@ export const writeTracklistText = (text: string): void => {
 	writeRowTitles(changedTitles);
 };
 
+// Calls onChange after a row is added or removed, until the returned
+// function is called.
+export const watchTracklistRows = (onChange: () => void): (() => void) => {
+	const rowParent = forceQuerySelector(document)(
+		ROW_TEMPLATE_SELECTOR,
+	).parentElement;
+	if (rowParent === null) {
+		return () => undefined;
+	}
+	// Only rows, not their contents, so adding reset slots doesn't call onChange.
+	const observer = new MutationObserver(onChange);
+	observer.observe(rowParent, { childList: true });
+	return () => observer.disconnect();
+};
+
 // Calls onEdit after the user changes a field or a row is added or removed,
 // until the returned function is called.
 export const watchTracklistEdits = (onEdit: () => void): (() => void) => {
 	const editors = forceQuerySelector(document)(SIMPLE_SELECTOR).parentElement;
-	const rowParent = forceQuerySelector(document)(
-		ROW_TEMPLATE_SELECTOR,
-	).parentElement;
-	if (editors === null || rowParent === null) {
+	if (editors === null) {
 		return () => undefined;
 	}
 	editors.addEventListener("change", onEdit);
-	// Only rows, not their contents, so adding reset slots doesn't call onEdit.
-	const observer = new MutationObserver(onEdit);
-	observer.observe(rowParent, { childList: true });
+	const stopWatchingRows = watchTracklistRows(onEdit);
 	return () => {
 		editors.removeEventListener("change", onEdit);
-		observer.disconnect();
+		stopWatchingRows();
 	};
 };
 
@@ -162,15 +179,12 @@ const ensureResetSlot = (row: HTMLTableRowElement): HTMLElement | undefined => {
 // Returns each track's reset slot, adding the slots RYM's row rebuilds
 // removed.
 export const ensureResetSlots = (): Map<TrackKey, HTMLElement> => {
-	const rows = getRows();
-	const keys = getRowKeys(rows);
 	const slots = new Map<TrackKey, HTMLElement>();
-	rows.forEach((row, index) => {
-		const key = keys[index];
+	for (const [key, row] of getKeyedRows()) {
 		const slot = ensureResetSlot(row);
-		if (key !== undefined && slot !== undefined) {
+		if (slot !== undefined) {
 			slots.set(key, slot);
 		}
-	});
+	}
 	return slots;
 };

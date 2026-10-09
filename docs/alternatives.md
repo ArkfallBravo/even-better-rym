@@ -60,3 +60,33 @@ describes how the code works now.
 - **Re-picking a parent artist counts as "linked"** (not chosen). It counts
   as "inherited", which only changes the status text, since both give the
   same token. Bring back if the difference matters to the user.
+
+## Raised by the 2026-10-09 simplify review (not done)
+
+- **Patch RYM's `addFiledUnder` to skip artists already listed** (deferred).
+  It would replace removing repeats after the fact
+  (`removeRepeatedFiledUnderEntries`), as `chart-shortcuts` patches
+  `RYMchart`. It changes page behaviour and needs a Safari test. Bring back
+  if the remove-after pass causes flicker or extra list changes.
+
+- **Keep `managedIds` in `ReleasePickerState`** (deferred). It is a ref in
+  the component, updated from the sync effect and the watcher. Moving it
+  into the pure state would put the "which entries may the picker remove"
+  rule under test. Bring back if that rule breaks again.
+
+- **Make Apply a "Done" button** (deferred; the user's call). Choices apply
+  immediately, so Apply only picks up outside edits and closes the popup.
+
+- **Model RYM's field trimming in pure code instead of reading the page
+  back after each write** (deferred). `showCurrent` reads the tracklist
+  after writing it. A pure trim would avoid the read, but the no-false-undo
+  rule depends on the two matching exactly.
+
+- **Return the same objects when nothing changed and compare by reference**
+  (deferred). It would replace `isSamePickerState`'s JSON comparison. That
+  comparison leaves out `appliedPlan`, so switching would change which
+  edits count as undo steps.
+
+- **Drop the popup click watcher's re-subscription on every choice change**
+  (not worth it). It needs refs for the choices and release labels. The
+  churn only happens while the popup is open.

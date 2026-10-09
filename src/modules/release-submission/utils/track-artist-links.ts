@@ -13,8 +13,8 @@ import type { Track } from "~/shared/services/types";
 
 import { buildLinkedTitle } from "./artist-shortcuts";
 
-const TRACKLIST_LINE_SEPARATOR = "\n";
-const TRACKLIST_FIELD_SEPARATOR = "|";
+export const TRACKLIST_LINE_SEPARATOR = "\n";
+export const TRACKLIST_FIELD_SEPARATOR = "|";
 
 // Maps an artist name to the label written for it: an [ArtistNNNN] token,
 // or the plain name when the user skipped it.

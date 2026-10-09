@@ -9,7 +9,7 @@
 //
 // ----------------------------------------------------------------------- //
 
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import {
 	canRedo,
@@ -39,6 +39,7 @@ import {
 	reapplyReleaseLabels,
 	recordUserChange,
 } from "../utils/tracklist-picker-state";
+import { useLatestState } from "./use-latest-state";
 
 type StateChange = (state: TracklistPickerState) => TracklistPickerState;
 
@@ -47,6 +48,7 @@ export type TracklistHistory = {
 	canUndo: boolean;
 	canRedo: boolean;
 	editState: (change: StateChange) => void;
+	reapply: () => void;
 	undo: () => void;
 	redo: () => void;
 };
@@ -80,7 +82,11 @@ export function useTracklistHistory(
 	session: PickerSession,
 	release: ReleaseArtistLabels,
 ): TracklistHistory {
-	const [history, setHistory] = useState(() =>
+	const {
+		state: history,
+		latest: latestHistory,
+		commit,
+	} = useLatestState(() =>
 		createEditHistory(
 			createPickerState(
 				readTracklistText(),
@@ -89,14 +95,8 @@ export function useTracklistHistory(
 		),
 	);
 	// Read by the DOM callbacks and the functions below, which outlive renders.
-	const latestHistory = useRef(history);
 	const latestReleaseLabels = useRef<ArtistLabels>(release.labels);
 	latestReleaseLabels.current = release.labels;
-
-	const commit = useCallback((next: PickerHistory) => {
-		latestHistory.current = next;
-		setHistory(next);
-	}, []);
 
 	useEffect(
 		() =>
@@ -146,6 +146,7 @@ export function useTracklistHistory(
 		canUndo: canUndo(history),
 		canRedo: canRedo(history),
 		editState,
+		reapply: useCallback(() => editState((state) => state), [editState]),
 		undo: useCallback(() => restore(undoEdit), [restore]),
 		redo: useCallback(() => restore(redoEdit), [restore]),
 	};

@@ -56,7 +56,7 @@ export function PickerButton({
 	);
 }
 
-export type InheritOption = {
+type InheritOption = {
 	value: string;
 	label: string;
 };
