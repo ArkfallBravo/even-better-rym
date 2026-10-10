@@ -99,3 +99,9 @@ describes how the code works now.
   settings) the port never uses. The port only needs a fast-forward of the
   port branch. Bring back when the fork's own branches need upstream's
   fixes, as a separate task.
+
+- **Split the port into a tracklist-picker commit and a release-picker
+  commit** (not chosen). The first port did this. The tracklist picker
+  now follows the release picks throughout, so neither commit works on its
+  own. Bring back only if kknq asks for smaller commits, which would mean
+  splitting the PR's two commits further by hand.

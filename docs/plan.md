@@ -960,21 +960,18 @@
   `main`); the popup's position beside the panel; and a band name
   containing `&` arriving as one Apple Music entry.
 
-  Upstream PR to `kknq/even-better-rym` (first port 2026-10-02, now being
-  finished together with the release picker; see the next entry's "Upstream
-  port" status): branch `tracklist-artist-links-upstream`, created from
-  `upstream/main`, with the first uncommitted port saved in `git stash`
-  ("picker port (uncommitted)"). Upstream has no per-track Apple Music artists (PR
-  #65 was closed unmerged), so the port carries `Track.artists` and
-  `track-artists.ts` (without `getAlbumHeaderArtists`, since upstream has no
-  VA detection). It also carries the four new `page-functions.ts`
-  functions, the `ARTIST_SEPARATOR` export, and the picker files; docs and
-  fork-only refactors are left out. Build, Biome, tsc and 240 tests passed
-  on it; not yet tested in Safari. Gotcha: the branch was created with
-  `git switch -c … upstream/main`, so it tracks `upstream/main` and a bare
-  `git push` would target kknq's repo. Push it with
-  `git push -u origin tracklist-artist-links-upstream`. To test it in
-  Safari, see `CLAUDE.md` ("Testing an upstream-based branch in Safari").
+  Upstream PR (2026-10-02 first port; the picker work was finished and
+  committed 2026-10-10): kknq/even-better-rym#150, open, from
+  `ArkfallBravo:tracklist-artist-links-upstream`, which is based on
+  `upstream/main` and pushed to `origin`. Its commits and the port's
+  async-`runScript` changes are described in "Upstream port" below. Upstream
+  has no per-track Apple Music artists (PR #65 was closed unmerged), so the
+  PR carries `Track.artists` and `track-artists.ts` (without
+  `getAlbumHeaderArtists`, since upstream has no VA detection). The branch
+  tracks `origin` now, so a bare `git push` on it goes to the fork. The PR
+  body asks kknq whether "[unknown artist]" should count as a release row's
+  link. To test it in Safari, see `CLAUDE.md` ("Testing an upstream-based
+  branch in Safari").
   Decided by the user (2026-10-06): strip the file headers on the upstream
   copies, and fix the `require-await` error in `artist-link-formatting.tsx`
   (the user's own PR #82 code) in this PR by dropping its `async` and
