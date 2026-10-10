@@ -1215,6 +1215,15 @@
   Next step: re-port to `tracklist-artist-links-upstream` (stash@{0}
   holds the earlier port; see the port caveat below), then re-test
   upstream items 4-7 and the "[unknown artist]" question.
+  Port plan (agreed 2026-10-10, not started): first fast-forward
+  `tracklist-artist-links-upstream` from `187349a` to `upstream/main`
+  (kknq's `37364ea` and `567497b` touch neither the picker's files nor
+  `dom.ts`/messaging), then apply the picker work with the async
+  `runScript` changes. The fork's `artist-pickers` stays unsynced until
+  after the PR, as a separate task. `artist-pickers` is missing 18 upstream
+  commits, including `e1f45a5` ("[unknown artist] works again"), so the
+  "[unknown artist]" check can only be judged on the upstream build.
+  Commit, push and PR only after the user's Safari test.
   - In simple mode the inputs are the source of truth, so a single-title
     change (e.g. Reset) could set the input directly without a mode switch.
   - Row helpers live in RYM's `cdn.sonemic.net/dist/rym25/js/legacy/basereq.js`

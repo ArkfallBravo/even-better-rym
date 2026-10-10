@@ -90,3 +90,12 @@ describes how the code works now.
 - **Drop the popup click watcher's re-subscription on every choice change**
   (not worth it). It needs refs for the choices and release labels. The
   churn only happens while the popup is open.
+
+## Port order (2026-10-10)
+
+- **Merge upstream into `artist-pickers` before porting** (not chosen). The
+  fork is missing 18 upstream commits, and merging them means resolving
+  conflicts in fork-only code (Apple Music per-track artists, native
+  settings) the port never uses. The port only needs a fast-forward of the
+  port branch. Bring back when the fork's own branches need upstream's
+  fixes, as a separate task.
