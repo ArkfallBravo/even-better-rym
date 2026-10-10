@@ -1055,38 +1055,26 @@
     linked artists as parent entries, so they show as "inherited from
     parent". The result is still correct.
 
-  Upstream port (2026-10-06, **built, not committed; on hold while the
-  tracklist-picker additions below are built on the fork**). The port's
-  commit-2 state is stashed (`git stash list`: "upstream picker port,
-  commit 2 state"); commit 1's tree is still `refs/ebr/picker-port-commit1-tree`.
-  To resume: `git switch tracklist-artist-links-upstream`, then
-  `git stash pop` that entry (it holds untracked files too). The older
-  "picker port (uncommitted)" stash is the original pre-port stash; drop it
-  only once the port is committed. On `tracklist-artist-links-upstream`,
-  fast-forwarded to `upstream/main` `187349a` (it had no commits of its own),
-  then the stash applied cleanly (the stash entry is still in the list).
-  - Two commits, each checked on its own: Biome, tsc and ESLint on the
-    changed paths, plus vitest. Commit 1 (tracklist picker) is 262 tests;
-    commit 2 (release picker) is 279.
-    - Commit 1: the stash, plus `hasSameMembers`/`hasDifferingTrackArtists`,
-      `picker-row.tsx`, a fresh panel per import (`usePickerImport` with a
-      `key`), the shared `createSerialQueue` helper
-      (`src/shared/utils/serial-queue.ts`, tested), and the lint fix.
-    - Commit 2: `release-artist-links.ts` and its tests, `filed-under.ts`,
-      `release-artist-picker.tsx`, `mergeArtistLabels`, the
-      release-label prefill and auto-apply, the `dom.d.ts` events, the
-      `fillers.ts` change, and registration in `app.tsx`.
-  - Commit 1's exact tree is saved as tree `47fa285`, kept reachable by
-    `refs/ebr/picker-port-commit1-tree`. The working tree holds commit 2's
-    state, uncommitted. To commit after the test, without the pre-commit
-    hook's restaging mixing the two:
-    1. `git commit-tree 47fa285 -p HEAD`, with commit 1's message.
-    2. `git reset --soft` to that commit, then `git add -A src` and commit
-       normally.
-    3. Delete the ref, drop the stash, rebuild the fork for Safari
-       (`npm run build:safari` + `xcodebuild`).
-    4. Push with `git push -u origin`; open the PR only when the user says
-       so, after showing the body.
+  Upstream port (first built 2026-10-06, **re-ported with the
+  tracklist-picker additions and committed on
+  `tracklist-artist-links-upstream` on 2026-10-10 after the user's Safari
+  test; not pushed, no PR yet**). The branch was fast-forwarded to
+  `upstream/main` `567497b`, then holds two commits: `c706026` (Apple Music
+  per-track artists: `Track.artists`, `track-artists.ts`, `resolve.ts`) and
+  `c631495` (both pickers, the queues and the `fillers.ts` change). The
+  earlier two-commit split (tracklist picker, then release picker) was
+  dropped, since the tracklist picker now follows the release picks
+  throughout. Built from the fork's `artist-pickers` files plus the async
+  changes below; the fork's Apple Music geo-host fix `cfafc1d` was left
+  out as a separate fix. Left to do:
+  - Push with `git push -u origin tracklist-artist-links-upstream` and open
+    the PR only when the user asks, after showing the body.
+  - Then clean up: `refs/ebr/picker-port-commit1-tree` and the two port
+    stashes ("upstream picker port, commit 2 state" `8de7df2`, and the older
+    "picker port (uncommitted)") are no longer needed; deleting them needs
+    the user's go-ahead.
+  - Rebuild the fork for Safari (`npm run build:safari` + `xcodebuild`),
+    since the upstream build replaced the installed app.
   - Differences from the tested fork code, all because upstream's
     `runScript` is async (see `CLAUDE.md`):
     - every filed-under add, remove and reorder is awaited, and
@@ -1095,7 +1083,8 @@
       (a per-panel queue, the first version, missed the VA clear and a
       remounted panel's first sync);
     - every advanced-tracklist edit goes through
-      `editAdvancedTracklist` (`utils/tracklist-editor.ts`, commit 1): it
+      `editAdvancedTracklist` (now in `utils/simple-tracklist.ts`; the
+      first port's `tracklist-editor.ts` is gone): it
       waits its turn in one queue, switches to advanced, applies a text
       transform, and switches back. Both the picker (`replaceArtistLinks`)
       and kknq's `fillTracks` use it (user approved touching `fillTracks`,
@@ -1121,7 +1110,9 @@
     and without preserved lengths, "Tracks" unticked) and 2 (single
     artist) pass. 3 found the manual-edit bug and led to the additions
     below. 4 to 7 not run yet; the "[unknown artist]" question is still
-    unanswered.
+    unanswered. 2026-10-10: the user tested the re-port in Safari and said
+    to commit it, without reporting results per check, so whether
+    "[unknown artist]" should count as a release row's link is still open.
   - Earlier note: the user's Safari test of the upstream build was pending. After
     the simplify pass, steps 2 (tracklist auto-apply), 3 (quick successive
     picks) and 5 (VA) need testing against the rebuilt build, since the
@@ -1143,8 +1134,8 @@
     it as that row's link. Ask whether that is wanted.
 
 - Tracklist-picker additions (started 2026-10-07, **committed on
-  `artist-pickers` after passing the user's Safari test 2026-10-09; upstream
-  port not started**; plan approved 2026-10-07). Requested by the user after test 3 of the
+  `artist-pickers` after passing the user's Safari test 2026-10-09; ported
+  upstream and committed 2026-10-10, see "Upstream port" above**; plan approved 2026-10-07). Requested by the user after test 3 of the
   upstream build. Built on the fork (`artist-pickers`) first, then ported
   again (user's choice; the port's async queue and `editAdvancedTracklist`
   code will need the same additions).
@@ -1212,18 +1203,15 @@
   constants, `getKeyedRows`, `watchTracklistRows` (reset slots no longer
   re-scan on field edits), one parse per filed-under change,
   `getUnchosenIds`, `canApplyChoices` and a named `reapply`.
-  Next step: re-port to `tracklist-artist-links-upstream` (stash@{0}
-  holds the earlier port; see the port caveat below), then re-test
-  upstream items 4-7 and the "[unknown artist]" question.
-  Port plan (agreed 2026-10-10, not started): first fast-forward
-  `tracklist-artist-links-upstream` from `187349a` to `upstream/main`
-  (kknq's `37364ea` and `567497b` touch neither the picker's files nor
-  `dom.ts`/messaging), then apply the picker work with the async
-  `runScript` changes. The fork's `artist-pickers` stays unsynced until
-  after the PR, as a separate task. `artist-pickers` is missing 18 upstream
-  commits, including `e1f45a5` ("[unknown artist] works again"), so the
-  "[unknown artist]" check can only be judged on the upstream build.
-  Commit, push and PR only after the user's Safari test.
+  Port (2026-10-10): `tracklist-artist-links-upstream` was fast-forwarded
+  to `upstream/main` first (kknq's `37364ea` and `567497b` touch neither
+  the picker's files nor `dom.ts`/messaging), then the picker work was
+  applied with the async `runScript` changes (see "Port caveat" below) and
+  committed after the user's Safari test. The fork's `artist-pickers` stays
+  unsynced until after the PR, as a separate task. `artist-pickers` is
+  missing 18 upstream commits, including `e1f45a5` ("[unknown artist] works
+  again"), so the "[unknown artist]" behaviour can only be judged on the
+  upstream build.
   - In simple mode the inputs are the source of truth, so a single-title
     change (e.g. Reset) could set the input directly without a mode switch.
   - Row helpers live in RYM's `cdn.sonemic.net/dist/rym25/js/legacy/basereq.js`
@@ -1264,13 +1252,20 @@
     cells survive); anything else goes through one advanced/simple round
     trip (`writeThroughAdvanced`). After a write the snapshot re-reads the
     page, since `goSimple` trims fields.
-  - **Port caveat:** with upstream's async `runScript`, swapping
-    `editAdvancedTracklist` into `writeThroughAdvanced` is not enough.
-    `showCurrent` would re-read the page before the round trip finishes,
-    and the row observer could see the rebuilt rows before the picker's
-    commit and record the picker's own write as a user step. The port has
-    to commit the expected text before awaiting the write, then await it
-    before re-reading.
+  - **Port caveat (resolved in the 2026-10-10 port):** with upstream's
+    async `runScript`, the row observer sees the rebuilt (trimmed) rows
+    before the write's promise resolves, and a half-finished write leaves
+    the page out of step with the snapshot. The port queues every
+    tracklist write (the picker's and `fillTracks`) in `simple-tracklist.ts`
+    and exposes `isTracklistEditPending()`; `recordOutsideEdits` records
+    nothing while a write is queued or running, and `showCurrent` commits
+    the expected snapshot first, awaits the write, then re-reads the page
+    only if no later write is queued. The panel mounts only after
+    `waitForTracklistEdits()` (so it reads the import's filled tracklist),
+    and an import closes the previous panel straight away, since otherwise
+    its label effect would queue a write of the old tracklist behind the new
+    fill. A user edit made during a write is folded into the write's
+    snapshot rather than becoming its own undo step.
   - The pure undo pieces (`recordUserChange`, `reapplyReleaseLabels`) live
     in `tracklist-picker-state.ts` and are tested, including "undoing typing
     keeps a later automatic update".
@@ -1300,9 +1295,11 @@
     chosen), and an added artist no row ends up choosing is dropped from
     it, so a parent artist the user re-adds by hand isn't deleted by the
     next sync (found by a side agent, pre-existing; user asked to fix). The panel keeps `{choices, activeName}` in one state read via
-    a ref, so the watcher is set up once per session. Port note: with
-    async `runScript` the watcher may see a change before sync's adds
-    land; untested there.
+    a ref, so the watcher is set up once per session. In the port (async
+    `runScript`), every list edit and every watcher report runs through one
+    queue in `filed-under.ts`, so the watcher only reports once an
+    in-progress sync has finished; otherwise a report between two adds
+    would clear the second chosen artist.
   - **Removing a release pick drops the tracklist link** (user's request,
     2026-10-07): once the picker has written the tracklist
     (`appliedPlan` non-empty), a track artist following an unpicked
