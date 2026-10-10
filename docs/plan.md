@@ -1058,7 +1058,8 @@
   Upstream port (first built 2026-10-06, **re-ported with the
   tracklist-picker additions and committed on
   `tracklist-artist-links-upstream` on 2026-10-10 after the user's Safari
-  test; not pushed, no PR yet**). The branch was fast-forwarded to
+  test; pushed to `origin` and opened as kknq/even-better-rym#150 on
+  2026-10-10**). The branch was fast-forwarded to
   `upstream/main` `567497b`, then holds two commits: `c706026` (Apple Music
   per-track artists: `Track.artists`, `track-artists.ts`, `resolve.ts`) and
   `c631495` (both pickers, the queues and the `fillers.ts` change). The
@@ -1067,8 +1068,8 @@
   throughout. Built from the fork's `artist-pickers` files plus the async
   changes below; the fork's Apple Music geo-host fix `cfafc1d` was left
   out as a separate fix. Left to do:
-  - Push with `git push -u origin tracklist-artist-links-upstream` and open
-    the PR only when the user asks, after showing the body.
+  - Respond to review on #150. The PR body asks kknq whether
+    "[unknown artist]" should count as a release row's link.
   - Then clean up: `refs/ebr/picker-port-commit1-tree` and the two port
     stashes ("upstream picker port, commit 2 state" `8de7df2`, and the older
     "picker port (uncommitted)") are no longer needed; deleting them needs
