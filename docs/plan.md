@@ -12,8 +12,29 @@
   as one commit on `fix/apple-music-geo-links` (off `upstream/main` at
   `187349a`): kknq/even-better-rym#144, open. Upstream had since added a
   second lookup step to the Apple Music search, so the port kept their code and
-  applied only the rename and host change. Once #144 merges and is synced,
-  drop this entry.
+  applied only the rename and host change.
+
+  kknq's review (2026-10-10, changes requested): the change works on their
+  machines, but without `geo.` the release page's own links no longer
+  redirect to the user's store. They open in the submitter's region (`/us/`
+  for kknq, who is in Poland). Fixed on the PR branch as `c46bbbb`, pushed
+  the same day: `getFullLink` in `stream-links/use-page-data.ts` now uses
+  `streamingPreferences.service_regions.applemusic`, falling back to the
+  link's own `loc`. The URL is built from parts there, so no regex is needed,
+  despite kknq's suggestion of one. `getFullLink` is exported so the new
+  `use-page-data.test.ts` can test it; the preferred-region test fails on the
+  code from before the fix. Still open:
+  - `c46bbbb` hasn't been tested in Safari, and kknq hasn't re-reviewed it.
+  - Region casing is unchecked. The Deezer case lowercases
+    `service_regions` values, which hints that RYM may store `PL` rather
+    than `pl`. The Apple Music code, both this and `search.ts`, uses the
+    value as-is.
+  - The fork has the same gap: its `getFullLink` still uses `data.loc`. It
+    gets the fix when #144 merges and is synced, but the fork's
+    `use-page-data.ts` differs from upstream's (no `metadata.ts` or
+    `release-type.ts` split), so expect a conflict there.
+
+  Once #144 merges and is synced, drop this entry.
 
 - App Store v1.1 submission prep (started 2026-08-14): tagged the exact
   commit that was on `main` when the v1.0 build was submitted for review
@@ -138,28 +159,6 @@
   all clean. **Manually tested and confirmed working by the user** in the
   Safari-wrapped app. Committed as `eeda6525`.
 
-  **Open question, not resolved — flagged rather than guessed at:** the
-  user recalled Tidal autofind sometimes succeeding (a bold, filled
-  "found"-style icon, confirmed via `stream-link-icon.tsx` to render at
-  `opacity: 0.8` vs. the faint `opacity: 0.15` shared by "not-found" and
-  "failed" states — so this wasn't a visual misread of a dim icon) even
-  when RYM's page had no pre-existing Tidal link (which would otherwise
-  skip `search()` entirely via the `_tag: "exists"` path in
-  `stream-link.tsx`). Live testing shows the current API unconditionally
-  rejects any free-text path-based ID, and the accepted ID shape
-  (`1FBqsKJyGruHdyqg1t3A3MQgQGotdVdRZ`-style, opaque/server-generated)
-  reads like a route that has always validated a real ID — suggesting
-  Tidal's API contract may have changed since `kknq` wrote this in
-  2026-03-14, but this could **not** be confirmed: Tidal's docs site
-  (`developer.tidal.com`) is a client-rendered SPA that returns an empty
-  shell to both `curl` and `WebFetch`, and no changelog/deprecation notice
-  turned up via web search. Left as an explicitly unverified hypothesis,
-  not a finding. Separately, but with a real code-level explanation:
-  inconsistent *failure* text across attempts (sometimes `HTTP 400`,
-  sometimes no error code shown) is explained by two real, still-unfixed
-  issues surfaced during this diagnosis — see the `docs/todo.md` entries
-  added for both.
-
 - `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"
   (2026-08-14, open — not yet resolved): while wrapping up the autofind-link
   triage session above, Xcode prompted to "Update to recommended settings"
@@ -252,33 +251,6 @@
   "Verify/recreate DSTROOT symlink" to match. Validated with `plutil -lint`
   after editing, then **rebuilt in Xcode and confirmed by the user
   (2026-08-14) that Clean now works.**
-
-- Open question (2026-08-05, still unresolved — decision pending): the user
-  said "Commit" right after confirming the `/Applications` build fix worked.
-  That fix lives entirely in `EvenBetterRYM/project.pbxproj`, which per
-  `CLAUDE.md` is **not tracked in git** — so there was nothing from that work
-  to commit; asked the user to clarify whether "commit" meant the unrelated
-  pending changes visible in `git status` (`CLAUDE.md` modified,
-  `docs/.preserve-checkpoint.md`/`docs/memories.md` untracked, both
-  predating this conversation) instead.
-
-  The user then asked directly whether committing the Xcode project itself
-  would be "sanitary." Checked and recommended **against** committing it
-  as-is: `ArkfallBravo/even-better-rym` is a **public** repo (confirmed via
-  `gh repo view --json visibility`), and `project.pbxproj` currently has
-  `DEVELOPMENT_TEAM = 7C45KQPPCV` (the real Apple Developer Team ID) baked
-  in, which would become permanently public. Also found
-  `EvenBetterRYM.xcodeproj/xcuserdata/lillyanasimson.xcuserdatad` (personal
-  Xcode editor state, present in two places under the project) sitting
-  right there ready to get swept in by a naive `git add`, on top of
-  `EvenBetterRYM/` already being deliberately gitignored (`.gitignore:12` —
-  not an oversight). Offered a sanitized path instead (strip/placeholder the
-  team ID, add an explicit `xcuserdata/` ignore, `git add -f` just the
-  wanted files) but has not implemented it — full reasoning now lives in
-  `CLAUDE.md`'s "Building the macOS app straight into `/Applications`"
-  section under "Not committed to git". **Still waiting on the user's
-  decision**: sanitize-and-commit `project.pbxproj`, or leave it fully
-  untracked with the writeup in `CLAUDE.md` as the only durable record.
 
 - App Store Connect listing for "EvenBetterRYM for Safari" (iOS + macOS,
   v1.0): metadata (description, promo text, copyright, support URL, age
@@ -786,79 +758,6 @@
   shortcuts select the right parent-level genre/descriptor against RYM's
   live dropdown, and clicking "Browse sub-genre" / typing normally in the
   native widget is untouched. Committed.
-
-- `chart-shortcuts` new toggle shortcuts (started 2026-08-05,
-  **implemented, build-verified, awaiting the user's manual in-browser test
-  before commit**): follow-on to the redesign above. Added keyboard
-  shortcuts covering the chart-builder's per-category checkboxes (see the
-  `page_chart_query_free_section_*` discovery documented in `CLAUDE.md`'s
-  Feature module pattern section), confirmed against a second read of the
-  cached `charts_source.html` (both the `_include` and `_exclude` sides
-  each have their own `_sub_items`/`_all` checkbox ids and
-  `onClickBrowserItemSub`/`onClickBrowserItemAll` handlers, keyed by the
-  full 8-way `FilterType`, not just the `_include` type):
-
-  - Ctrl+Z/X/C/S → toggle "Include sub-genres" for genres / influences /
-    either / descriptors (`onClickBrowserItemSub` on the `_include`
-    `FilterType`).
-  - Ctrl+Shift+Z/X/C/S → same, but the `_exclude` side ("Exclude
-    sub-genres").
-  - Ctrl+Q/W/E/A → toggle "Must contain all" for genres / influences /
-    either / descriptors (`onClickBrowserItemAll` on the `_include` type).
-  - Ctrl+Shift+Q/W/E/A → same, `_exclude` side ("Only exclude items
-    containing all").
-
-  **Resolved open question**: the user chose, via `AskUserQuestion`, to
-  **remove the sticky "exclude mode" toggle entirely** (was Ctrl+\`,
-  module-level `excludeMode` variable) rather than have it either apply
-  only to the original Ctrl+1/2/3/D shortcuts or extend to the new
-  toggle shortcuts too — every shortcut (old and new) now determines
-  exclude purely from literal `event.shiftKey`. This simplified `app.ts`:
-  removed `excludeMode`, `updateExcludeBadge`, the `[EXCL]` badge span and
-  its `.ebr-exclude-badge` CSS rule (the rule's only consumer), and
-  `resetInput` no longer resets/updates any mode state.
-
-  `app.ts` rewrite:
-  - Added `Category = "genre" | "sec_genre" | "genre_either" | "descriptor"`
-    and `filterTypeFor(category, exclude)`, replacing the ad hoc
-    per-key-count `genreFilterTypeFor`.
-  - Added `toggleCheckbox(filterType, kind: "sub" | "all")`: builds the
-    `page_chart_query_free_section_<filterType>_<sub_items|all>` id, flips
-    `checkbox.checked`, then calls the matching `RYMchart.onClickBrowserItem*`
-    — one self-contained injected script per action, mirroring the existing
-    `applyItem`/`updateChart` pattern. Does **not** suppress
-    `onClickCreateChart` around the call (unlike `applyItem`/
-    `removeBrowserItem`'s patch) — that suppression was established through
-    actual investigation of `addBrowserItem`'s side effects, not verified
-    for the checkbox handlers, so it wasn't speculatively added; worth
-    checking during manual test whether toggling a checkbox unexpectedly
-    triggers a live chart refresh.
-  - Replaced `handleGenreShortcut`/`handleDescriptorShortcut` with a single
-    `handleApplyShortcut` driven by an `APPLY_KEY_CATEGORY` lookup map
-    (`1`/`2`/`3`/`d` → `Category`) plus `APPLY_SCOPE` (`Category` → the
-    existing narrower `genre`/`descriptor` native-browse `Scope`). Added
-    `handleSubToggleShortcut`/`handleAllToggleShortcut` driven by
-    `SUB_TOGGLE_KEY_CATEGORY` (`z`/`x`/`c`/`s`) and
-    `ALL_TOGGLE_KEY_CATEGORY` (`q`/`w`/`e`/`a`). All four handlers key off
-    `event.key.toLowerCase()` (safe for letters and digits since Shift
-    doesn't change `event.key`'s letter/digit, only case/symbol — matches
-    the existing Ctrl+D handler's approach) plus `event.shiftKey`.
-  - `insertShortcutHint` now renders the user's 24 supplied lines verbatim
-    (`HINT_LINES` array, `<br>`-joined) in place of the old abbreviated
-    `^1/2/3 top genre · ^D top descriptor · +Shift = exclude` block —
-    normalized the pasted text's inconsistent straight/curly quotes to
-    plain `"` throughout for consistency with the rest of the array.
-  - `src/manifest.ts`'s `chart-shortcuts` content-script entry no
-    longer references `chart-shortcuts.css` (deleted — its only rule
-    was the now-removed `.ebr-exclude-badge`).
-
-  Verified: `tsc --noEmit`, `eslint src/modules/chart-shortcuts/
-  src/manifest.ts`, `biome check` on the same all clean, `npm run
-  build:safari` succeeds end-to-end. **Not yet manually tested in the
-  Safari-wrapped app or committed** — per this project's manual-testing
-  rule, needs the user to rebuild in Xcode and confirm all 24 shortcuts
-  (and the checkbox-toggle chart-refresh question above) behave correctly
-  before this gets committed.
 
 - `EvenBetterRYM/` private git repo (2026-08-05): prompted directly by the
   DSTROOT symlink incident above — two risky `project.pbxproj` build-system
@@ -1560,3 +1459,6 @@
   `fix-apple-music-title-slash-mangling` — fully shipped to `main`
   (`56ebb84`) and pushed. Writeup:
   `docs/archive/apple-music-title-fix-and-simplify-2026-09.md`.
+- `chart-shortcuts` include-sub / must-contain-all toggle shortcuts
+  (2026-08-05), shipped to `main`. Writeup:
+  `docs/archive/chart-shortcuts-toggle-shortcuts-2026-08.md`.
