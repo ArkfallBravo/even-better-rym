@@ -4,6 +4,9 @@ export const pages = {
 	trackTime: "/release/",
 	releaseSubmission: "/releases/ac",
 	coverArt: "/images/upload",
+	userReception: "/release/",
+	whoSampled: "/release/",
+	wikipedia: "/release/",
 	discogsCarousel: "/release/",
 	streamLinkSubmission: "/submit_media_link",
 	userCollection: "/collection",
@@ -33,10 +36,13 @@ export const pageLabels: Record<PageKey, string> = {
 	trackTime: "Release Length to Hours Conversion",
 	releaseSubmission: "Release Submission Helper",
 	coverArt: "Cover Art Submission Helper",
+	userReception: "User Reception",
+	whoSampled: "WhoSampled Link",
+	wikipedia: "Wikipedia Search",
 	discogsCarousel: "Discogs Release Image Carousel",
 	streamLinkSubmission: "Media Links Submission Helper",
-	userCollection: "Music Collection Filters",
-	filmCollection: "Film Collection Filters",
+	userCollection: "Music Collection Enhancements",
+	filmCollection: "Film Collection Enhancements",
 	userPage: "User Page Enhancements",
 	voteHistoryGenres: "Enhancements for Music and Film Genre Vote History",
 	voteHistoryDescriptors: "Enhancements for Descriptor Vote History",
@@ -78,6 +84,8 @@ export const featureGroups: readonly (readonly [string, readonly PageKey[]])[] =
 				"streamLinkSubmission",
 			],
 		],
+		["Release insights", ["userReception"]],
+		["External reference links", ["whoSampled", "wikipedia"]],
 		[
 			"Library and user profiles",
 			[
@@ -106,12 +114,18 @@ export const pageHints: Record<PageKey, string> = {
 	releaseSubmission:
 		"Pre-fills the release submission form with data found on the provided page.",
 	coverArt: "Adds download controls to the cover art upload page.",
+	userReception:
+		"Summarizes the release's rating distribution into a user reception meter and ranked categories.",
+	whoSampled: "Adds a direct WhoSampled album link for the current release.",
+	wikipedia: "Adds a button to search for the current release on Wikipedia.",
 	discogsCarousel:
 		"Adds an optional carousel of secondary Discogs release images to music release pages.",
 	streamLinkSubmission:
 		"Assists with converting Soundcloud and Bandcamp links to embed codes on the media link submission page.",
-	userCollection: "Adds filters to your music collection page.",
-	filmCollection: "Adds filters to your film collection page.",
+	userCollection:
+		"Adds configurable filters, columns, and page-size controls to music collections.",
+	filmCollection:
+		"Adds configurable filters, columns, and page-size controls to film collections.",
 	userPage: "Adds edit buttons for favorite artists and other comments.",
 	voteHistoryGenres:
 		"Adds history navigation and a searchable genre selector dropdown to music and film genre vote history pages.",

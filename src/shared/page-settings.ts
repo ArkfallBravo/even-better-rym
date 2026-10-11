@@ -16,10 +16,10 @@ const getAllSettings = async (): Promise<Partial<Record<string, boolean>>> => {
 	return response.data;
 };
 
-export const getPageEnabled = async (key: PageKey): Promise<boolean> =>
+export const getModuleEnabled = async (key: PageKey): Promise<boolean> =>
 	resolvePageEnabled(await getAllSettings(), key);
 
-export const getAllPageEnabled = async (): Promise<
+export const getAllModulesEnabled = async (): Promise<
 	Record<PageKey, boolean>
 > => {
 	const settings = await getAllSettings();
@@ -32,7 +32,7 @@ export const getAllPageEnabled = async (): Promise<
 	) as Record<PageKey, boolean>;
 };
 
-export const setPageEnabled = async (
+export const setModuleEnabled = async (
 	key: PageKey,
 	enabled: boolean,
 ): Promise<void> => {
@@ -42,8 +42,8 @@ export const setPageEnabled = async (
 	});
 };
 
-export const runPage = async (key: PageKey, callback: () => unknown) => {
-	const enabled = await getPageEnabled(key);
+export const runModule = async (key: PageKey, callback: () => unknown) => {
+	const enabled = await getModuleEnabled(key);
 	if (!enabled) return;
 
 	try {

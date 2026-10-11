@@ -32,10 +32,17 @@ const hostsArray = [
 	"https://livemixtapes.com/*",
 	"https://*.metal-archives.com/*",
 	"https://metal-archives.com/*",
+	"https://en.wikipedia.org/*",
 ];
 
 const sharedManifest = {
 	content_scripts: [
+		{
+			js: ["src/modules/spotify-search/main.ts"],
+			matches: ["https://open.spotify.com/search/*"],
+			all_frames: true,
+			run_at: "document_idle",
+		},
 		{
 			js: ["src/modules/cover-art/main.ts"],
 			matches: ["*://*.rateyourmusic.com/images/upload*"],
@@ -102,6 +109,21 @@ const sharedManifest = {
 			run_at: "document_start",
 		},
 		{
+			js: ["src/modules/user-reception/main.ts"],
+			css: ["src/modules/user-reception/user-reception.css"],
+			matches: [
+				"*://*.rateyourmusic.com/release/*",
+				"*://*.rateyourmusic.com/film/*",
+			],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/reference-links/main.ts"],
+			css: ["src/modules/reference-links/reference-links.css"],
+			matches: ["*://*.rateyourmusic.com/release/*"],
+			run_at: "document_start",
+		},
+		{
 			js: ["src/modules/discogs-carousel/main.tsx"],
 			css: ["src/modules/discogs-carousel/discogs-carousel.css"],
 			matches: ["*://*.rateyourmusic.com/release/*"],
@@ -109,6 +131,10 @@ const sharedManifest = {
 		},
 		{
 			js: ["src/modules/user-collection/main.ts"],
+			css: [
+				"src/modules/user-collection/collection.css",
+				"src/shared/components/checkbox.css",
+			],
 			matches: [
 				"*://*.rateyourmusic.com/collection*",
 				"*://*.rateyourmusic.com/film_collection*",
@@ -201,7 +227,12 @@ const ManifestV2 = {
 		persistent: false,
 	},
 	browser_action: browserAction,
-	permissions: [...sharedManifest.permissions, ...hostsArray],
+	permissions: [
+		...sharedManifest.permissions,
+		...hostsArray,
+		"webRequest",
+		"webRequestBlocking",
+	],
 };
 
 const ManifestV3 = {
@@ -211,6 +242,12 @@ const ManifestV3 = {
 		service_worker: "src/modules/background/index.ts",
 	},
 	host_permissions: hostsArray,
+	permissions: [
+		...sharedManifest.permissions,
+		"offscreen",
+		"declarativeNetRequestWithHostAccess",
+	] satisfies chrome.runtime.ManifestPermissions[],
+	minimum_chrome_version: "116",
 };
 
 export function getManifest(

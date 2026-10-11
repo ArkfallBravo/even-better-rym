@@ -22,9 +22,17 @@ export default defineConfig(({ mode }) => {
 					Number(env.MANIFEST_VERSION) || 3,
 					env.EXTENSION_DISPLAY_NAME || undefined,
 				),
-				additionalInputs: debugToolsEnabled
-					? { html: ["src/modules/import-check/index.html"] }
-					: undefined,
+				additionalInputs: {
+					html: [
+						{
+							fileName: "src/modules/spotify-search/offscreen.html",
+							webAccessible: false,
+						},
+						...(debugToolsEnabled
+							? ["src/modules/import-check/index.html"]
+							: []),
+					],
+				},
 			}),
 		],
 		resolve: {

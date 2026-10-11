@@ -57,6 +57,37 @@ export type ScriptResponse = {
 	type: "script";
 };
 
+export type SpotifySearchRequest = {
+	id: string;
+	type: "spotifySearch";
+	data: {
+		artist: string;
+		title: string;
+		releaseType?: "single" | "music video";
+	};
+};
+
+export type SpotifySearchResponse = {
+	id: string;
+	type: "spotifySearch";
+	data: { url?: string; error?: string };
+};
+
+export type WikipediaSearchRequest = {
+	id: string;
+	type: "wikipediaSearch";
+	data: {
+		artistName: string;
+		albumTitle: string;
+	};
+};
+
+export type WikipediaSearchResponse = {
+	id: string;
+	type: "wikipediaSearch";
+	data: { url?: string; error?: string };
+};
+
 export type StorageSetRequest = {
 	id: string;
 	type: "storageSet";
@@ -155,7 +186,9 @@ export type BackgroundRequest =
 	| SettingsGetAllRequest
 	| SettingsSetRequest
 	| JsonSettingGetRequest
-	| JsonSettingSetRequest;
+	| JsonSettingSetRequest
+	| SpotifySearchRequest
+	| WikipediaSearchRequest;
 export type BackgroundResponse =
 	| FetchResponse
 	| DownloadResponse
@@ -164,7 +197,9 @@ export type BackgroundResponse =
 	| SettingsGetAllResponse
 	| SettingsSetResponse
 	| JsonSettingGetResponse
-	| JsonSettingSetResponse;
+	| JsonSettingSetResponse
+	| SpotifySearchResponse
+	| WikipediaSearchResponse;
 
 export const isBackgroundRequest = (o: unknown): o is BackgroundRequest =>
 	typeof o === "object" && o !== null && "id" in o && "type" in o;

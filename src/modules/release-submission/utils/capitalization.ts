@@ -53,6 +53,9 @@ const isAfterHyphen = (phrase: Phrase, index: number) =>
 	phrase.slice(0, index).findLast((token) => token.type !== "whitespace")
 		?.text === "-";
 
+const isAfterUnspacedHyphen = (phrase: Phrase, index: number) =>
+	phrase[index - 1]?.text === "-";
+
 const isReleaseFormat = (token: Token) =>
 	RELEASE_FORMATS.has(token.text.toLowerCase());
 
@@ -92,6 +95,8 @@ const capitalizePhrase =
 							if (index === firstWordIndex) return toTitleCase(token);
 							if (isAlwaysUppercase(token.type))
 								return token.text.toUpperCase();
+							if (token.type === "word" && isAfterUnspacedHyphen(phrase, index))
+								return token.text.toLowerCase();
 							if (token.type === "word" && isAfterHyphen(phrase, index))
 								return toTitleCase(token);
 							return token.text.toLowerCase();
@@ -102,6 +107,13 @@ const capitalizePhrase =
 			: pipe(
 					phrase
 						.map((token, index) => {
+							if (
+								token.type === "word" &&
+								/[а-яё]/i.test(token.text) &&
+								isAfterUnspacedHyphen(phrase, index)
+							) {
+								return token.text.toLowerCase();
+							}
 							if (index === firstWordIndex || index === lastWordIndex) {
 								const isForced = ENG_DO_NOT_CAPITALIZE_FORCE.has(
 									token.text.toLowerCase(),

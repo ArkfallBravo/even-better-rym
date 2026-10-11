@@ -29,6 +29,8 @@ import * as storage from "~/shared/utils/storage";
 import { download } from "./download";
 import { backgroundFetch } from "./fetch";
 import { script } from "./script";
+import { spotifySearch } from "./spotify-search";
+import { wikipediaSearch } from "./wikipedia-search";
 
 if (import.meta.env.VITE_DEBUG_TOOLS === "true") {
 	console.log(
@@ -116,6 +118,8 @@ const getResponse = (
 		if (message.type === "fetch") return backgroundFetch(message);
 		if (message.type === "download") return download(message, tabId);
 		if (message.type === "script") return script(message, tabId);
+		if (message.type === "spotifySearch") return spotifySearch(message);
+		if (message.type === "wikipediaSearch") return wikipediaSearch(message);
 	}
 	throw new Error(`Invalid message: ${JSON.stringify(message)}`);
 };
@@ -286,7 +290,7 @@ browser.tabs.onUpdated.addListener((id, _changeInfo, tab) => {
 
 	if (matchingKeys.length === 0) return;
 
-	// Reads settingsCache directly rather than going through getPageEnabled,
+	// Reads settingsCache directly rather than going through getModuleEnabled,
 	// which would round-trip a sendMessage back to this same script.
 	void ensureSettings().then(() => {
 		const enabled = matchingKeys.some((key) =>
