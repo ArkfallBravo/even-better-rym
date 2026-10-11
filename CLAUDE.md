@@ -207,10 +207,10 @@ That squash also surfaced two lint-config gaps, now fixed: (1) `biome.json`'s `f
 ### Feature module pattern
 
 Each feature lives in its own directory under `src/modules/`. Every module follows:
-- `main.ts` — entry point injected by a `content_scripts` entry in `src/manifest.ts`. Wraps everything in a top-level `await runPage('key', async () => { ... })`.
+- `main.ts` — entry point injected by a `content_scripts` entry in `src/manifest.ts`. Wraps everything in a top-level `await runModule('key', async () => { ... })`.
 - `app.ts` / `app.tsx` — the actual feature logic or root Preact component.
 
-`runPage` (`src/shared/page-settings.ts`) checks the feature's enabled/disabled toggle (via `getPageEnabled`, which round-trips through the background script) before running the callback, and swallows errors from `callback()` (e.g. a module failing because an expected DOM element isn't present on some page layout is expected, not fatal).
+`runModule` (`src/shared/page-settings.ts`) checks the feature's enabled/disabled toggle (via `getModuleEnabled`, which round-trips through the background script) before running the callback, and swallows errors from `callback()` (e.g. a module failing because an expected DOM element isn't present on some page layout is expected, not fatal).
 
 Adding a module requires wiring it in three places: a `content_scripts` entry in `src/manifest.ts`, a `PageKey` + label/hint entry in `src/shared/pages.ts`, and the module directory itself.
 
@@ -253,7 +253,7 @@ Single source of truth mapping each `PageKey` to: its URL path prefix (`pages`),
 
 ### Background script message routing (`src/modules/background/index.ts`)
 
-Single `browser.runtime.onMessage` listener dispatches on a discriminated `message.type` (defined in `src/shared/utils/messaging.ts`): `storageSet`, `settingsGetAll`, `settingsSet`, `jsonSettingGet`, `jsonSettingSet` are tab-less messages (from the popup); everything else is tab-scoped and routed through `getResponse`/`getScriptResponse` to handlers in `download.ts`, `fetch.ts`, `script.ts`. The background script also maintains an in-memory `settingsCache` (hydrated from native settings) and updates the toolbar icon per-tab based on whether the current page's feature is enabled — it reads `settingsCache` directly here rather than calling `getPageEnabled`, to avoid a message round-trip back to itself. Every tab-less handler's response chain has a `.catch` fallback so it always calls `sendResponse` — without one, a rejected native call (e.g. `settingsSet`/`jsonSettingSet` on any build with no native host, i.e. non-Safari) means the caller's `await` hangs forever instead of failing.
+Single `browser.runtime.onMessage` listener dispatches on a discriminated `message.type` (defined in `src/shared/utils/messaging.ts`): `storageSet`, `settingsGetAll`, `settingsSet`, `jsonSettingGet`, `jsonSettingSet` are tab-less messages (from the popup); everything else is tab-scoped and routed through `getResponse`/`getScriptResponse` to handlers in `download.ts`, `fetch.ts`, `script.ts`. The background script also maintains an in-memory `settingsCache` (hydrated from native settings) and updates the toolbar icon per-tab based on whether the current page's feature is enabled — it reads `settingsCache` directly here rather than calling `getModuleEnabled`, to avoid a message round-trip back to itself. Every tab-less handler's response chain has a `.catch` fallback so it always calls `sendResponse` — without one, a rejected native call (e.g. `settingsSet`/`jsonSettingSet` on any build with no native host, i.e. non-Safari) means the caller's `await` hangs forever instead of failing.
 
 `fetch.ts` exists because some cross-origin requests (auth token exchange, API calls without CORS headers) must run from the background script's context rather than a content script.
 

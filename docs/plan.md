@@ -1456,6 +1456,35 @@
   script, which per `shared/utils/fetch.ts` can't reach external APIs on
   iOS. The user said to ignore iOS (2026-10-06).
 
+- Second upstream sync (2026-10-10, branch `sync-upstream-2.8` off
+  `artist-pickers`): merging the 18 `upstream/main` commits after #124, up
+  to `567497b` (#149). Done on a branch off `artist-pickers` rather than
+  `main`, since `main` lacks the first sync and the picker work. Status: the
+  user tested it in Safari on 2026-10-11 and it works; committed as merge
+  `784e447`, and `main` fast-forwarded to it. Not pushed.
+  - Upstream renamed `runPage`/`getPageEnabled`/`setPageEnabled`/
+    `getAllPageEnabled` to `runModule`/`getModuleEnabled`/
+    `setModuleEnabled`/`getAllModulesEnabled` and auto-merged those names
+    into every module. `page-settings.ts` keeps the fork's native
+    round-trip, `resolvePageEnabled` defaults and `runModule` try/catch
+    under the new names. The background's toolbar-icon check keeps
+    reading `settingsCache`.
+  - `messaging.ts`: the fork's settings messages plus upstream's
+    `spotifySearch`/`wikipediaSearch`; upstream's keybinding messages stay
+    dropped, as in the first sync.
+  - `applemusic/search.ts`: upstream's artist/album lookup fallback, with
+    the fork's `toRegionalAppleMusicUrl` (no `geo.` host, PR #144).
+  - `vite.config.ts`: the fork's display name and `VITE_DEBUG_TOOLS` page,
+    plus upstream's Spotify offscreen page.
+  - Upstream's Spotify web search uses `webRequest`/`webRequestBlocking`
+    on MV2 (now in the MV2 manifest) instead of Chrome's offscreen
+    document. Whether App Store validation accepts that alongside
+    `persistent: false` is unchecked; the user's "works" didn't single
+    out Spotify.
+  - Not mirrored to native yet: upstream's new collection settings
+    (`brym.collection.<kind>`, `shared/collection/settings.ts`) use
+    `storage.local` directly, so Safari's "clear history" wipes them.
+
 ## Archived initiatives
 
 - Apple Music release-title import fix (`Sorry : / /` / `Sorry :p` →
