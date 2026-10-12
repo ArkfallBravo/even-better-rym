@@ -17,13 +17,11 @@ import type { ResolveData } from "~/shared/services/types";
 import { waitForElement } from "~/shared/utils/dom";
 
 import { buildArtistToken } from "../utils/artist-shortcuts";
-import {
-	closeShortcutPopup,
-	openArtistLinkPopup,
-} from "../utils/page-functions";
+import { closeShortcutPopup } from "../utils/page-functions";
 import type { ReleaseArtistLabels } from "../utils/release-artist-links";
 import {
-	prefillArtistSearch,
+	continueArtistSearch,
+	startArtistSearch,
 	watchArtistResultClicks,
 } from "../utils/shortcut-popup";
 import {
@@ -44,6 +42,7 @@ import {
 	getDistinctTrackArtists,
 	getUntetheredKeys,
 	hasDifferingTrackArtists,
+	isVariousArtistsRelease,
 	withReleaseArtistFallback,
 } from "../utils/track-artist-links";
 import type { PickerSession } from "../utils/tracklist-picker-state";
@@ -55,6 +54,7 @@ import {
 	PickerRow,
 } from "./picker-row";
 import { useTracklistHistory } from "./tracklist-history";
+import { useImportSession } from "./use-import-session";
 
 const PICKER_ID = "ebr-artist-link-picker";
 const NO_RELEASE_ARTISTS: ReleaseArtistLabels = {
@@ -69,12 +69,15 @@ export default async function injectArtistLinkPicker() {
 	render(<ArtistLinkPicker />, container);
 }
 
-// Returns the picker session for an import, or undefined if every track's
-// artists are the release's, which RYM lists without track artists.
+// Returns the picker session for an import, or undefined unless it's a
+// Various Artists release with tracks by other than the release's artists.
 function getPickerSession(data: ResolveData): PickerSession | undefined {
 	const releaseArtists = data.artists ?? [];
 	const importedTracks = data.tracks ?? [];
-	if (!hasDifferingTrackArtists(importedTracks, releaseArtists)) {
+	if (
+		!isVariousArtistsRelease(releaseArtists) ||
+		!hasDifferingTrackArtists(importedTracks, releaseArtists)
+	) {
 		return undefined;
 	}
 	const tracks = withReleaseArtistFallback(importedTracks, releaseArtists);
@@ -83,48 +86,6 @@ function getPickerSession(data: ResolveData): PickerSession | undefined {
 		return undefined;
 	}
 	return { tracks, names };
-}
-
-// Opens the popup beside the picker, searching for name.
-function startArtistSearch(name: string): void {
-	openArtistLinkPopup(PICKER_ID);
-	void prefillArtistSearch(name);
-}
-
-// Prefills the search for the next artist, or closes the popup when none
-// are left.
-function continueArtistSearch(nextName: string | undefined): void {
-	if (nextName === undefined) {
-		closeShortcutPopup();
-		return;
-	}
-	startArtistSearch(nextName);
-}
-
-type PickerImport = {
-	count: number;
-	session: PickerSession | undefined;
-};
-
-// Tracks the picker session started by the most recent import, numbered so
-// each import gets a fresh panel.
-function usePickerImport(): PickerImport {
-	const [pickerImport, setPickerImport] = useState<PickerImport>({
-		count: 0,
-		session: undefined,
-	});
-
-	useEffect(() => {
-		const listener = (event: CustomEvent<ResolveData>) =>
-			setPickerImport((previous) => ({
-				count: previous.count + 1,
-				session: getPickerSession(event.detail),
-			}));
-		document.addEventListener("importEvent", listener);
-		return () => document.removeEventListener("importEvent", listener);
-	}, []);
-
-	return pickerImport;
 }
 
 // Tracks the release artists and labels the release-artist picker most
@@ -155,7 +116,7 @@ function useResetSlots(): Map<TrackKey, HTMLElement> {
 }
 
 function ArtistLinkPicker() {
-	const { count, session } = usePickerImport();
+	const { count, session } = useImportSession(getPickerSession);
 	const release = useReleaseArtistLabels();
 	if (session === undefined) {
 		return null;
@@ -189,7 +150,7 @@ function PickerPanel({ session, release }: Readonly<PickerPanelProps>) {
 			const nextName = session.names.find((name) => !nextLabels.has(name));
 			editState((state) => ({ ...state, choices: nextChoices }));
 			setActiveName(nextName);
-			continueArtistSearch(nextName);
+			continueArtistSearch(PICKER_ID, nextName);
 		});
 	}, [session, release, choices, activeName, editState]);
 
@@ -204,7 +165,7 @@ function PickerPanel({ session, release }: Readonly<PickerPanelProps>) {
 	};
 	const handleLink = (name: string) => {
 		setActiveName(name);
-		startArtistSearch(name);
+		startArtistSearch(PICKER_ID, name);
 	};
 	const handleFollow = (name: string, releaseName: string) =>
 		setChoice(
@@ -231,6 +192,10 @@ function PickerPanel({ session, release }: Readonly<PickerPanelProps>) {
 					active={name === activeName}
 				>
 					<PickerButton value="Link" onClick={() => handleLink(name)} />
+					<PickerButton
+						value="Text"
+						onClick={() => setChoice(name, { kind: "text" })}
+					/>
 					<PickerButton
 						value="Skip"
 						onClick={() => setChoice(name, { kind: "skipped" })}

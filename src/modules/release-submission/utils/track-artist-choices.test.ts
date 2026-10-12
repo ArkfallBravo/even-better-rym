@@ -18,6 +18,7 @@ import {
 	withChoice,
 	withUnpickedFollowedNames,
 } from "./track-artist-choices";
+import { OMITTED_LABEL } from "./track-artist-links";
 
 describe("getInitialTrackChoices", () => {
 	test("has identically spelled track artists follow the release artist", () => {
@@ -46,9 +47,10 @@ describe("resolveTrackArtistLabels", () => {
 	test("resolves each kind of choice", () => {
 		const choices: TrackArtistChoices = new Map([
 			["A", { kind: "linked", token: "[Artist2]" }],
-			["B", { kind: "skipped" }],
+			["B", { kind: "text" }],
 			["C", { kind: "following", releaseName: "Release A" }],
 			["D", { kind: "following", releaseName: "Release B" }],
+			["E", { kind: "skipped" }],
 		]);
 
 		expect(resolveTrackArtistLabels(choices, releaseLabels)).toEqual(
@@ -57,6 +59,7 @@ describe("resolveTrackArtistLabels", () => {
 				["B", "B"],
 				["C", "[Artist1]"],
 				["D", "Release B"],
+				["E", OMITTED_LABEL],
 			]),
 		);
 	});
@@ -91,7 +94,10 @@ describe("withUnpickedFollowedNames", () => {
 describe("describeTrackChoice", () => {
 	test("describes each kind of choice", () => {
 		expect(describeTrackChoice(undefined, undefined)).toBe("not picked");
-		expect(describeTrackChoice({ kind: "skipped" }, "A")).toBe("left unlinked");
+		expect(describeTrackChoice({ kind: "text" }, "A")).toBe("plain text");
+		expect(describeTrackChoice({ kind: "skipped" }, OMITTED_LABEL)).toBe(
+			"left out",
+		);
 		expect(
 			describeTrackChoice({ kind: "linked", token: "[Artist1]" }, "[Artist1]"),
 		).toBe("[Artist1]");

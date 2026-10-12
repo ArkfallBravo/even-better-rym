@@ -15,9 +15,13 @@ import { buildLinkedTitle } from "./artist-shortcuts";
 
 export const TRACKLIST_LINE_SEPARATOR = "\n";
 export const TRACKLIST_FIELD_SEPARATOR = "|";
+const VARIOUS_ARTISTS = "various artists";
+
+// The label of an artist the user left out of the tracklist.
+export const OMITTED_LABEL = "";
 
 // Maps an artist name to the label written for it: an [ArtistNNNN] token,
-// or the plain name when the user skipped it.
+// the plain name when written as text, or OMITTED_LABEL when left out.
 export type ArtistLabels = Map<string, string>;
 
 // Identifies a track by its position and which occurrence of that position
@@ -81,6 +85,11 @@ export const hasDifferingTrackArtists = (
 			!hasSameMembers(track.artists, releaseArtists),
 	);
 
+// Checks whether the release is credited to Various Artists, which covers
+// split releases too.
+export const isVariousArtistsRelease = (releaseArtists: string[]): boolean =>
+	releaseArtists[0]?.toLowerCase() === VARIOUS_ARTISTS;
+
 // Returns each track artist name once, in order of first appearance.
 export const getDistinctTrackArtists = (tracks: Track[]): string[] => [
 	...new Set(tracks.flatMap((track) => track.artists ?? [])),
@@ -102,7 +111,8 @@ export const getTrackKeys = (
 	});
 };
 
-// Builds each track's labels entry from the artists' labels.
+// Builds each track's labels entry from the artists' labels, leaving out
+// omitted artists.
 export const buildRelinkPlan = (
 	tracks: Track[],
 	labels: ArtistLabels,
@@ -116,7 +126,9 @@ export const buildRelinkPlan = (
 		}
 		plan.set(
 			key,
-			track.artists.map((name) => labels.get(name) ?? name),
+			track.artists
+				.map((name) => labels.get(name) ?? name)
+				.filter((label) => label !== OMITTED_LABEL),
 		);
 	});
 	return plan;
@@ -200,9 +212,9 @@ export const tetherTrackTitles = (text: string): TrackTether =>
 	);
 
 // Returns the title the picker writes for a track: its base title prefixed
-// with its artist labels.
+// with its artist labels, if it has any.
 const buildWrittenTitle = (base: string, labels: string[]): string =>
-	buildLinkedTitle(base, labels).trim();
+	labels.length === 0 ? base : buildLinkedTitle(base, labels).trim();
 
 // Returns the tracklist with each planned track that still holds the
 // picker's last title prefixed with its labels. A track the picker hasn't
