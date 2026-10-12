@@ -1461,7 +1461,11 @@
   to `567497b` (#149). Done on a branch off `artist-pickers` rather than
   `main`, since `main` lacks the first sync and the picker work. Status: the
   user tested it in Safari on 2026-10-11 and it works; committed as merge
-  `784e447`, and `main` fast-forwarded to it. Not pushed.
+  `784e447`, and `main` fast-forwarded to it. Pushed to `origin/main` as
+  `fc9b6fa` on 2026-10-11. The branch `sync-upstream-2.8` is now
+  `refs/archive/sync-upstream-2.8`, as are the other merged branches
+  (see `CLAUDE.md`, "Archived branches"), so references above to
+  `artist-pickers`/`sync-upstream` as branches mean those archive refs.
   - Upstream renamed `runPage`/`getPageEnabled`/`setPageEnabled`/
     `getAllPageEnabled` to `runModule`/`getModuleEnabled`/
     `setModuleEnabled`/`getAllModulesEnabled` and auto-merged those names
@@ -1481,9 +1485,74 @@
     document. Whether App Store validation accepts that alongside
     `persistent: false` is unchecked; the user's "works" didn't single
     out Spotify.
-  - Not mirrored to native yet: upstream's new collection settings
-    (`brym.collection.<kind>`, `shared/collection/settings.ts`) use
-    `storage.local` directly, so Safari's "clear history" wipes them.
+  - Collection settings (`brym.collection.<kind>`,
+    `shared/collection/settings.ts`) now go through
+    `getStoredSetting`/`setStoredSetting` (dynamic `import()`, as in
+    `visibility/settings.ts`), so they're mirrored to native storage.
+    Uncommitted on `main` (2026-10-11), waiting on the user's Safari
+    test. `use-settings.ts` still reloads on `browser.storage.onChanged`,
+    which per `CLAUDE.md` doesn't reach a Safari content script from a
+    popup write, so a popup change may need a page refresh to show.
+
+- Guest credits instead of track links on non-VA releases (started
+  2026-10-12 on branch `guest-credits` off `main`, **confirmed working in
+  Safari and committed on 2026-10-12; not yet ported to the upstream
+  branch**). Afterwards it goes into upstream PR #150 too
+  (`tracklist-artist-links-upstream`), since the user called it a fix for
+  that PR. User decisions (2026-10-12):
+  - The tracklist picker only runs on Various Artists and split releases.
+    A split is a VA release. On any other release no track gets a prefix,
+    including the release artist. This reverses the 2026-10-06 rule that a
+    track by A alone on an A & B release gets the picker.
+  - Every track artist who isn't a release artist is credited instead:
+    role `guest`, tracks field written `2, 12`. Example: Northwind
+    (music.apple.com/us/album/northwind/1027973195), Sharm on tracks 2
+    and 12.
+  - VA picker behavior is unchanged.
+
+  How it works:
+  - Both panels key off `isVariousArtistsRelease`
+    (`utils/track-artist-links.ts`): the first release artist is "Various
+    Artists". Splits need no check of their own, since per the user a
+    split is a kind of VA release. A first draft guessed splits from the
+    track artists; the user rejected it.
+  - The new `use-cases/guest-credit-picker.tsx` sits after `#creditsx`.
+    It has one Link/Skip row per guest (`getGuestArtists`,
+    `utils/guest-credits.ts`). Link reuses the tracklist picker's "Insert
+    link" popup and click reading (`startArtistSearch` /
+    `continueArtistSearch` moved into `utils/shortcut-popup.ts`). The
+    picked id goes to RYM's page-world `addCredit('a', id, name)`, and the
+    same injected script fills `credits_roles_<credits_num>` and
+    `credits_tracks_<credits_num>` (`addArtistCredit`,
+    `utils/page-functions.ts`). RYM's own Credits search wasn't used, so
+    whether its result clicks work in Safari didn't need testing.
+  - Re-linking or skipping a guest deletes the line it added before
+    (`deleteCredit(N)`). The line number is read from the last
+    `#creditsx li.sortable_credit` right after the synchronous fork
+    `runScript`. On the upstream branch, `runScript` is async, so the port
+    must await `addArtistCredit` before reading it.
+  - `useImportSession` (`use-cases/use-import-session.ts`) replaces the
+    tracklist picker's `usePickerImport`, so both panels share it.
+
+  - Three buttons in both the tracklist and guest pickers (user,
+    2026-10-12). **Link** picks the RYM artist. **Text** writes the name
+    as plain text: a plain-name prefix in the tracklist, or an unlinked
+    credit line. **Skip** leaves the artist out, so no prefix and no
+    credit, but the row stays in the picker. Skip used to mean Text.
+    - In the tracklist, a skipped artist's label is `OMITTED_LABEL` (`""`).
+      `buildRelinkPlan` drops it, and a track whose labels all drop keeps
+      its bare base title.
+    - Text credits call RYM's manual-line path, `addCredit('a', 'XXX',
+      name)`, then type the name into `credits_artist_N`. RYM's help text
+      says manual lines are for "an unlinked credit". Whether RYM accepts a
+      plain name there on submit is unchecked.
+    - The release-artist picker's Skip is unchanged and still means "plain
+      name". It wasn't part of the request.
+
+  The user's Safari test passed all of the checks: Northwind, Link, Text,
+  Skip, and a VA release. Next: port this to
+  `tracklist-artist-links-upstream` for PR #150, awaiting
+  `addArtistCredit` there because upstream's `runScript` is async.
 
 ## Archived initiatives
 

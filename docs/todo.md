@@ -20,7 +20,7 @@
     `fillers.ts`' comment says CSP blocks that. Sharing one helper means
     touching kknq's code, so ask first.
     The upstream picker port (2026-10-07) shares it through
-    `editAdvancedTracklist` (`utils/tracklist-editor.ts`), used by the
+    `editAdvancedTracklist` (`utils/simple-tracklist.ts`), used by the
     picker and kknq's `fillTracks`; the fork still has the three copies
     until that port is merged and synced back.
   - kknq's `arrayToArtists` (`shared/utils/string.ts`) mutates its input
