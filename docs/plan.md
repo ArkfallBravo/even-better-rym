@@ -1497,8 +1497,8 @@
 - Guest credits instead of track links on non-VA releases (started
   2026-10-12 on branch `guest-credits` off `main`, **confirmed working in
   Safari and committed on 2026-10-12; ported to
-  `tracklist-artist-links-upstream` as `7735445`, tested there, waiting on
-  the user's push**). It goes into upstream PR #150 too
+  `tracklist-artist-links-upstream` as `7735445` and pushed to PR #150 on
+  2026-10-12**). It goes into upstream PR #150 too
   (`tracklist-artist-links-upstream`), since the user called it a fix for
   that PR. User decisions (2026-10-12):
   - The tracklist picker only runs on Various Artists and split releases.
@@ -1562,8 +1562,8 @@
 
 - Bonus-track tags on import (2026-10-12, branch `guest-credits`,
   **confirmed working in Safari and committed; ported to
-  `tracklist-artist-links-upstream` as `05261c2`, tested there, waiting on
-  the user's push**). `markBonusTrack`
+  `tracklist-artist-links-upstream` as `05261c2` and pushed to PR #150 on
+  2026-10-12**). `markBonusTrack`
   (`utils/bonus-track.ts`) rewrites a trailing "Bonus Track" (bare, after
   " - ", or in () or [], any case) as " [bonus track]" after the title.
   The user chose after over before, despite first writing "prepend". Only
