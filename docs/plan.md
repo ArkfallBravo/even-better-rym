@@ -1496,8 +1496,9 @@
 
 - Guest credits instead of track links on non-VA releases (started
   2026-10-12 on branch `guest-credits` off `main`, **confirmed working in
-  Safari and committed on 2026-10-12; not yet ported to the upstream
-  branch**). Afterwards it goes into upstream PR #150 too
+  Safari and committed on 2026-10-12; ported to
+  `tracklist-artist-links-upstream` as `7735445`, tested there, waiting on
+  the user's push**). It goes into upstream PR #150 too
   (`tracklist-artist-links-upstream`), since the user called it a fix for
   that PR. User decisions (2026-10-12):
   - The tracklist picker only runs on Various Artists and split releases.
@@ -1550,13 +1551,19 @@
       name". It wasn't part of the request.
 
   The user's Safari test passed all of the checks: Northwind, Link, Text,
-  Skip, and a VA release. Next: port this to
-  `tracklist-artist-links-upstream` for PR #150, awaiting
-  `addArtistCredit` there because upstream's `runScript` is async.
+  Skip, and a VA release. Upstream port: both commits went on as new
+  commits on top of PR #150 rather than folded in (user's choice, so no
+  force push). In the port, `addArtistCredit`/`deleteCreditLine` return
+  upstream's async `runScript` promise, and the guest panel awaits the
+  removal before adding and reading the new line. The tracklist picker kept
+  upstream's own `usePickerImport`, which waits for the async tracklist
+  fill, so on the upstream branch `useImportSession` serves only the guest
+  panel.
 
 - Bonus-track tags on import (2026-10-12, branch `guest-credits`,
-  **confirmed working in Safari and committed; not yet ported to the
-  upstream branch**). `markBonusTrack`
+  **confirmed working in Safari and committed; ported to
+  `tracklist-artist-links-upstream` as `05261c2`, tested there, waiting on
+  the user's push**). `markBonusTrack`
   (`utils/bonus-track.ts`) rewrites a trailing "Bonus Track" (bare, after
   " - ", or in () or [], any case) as " [bonus track]" after the title.
   The user chose after over before, despite first writing "prepend". Only
