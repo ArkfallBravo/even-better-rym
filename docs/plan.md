@@ -1554,6 +1554,19 @@
   `tracklist-artist-links-upstream` for PR #150, awaiting
   `addArtistCredit` there because upstream's `runScript` is async.
 
+- Bonus-track tags on import (2026-10-12, branch `guest-credits`,
+  **confirmed working in Safari and committed; not yet ported to the
+  upstream branch**). `markBonusTrack`
+  (`utils/bonus-track.ts`) rewrites a trailing "Bonus Track" (bare, after
+  " - ", or in () or [], any case) as " [bonus track]" after the title.
+  The user chose after over before, despite first writing "prepend". Only
+  those forms count; tags with a qualifier like "(Japan Bonus Track)" are
+  left alone. `formatTracks` in kknq's `utils/tracklist.ts` calls it after
+  capitalization, so the tag stays lowercase. The user approved that
+  one-line change to kknq's file. Known false positive: a song whose real
+  title ends in "Bonus Track" also gets rewritten. This goes to PR #150
+  with the guest-credits port.
+
 ## Archived initiatives
 
 - Apple Music release-title import fix (`Sorry : / /` / `Sorry :p` →
