@@ -1271,9 +1271,9 @@
     `{ names, labels }` (`ReleaseArtistLabels`), so the dropdown lists
     unpicked release artists. `InheritSelect` moved to `picker-row.tsx`.
   - Checks: 312 tests, Biome, tsc, ESLint, `build:safari` and `xcodebuild`
-    pass. Not yet tested in Safari.
+    pass.
   - **Release-picker removal bugs (found by the user in Safari,
-    2026-10-07, fixed and uncommitted):** removing an artist from Filed
+    2026-10-07, fixed in `4ca0177`):** removing an artist from Filed
     Under left its row "linked"/"inherited" (so the tracklist kept the
     token, and a removed inherited artist couldn't be re-inherited because
     the dropdown already showed it), and re-picking a removed artist was
@@ -1494,86 +1494,6 @@
     which per `CLAUDE.md` doesn't reach a Safari content script from a
     popup write, so a popup change may need a page refresh to show.
 
-- Guest credits instead of track links on non-VA releases (started
-  2026-10-12 on branch `guest-credits` off `main`, **confirmed working in
-  Safari and committed on 2026-10-12; ported to
-  `tracklist-artist-links-upstream` as `7735445` and pushed to PR #150 on
-  2026-10-12**). It goes into upstream PR #150 too
-  (`tracklist-artist-links-upstream`), since the user called it a fix for
-  that PR. User decisions (2026-10-12):
-  - The tracklist picker only runs on Various Artists and split releases.
-    A split is a VA release. On any other release no track gets a prefix,
-    including the release artist. This reverses the 2026-10-06 rule that a
-    track by A alone on an A & B release gets the picker.
-  - Every track artist who isn't a release artist is credited instead:
-    role `guest`, tracks field written `2, 12`. Example: Northwind
-    (music.apple.com/us/album/northwind/1027973195), Sharm on tracks 2
-    and 12.
-  - VA picker behavior is unchanged.
-
-  How it works:
-  - Both panels key off `isVariousArtistsRelease`
-    (`utils/track-artist-links.ts`): the first release artist is "Various
-    Artists". Splits need no check of their own, since per the user a
-    split is a kind of VA release. A first draft guessed splits from the
-    track artists; the user rejected it.
-  - The new `use-cases/guest-credit-picker.tsx` sits after `#creditsx`.
-    It has one Link/Skip row per guest (`getGuestArtists`,
-    `utils/guest-credits.ts`). Link reuses the tracklist picker's "Insert
-    link" popup and click reading (`startArtistSearch` /
-    `continueArtistSearch` moved into `utils/shortcut-popup.ts`). The
-    picked id goes to RYM's page-world `addCredit('a', id, name)`, and the
-    same injected script fills `credits_roles_<credits_num>` and
-    `credits_tracks_<credits_num>` (`addArtistCredit`,
-    `utils/page-functions.ts`). RYM's own Credits search wasn't used, so
-    whether its result clicks work in Safari didn't need testing.
-  - Re-linking or skipping a guest deletes the line it added before
-    (`deleteCredit(N)`). The line number is read from the last
-    `#creditsx li.sortable_credit` right after the synchronous fork
-    `runScript`. On the upstream branch, `runScript` is async, so the port
-    must await `addArtistCredit` before reading it.
-  - `useImportSession` (`use-cases/use-import-session.ts`) replaces the
-    tracklist picker's `usePickerImport`, so both panels share it.
-
-  - Three buttons in both the tracklist and guest pickers (user,
-    2026-10-12). **Link** picks the RYM artist. **Text** writes the name
-    as plain text: a plain-name prefix in the tracklist, or an unlinked
-    credit line. **Skip** leaves the artist out, so no prefix and no
-    credit, but the row stays in the picker. Skip used to mean Text.
-    - In the tracklist, a skipped artist's label is `OMITTED_LABEL` (`""`).
-      `buildRelinkPlan` drops it, and a track whose labels all drop keeps
-      its bare base title.
-    - Text credits call RYM's manual-line path, `addCredit('a', 'XXX',
-      name)`, then type the name into `credits_artist_N`. RYM's help text
-      says manual lines are for "an unlinked credit". Whether RYM accepts a
-      plain name there on submit is unchecked.
-    - The release-artist picker's Skip is unchanged and still means "plain
-      name". It wasn't part of the request.
-
-  The user's Safari test passed all of the checks: Northwind, Link, Text,
-  Skip, and a VA release. Upstream port: both commits went on as new
-  commits on top of PR #150 rather than folded in (user's choice, so no
-  force push). In the port, `addArtistCredit`/`deleteCreditLine` return
-  upstream's async `runScript` promise, and the guest panel awaits the
-  removal before adding and reading the new line. The tracklist picker kept
-  upstream's own `usePickerImport`, which waits for the async tracklist
-  fill, so on the upstream branch `useImportSession` serves only the guest
-  panel.
-
-- Bonus-track tags on import (2026-10-12, branch `guest-credits`,
-  **confirmed working in Safari and committed; ported to
-  `tracklist-artist-links-upstream` as `05261c2` and pushed to PR #150 on
-  2026-10-12**). `markBonusTrack`
-  (`utils/bonus-track.ts`) rewrites a trailing "Bonus Track" (bare, after
-  " - ", or in () or [], any case) as " [bonus track]" after the title.
-  The user chose after over before, despite first writing "prepend". Only
-  those forms count; tags with a qualifier like "(Japan Bonus Track)" are
-  left alone. `formatTracks` in kknq's `utils/tracklist.ts` calls it after
-  capitalization, so the tag stays lowercase. The user approved that
-  one-line change to kknq's file. Known false positive: a song whose real
-  title ends in "Bonus Track" also gets rewritten. This goes to PR #150
-  with the guest-credits port.
-
 ## Archived initiatives
 
 - Apple Music release-title import fix (`Sorry : / /` / `Sorry :p` →
@@ -1584,3 +1504,6 @@
 - `chart-shortcuts` include-sub / must-contain-all toggle shortcuts
   (2026-08-05), shipped to `main`. Writeup:
   `docs/archive/chart-shortcuts-toggle-shortcuts-2026-08.md`.
+- Guest credits on non-VA releases and bonus-track tags (2026-10-12, on
+  `main` as `d143a1b`, also in PR #150): fully shipped and tested in Safari.
+  Writeup: `docs/archive/guest-credits-and-bonus-track-2026-10.md`.

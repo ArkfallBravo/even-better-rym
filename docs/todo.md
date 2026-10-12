@@ -308,3 +308,16 @@
   a descriptive message rather than dropped. Find it by that message in
   `git stash list`, since its index shifts as other stashes are added. Needs the
   user's call: turn it into a real commit, or drop it.
+
+- Check whether RYM accepts a plain-name credit line on submit. The guest
+  credit picker's Text choice adds RYM's manual "unlinked credit" line
+  (`addCredit('a', 'XXX', name)`) with the name typed in. It's unchecked
+  whether RYM keeps that name when the release is submitted. Check on a real
+  release (see `CLAUDE.md`, "RYM's credits list").
+
+- Decide whether the release-artist picker's Skip should match the tracklist
+  and guest pickers. Its Skip still writes the plain name, and it has no
+  "leave out" choice. Asked 2026-10-12; no answer yet.
+
+- Test the collection-settings fix (`src/shared/collection/settings.ts`) in
+  Safari and commit it. It's still uncommitted on `main`.

@@ -105,3 +105,27 @@ describes how the code works now.
   now follows the release picks throughout, so neither commit works on its
   own. Bring back only if kknq asks for smaller commits, which would mean
   splitting the PR's two commits further by hand.
+
+## Guest credits
+
+- **Link through RYM's own Credits search** (not chosen, 2026-10-12). The
+  search box (`#credit_searchterm`, `searchCredits()`) would show RYM's
+  results in `#creditlist`. The existing `fillArtist` clicks the top result
+  without checking, which is the behaviour a mod objected to in the bulk
+  auto-link. The guest picker reuses the "Insert link" popup and its click
+  reading instead. Bring back if the popup's result clicks stop working in
+  Safari; the Credits search's own result clicks are untested.
+
+- **Treat a split release as non-VA by checking its track artists** (rejected
+  by the user, 2026-10-12). A first draft counted a release as a split when a
+  track lacked one of its artists. The user said a split is a VA release,
+  so the only check is that the first release artist is "Various Artists".
+  Bring back only if RYM stops treating splits as VA.
+
+- **Put "[bonus track]" before the title** (not chosen, 2026-10-12). The
+  request said "prepend", but the user chose after the title.
+
+- **Fold the guest-credit commits into PR #150's existing two commits**
+  (not chosen, 2026-10-12). That would need a force push. The user chose
+  new commits on top, which is a plain push. Bring back if the PR's history
+  needs cleaning before merge.

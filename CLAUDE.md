@@ -249,6 +249,14 @@ The release-artist picker (`release-submission/use-cases/release-artist-picker.t
 
 Apple Music's album page has one `"subtitleLinks"` entry per distinct artist on each track, and it's empty on tracks by the album artists. The album header is the first `subtitleLinks` in the track-lockup script (`getAlbumHeaderArtists`). Never search the whole script for "Various Artists": recommended albums further down the page carry their own `subtitleLinks`, and one of them once marked a non-VA release as Various Artists.
 
+### RYM's credits list (release-edit page)
+
+The guest-credit picker (`release-submission/use-cases/guest-credit-picker.tsx`) edits the credits list through RYM's own functions. From the saved `Release Editing - Rate Your Music.html`, confirmed in Safari on 2026-10-12:
+- `addCredit('a', id, name)` appends an `li.sortable_credit` inside `#creditsx`, with inputs `credits_artist_N`, `credits_roles_N` and `credits_tracks_N`, where N is the page's `credits_num`. The picker reads the new line's number from the last `#creditsx` line's id, since `addCredit` doesn't return it.
+- `addCredit('a', 'XXX', name)` is RYM's manual "unlinked credit" line, and the artist name is typed into `credits_artist_N`. Whether RYM accepts that plain name on submit is unchecked.
+- `deleteCredit(N)` removes a line. Its `javascript:` links are blocked by CSP from the content script, so call it through `runScript`.
+- On upstream's async `runScript`, these calls must be awaited before the new line number is read, or the picker reads the old list.
+
 ### Page key registry (`src/shared/pages.ts`)
 
 Single source of truth mapping each `PageKey` to: its URL path prefix (`pages`), popup toggle label (`pageLabels`), popup description (`pageHints`), and which named popup group it's listed under (`featureGroups`, from upstream's popup redesign; it replaced the old URL-prefix `pageGroupLabels`). `globalPageKeys` marks keys (`searchBar`, `hideRatings`, `hideReviews`) whose toggle state shouldn't affect the toolbar icon shown by the background script.
