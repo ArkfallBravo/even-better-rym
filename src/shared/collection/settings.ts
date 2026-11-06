@@ -1,5 +1,3 @@
-import * as storage from "~/shared/utils/storage";
-
 import {
 	type CollectionColumn,
 	type CollectionFilter,
@@ -67,17 +65,21 @@ export function isCollectionPageSize(value: unknown): value is number {
 }
 
 export async function getCollectionSettings(kind: CollectionKind) {
+	const { getStoredSetting } = await import("~/shared/utils/stored-settings");
 	return mergeCollectionSettings(
-		await storage.get<CollectionSettingsOverrides>(collectionSettingsKey(kind)),
+		await getStoredSetting<CollectionSettingsOverrides>(
+			collectionSettingsKey(kind),
+		),
 		kind,
 	);
 }
 
-export function setCollectionSettings(
+export async function setCollectionSettings(
 	kind: CollectionKind,
 	settings: CollectionSettings,
 ) {
-	return storage.set(
+	const { setStoredSetting } = await import("~/shared/utils/stored-settings");
+	await setStoredSetting(
 		collectionSettingsKey(kind),
 		mergeCollectionSettings(settings, kind),
 	);
