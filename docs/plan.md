@@ -1,11 +1,11 @@
 # Plan / open work
 
-- Third upstream sync, v2.8.2 to v3.1.0, as App Store v1.4 (started
+- Third upstream sync, v2.8.2 to v3.1.0, as App Store v2.0 (started
   2026-11-06, branch `sync-upstream-3.1` off `main`). Merges the 84
   `upstream/main` commits after `567497b` (#149), up to `86471ac` (#207).
   **Status: the user tested it in Safari and said everything looks good
   (2026-11-06). Committed on `sync-upstream-3.1` as merge `1ab2ac4`, then
-  the collection-settings fix `de1825b`; the Xcode repo has the v1.4 bump.
+  the collection-settings fix `de1825b`; the Xcode repo has the version bump, now v2.0.
   Not pushed, and `main` not fast-forwarded yet.** The macOS app builds
   with the deployment target at 12.0, see below. `tsc` is clean and vitest passes
   (127 files, 1643 tests). ESLint on `src` shows only three errors, all in
@@ -66,7 +66,7 @@
     `app.test.ts` also mock `~/shared/utils/messaging`, since the fork reads
     toggles through the background script rather than `storage`.
   - Versions: `package.json` is 3.1.0. The Xcode project is set to
-    `MARKETING_VERSION` 1.4 and `CURRENT_PROJECT_VERSION` 13 in the same
+    `MARKETING_VERSION` 2.0 (first 1.4) and `CURRENT_PROJECT_VERSION` 13 in the same
     four places as the 1.3 bump (`4473f69`); uncommitted in the Xcode repo.
 
   Resolved 2026-11-06: the user chose 12.0, set in all four macOS build settings, and the macOS `xcodebuild` now succeeds. Before that, `xcodebuild` failed with "The macOS deployment target … is set to
