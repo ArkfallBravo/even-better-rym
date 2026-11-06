@@ -36,7 +36,8 @@
   code, not confirmed in Safari.
 
 - Follow-up candidates surfaced but explicitly skipped by the 2026-09-06
-  `/simplify` pass (see `docs/plan.md` for why each was held back — none
+  `/simplify` pass (see `docs/archive/apple-music-title-fix-and-simplify-2026-09.md`
+  for why each was held back — none
   are urgent, listed here so they aren't lost):
   - `fetch.ts`'s direct-fetch-before-background-fallback always retries a
     doomed request for hosts that need the background path; a per-host
@@ -135,23 +136,6 @@
   since it wasn't this feature's concern. Not investigated; decide whether
   to commit it as-is or check what changed it first.
 
-- Decide whether to commit the `screenshots/` → `app store submission
-  stuff/` migration (2026-08-14): `git status` shows all six files
-  previously tracked under `screenshots/` as deleted in the working tree,
-  uncommitted, while `app store submission stuff/` (untracked) now holds the
-  App Store screenshots plus the draft description/release-notes text. See
-  `CLAUDE.md`'s "App Store Connect metadata" section.
-
-- **Done (2026-08-14)**: Tidal autofind failure diagnosed and fixed — the
-  `v2/searchResults` search request was using a broken path-based-ID URL
-  shape that Tidal's live API unconditionally rejects; fixed to use
-  `filter[query]`, plus a response-parsing bug (`data` is an array, not a
-  single object) that would have masked even a correct URL. Committed as
-  `eeda6525`, user-confirmed working. See `docs/plan.md`'s "Autofind-link
-  triage" entry for the full diagnosis, including an open question (why the
-  user recalled it sometimes succeeding) that was investigated but left
-  unresolved rather than guessed at.
-
 - Bandcamp and Qobuz showed "NOT FOUND" (not an error) in the same
   search-panel run that surfaced the Tidal bug above, for the same
   "Violent Magic Orchestra – Death Rave" test pair — not yet checked
@@ -203,13 +187,6 @@
   album header on 2026-10-01 (see the picker entry in `docs/plan.md`) and
   hasn't been tried on a VA page since.
 
-- Decide the macOS deployment target for v1.3. `EvenBetterRYM/project.pbxproj`
-  has an uncommitted change (2026-10-01, source unconfirmed, probably Xcode's
-  "Update to recommended settings") raising it from 11.0 to
-  `$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)` = 14.0, which would drop macOS
-  11–13 users. Xcode 27 only warns below 12.0, so the options are to keep 14.0
-  or set 12.0. Commit or revert accordingly.
-
 - Extend the tracklist artist-link picker (on `main`, see `docs/plan.md`)
   beyond Apple Music: make Spotify, Beatport, and
   LiveMixtapes return per-track artists as `Track.artists` data instead of
@@ -227,15 +204,6 @@
 - Tracklisting import should convert square brackets `[]` in track titles to
   parentheses `()`, to match RYM's expected formatting convention.
 
-- **Done (2026-07-31)**: pull-credits auto-import was disabled — removed the
-  "Credits" checkbox/option and the `fillCredits`/`fillCredit` functions from
-  `src/modules/release-submission/utils/fillers.ts` and
-  `use-cases/import-controls.tsx`. The unrelated, upstream (kknq-authored)
-  manual "+ artist"/"+ featuring"/"+ remixer" credits UI
-  (`use-cases/credits-controls.tsx`) was deliberately left untouched — it's
-  user-supervised one credit at a time, not an automatic bulk pull, and
-  predates this fork.
-
 - Credits and track-artist matching need a real disambiguation strategy
   instead of the current guesswork. Two candidate approaches: (1) an
   extensive conditional/heuristic system that cross-references the imported
@@ -245,12 +213,6 @@
   AI (Apple Intelligence / Foundation Models framework) would be a strong
   candidate given this is a Safari extension already tied to a native macOS/
   iOS app wrapper.
-
-- **Done (2026-08-05)**: `chart-shortcuts` redesign to stop its custom
-  suggestion overlay from fighting RYM's own native chart-builder dropdown —
-  see the `chart-shortcuts` redesign entry in `docs/plan.md` for the
-  full before/after. Manually tested and confirmed working by the user in
-  the Safari-wrapped app.
 
 - Separate, unrelated error surfaced in the extension background page's
   console while debugging the above (not yet investigated, not yet
@@ -265,29 +227,6 @@
   a live browser (run console commands, read DOM state) itself instead of
   relying on manually pasted console output during debugging sessions like
   the `chart-shortcuts` one.
-
-- Set up the macOS app target (`EvenBetterRYM.xcodeproj`) to build directly
-  into `/Applications`. Attempted twice now (both reverted — see
-  `docs/plan.md` for the full account of the second attempt and why it was
-  undone):
-  1. A "Copy to /Applications" Run Script build phase (`ditto` after
-     "Embed Foundation Extensions"), blocked by Xcode's script sandboxing
-     (`ENABLE_USER_SCRIPT_SANDBOXING = YES`, set at the project level) —
-     `ditto` couldn't read the built `.app`'s `Contents` directory even with
-     it declared in the phase's `inputPaths`/`outputPaths` (those only feed
-     Xcode's dependency-analysis graph, not the actual sandbox profile). The
-     fix for *that* specific problem is disabling
-     `ENABLE_USER_SCRIPT_SANDBOXING` for just the macOS app target's Debug/
-     Release configs (not project-wide).
-  2. Re-attempted with the sandboxing fix applied, a Run Script phase
-     (`ditto`, later changed to a literal `mv` per the user's actual manual
-     workflow), and (briefly) an explicit shared `.xcscheme` redirecting
-     Xcode's Run action to launch the `/Applications` copy instead of the
-     DerivedData one. None of it fixed the underlying issue: Safari's
-     Extensions list still only picked up the Debug build, not the
-     `/Applications` copy, regardless of which one Xcode's Run action
-     launched. Root cause not identified. User reverted all of it and is
-     back to doing this manually in Xcode.
 
 - `npm run lint` currently fails on `main` for reasons unrelated to any
   recent feature work (surfaced 2026-08-06 while bringing `chart-searchbar`
@@ -319,5 +258,40 @@
   and guest pickers. Its Skip still writes the plain name, and it has no
   "leave out" choice. Asked 2026-10-12; no answer yet.
 
-- Test the collection-settings fix (`src/shared/collection/settings.ts`) in
-  Safari and commit it. It's still uncommitted on `main`.
+- Make the collection page pick up a popup change without a refresh.
+  `use-settings.ts` reloads on `browser.storage.onChanged`, which doesn't
+  reach a Safari content script from a popup write (see `CLAUDE.md`);
+  `subscribeToStoredSetting` is the channel that works.
+
+- Decide whether upstream's `reference-links/settings.ts` and
+  `user-page/settings.ts` should go through `stored-settings`, so Safari's
+  "Clear History" doesn't wipe them (see the v3.1.0 sync in `docs/plan.md`).
+
+- Decide whether the fork restores "only VA releases get track-artist
+  prefixes" in kknq's tracklist picker, or raises it with kknq (see the
+  v3.1.0 sync in `docs/plan.md`).
+
+- Check whether Safari runs upstream's MAIN-world Spotify diagnostics script
+  (`spotify-search/page-errors.ts`) from the MV2 manifest.
+
+- Decide whether to use upstream's `stream-links/placement.ts` for
+  music-video pages; it's unused on the fork.
+
+- Sync upstream's `71e70da` (PR #144, Apple Music links without a blank
+  tab, merged 2026-10-14) into the fork. Expect a conflict in
+  `stream-links/use-page-data.ts`, which differs from upstream's (no
+  `metadata.ts` or `release-type.ts` split). Until then the fork's
+  `getFullLink` still uses `data.loc` instead of the user's preferred
+  region. See the #144 entry in `docs/plan.md`.
+
+- Check the popup on the built-in display. Its `maxHeight: 600` was set
+  from what an external monitor clamped to (2026-07-28), so the built-in
+  display may now scroll where it used to fit everything (see `CLAUDE.md`,
+  "Popup sizing").
+
+- Check whether App Store validation accepts upstream's Spotify web search
+  on the Safari build: it adds `webRequest`/`webRequestBlocking` to the MV2
+  manifest alongside `persistent: false` (synced 2026-10-10).
+
+- Confirm the drafted `app store submission stuff/app-store-description.txt`
+  and `whats-new.txt` (2026-08-14) as final before the next submission.

@@ -40,6 +40,21 @@ describes how the code works now.
   is a behaviour change from the earlier design. Bring back if immediate
   writes cause unwanted tracklist changes.
 
+- **Capture a pick through `createShortcut` and a hidden scratch input**
+  (rejected, 2026-10-01). Point RYM's `currentElement` at a hidden input
+  and read the id from `patchCreateShortcut`'s
+  `EbrArtistShortcutInsertedEvent`. It failed because the popup rows'
+  inline `onclick` never runs in the user's Safari, so `createShortcut`
+  is never called. The picker reads the clicked row's `onclick` text
+  instead. Bring back if those inline handlers start running.
+
+- **Have the picker call `fillTracks` itself** (rejected, 2026-10-07, in
+  the upstream port). It would rewrite the whole tracklist from the import
+  (losing the user's edits), recapitalize plain artist names, need the
+  import options, and ignore the "Tracks" checkbox. Both go through
+  `editAdvancedTracklist`'s queue instead. Bring back only if the picker
+  ever needs a full re-import of the tracklist.
+
 ## Release artist picker (Filed Under)
 
 - **Skip any RYM addition whose id is in `managedIds`** (the original
@@ -129,3 +144,20 @@ describes how the code works now.
   (not chosen, 2026-10-12). That would need a force push. The user chose
   new commits on top, which is a plain push. Bring back if the PR's history
   needs cleaning before merge.
+
+## Safari app build and Xcode repo
+
+- **Copy the built app into `/Applications` with a Run Script phase**
+  (reverted, 2026-07-28). A `ditto`/`mv` after "Embed Foundation
+  Extensions", plus a shared scheme that ran the copied app. The copy
+  worked, but Safari kept registering only the DerivedData build; the
+  cause was never found. Replaced by `DEPLOYMENT_LOCATION = YES` with
+  `DSTROOT`/`INSTALL_PATH`. Bring back only with
+  `pluginkit -m`/Console.app evidence of why Safari picked the DerivedData
+  copy. Full writeup: `docs/archive/safari-app-setup-2026-07-08.md`.
+
+- **Auto-commit `EvenBetterRYM/` whenever the main repo is committed**
+  (rejected, 2026-08-05). Generic commit messages and half-finished
+  Xcode state could land silently. A reminder-only `.husky/post-commit`
+  hook was chosen instead. Bring back if forgotten Xcode-repo changes
+  become a recurring problem despite the reminder.
