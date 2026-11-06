@@ -101,13 +101,6 @@
   specific descriptor typed and any browsing done earlier in that page
   session.
 
-- Two chart-shortcut checks still unconfirmed in Safari (see
-  `docs/archive/chart-shortcuts-customization-2026-08.md`): that
-  `Ctrl+Shift+1/2/3` (dead before the `event.code` switch) fire on a real
-  chart page, and that a changed binding survives a full Safari quit and
-  reopen. Using the shortcuts and surviving "Clear History" were covered by
-  the v3.1.0 sync test (2026-11-06).
-
 - The Mac modifier glyphs (`⌃⌥⇧⌘`) in the shortcut popup still don't fully
   match native macOS menu rendering (2026-08-22): switching the shortcut
   chip's font from monospace to the system UI stack fixed the flat
