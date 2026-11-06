@@ -24,13 +24,14 @@
 
 - `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"
   (2026-08-14, open — not yet resolved): while wrapping up the autofind-link
-  triage session above, Xcode prompted to "Update to recommended settings"
+  triage session (now in `docs/archive/import-debugging-2026-07-08.md`),
+  Xcode prompted to "Update to recommended settings"
   on the `EvenBetterRYM.xcodeproj` project, which the user flagged as
   potentially irreversible. Rather than risk that change being unreviewable
   afterward, committed the private `EvenBetterRYM/` repo's pre-existing
   uncommitted state as-is (`a8b383c`) first, explicitly as a revertible
   checkpoint — the user's own reasoning: "if we commit, we can always revert
-  the change later." That commit includes two things unrelated to today's
+  the change later." That commit includes two things unrelated to that
   session, accumulated since the repo's last commit (`1fd1c238`,
   2026-08-05): build-number bumps (`CURRENT_PROJECT_VERSION` 1→9,
   `MARKETING_VERSION` 1.0→1.1) from App Store submissions, and a stray file,
