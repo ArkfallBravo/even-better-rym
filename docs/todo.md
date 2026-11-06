@@ -267,10 +267,6 @@
   `user-page/settings.ts` should go through `stored-settings`, so Safari's
   "Clear History" doesn't wipe them (see the v3.1.0 sync in `docs/plan.md`).
 
-- Decide whether the fork restores "only VA releases get track-artist
-  prefixes" in kknq's tracklist picker, or raises it with kknq (see the
-  v3.1.0 sync in `docs/plan.md`).
-
 - Check whether Safari runs upstream's MAIN-world Spotify diagnostics script
   (`spotify-search/page-errors.ts`) from the MV2 manifest.
 

@@ -83,12 +83,9 @@
   - Upstream's Spotify diagnostics content script
     (`spotify-search/page-errors.ts`) uses `world: "MAIN"`, which is now in
     the MV2 Safari manifest. Whether Safari honours it is unchecked.
-  - kknq's tracklist picker now appears on non-VA releases too (`9d7f253`):
-    every artist starts as "Leave out", but release artists get an "Add to
-    track titles" button, and a non-VA release where a track leaves out a
-    release artist gets prefixes automatically. The user's rule is that only
-    VA releases (splits count as VA) get track-artist prefixes. Asked
-    2026-11-06 whether to restore that on the fork or raise it with kknq.
+  - kknq's tracklist picker now appears on non-VA releases too (`9d7f253`),
+    with an opt-in "Add to track titles" button for release artists. The
+    user decided to keep kknq's behavior as is (2026-11-06).
 
   The Safari test covered: every picker on a real
   import (tracklist, release artists, guest credits, the new suggested
