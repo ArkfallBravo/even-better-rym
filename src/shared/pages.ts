@@ -2,7 +2,9 @@ export const pages = {
 	streamLinks: "/release/",
 	descriptorLinks: "/release/",
 	trackTime: "/release/",
+	releaseComments: "/release/",
 	releaseSubmission: "/releases/ac",
+	artistSubmission: "/artist/profile_ac",
 	coverArt: "/images/upload",
 	userReception: "/release/",
 	whoSampled: "/release/",
@@ -12,11 +14,14 @@ export const pages = {
 	userCollection: "/collection",
 	filmCollection: "/film_collection",
 	userPage: "/~",
+	listComments: "/list/",
 	voteHistoryGenres: "/rgenre/vote_history",
 	voteHistoryDescriptors: "/rdescriptor/vote_history",
 	streamLinkMissing: "/misc/media_link_you_know",
 	searchBar: "/",
+	searchFocus: "/",
 	genreChartControls: "/genre/",
+	artistSearchHint: "/artist/",
 	timeline: "/artist/",
 	map: "/artist/",
 	hideVotes: "/r",
@@ -34,7 +39,9 @@ export const pageLabels: Record<PageKey, string> = {
 	streamLinks: "Attempt to Add Streaming Links",
 	descriptorLinks: "Descriptor Links",
 	trackTime: "Release Length to Hours Conversion",
+	releaseComments: "Load All Release Comments",
 	releaseSubmission: "Release Submission Helper",
+	artistSubmission: "Artist Location Clear Buttons",
 	coverArt: "Cover Art Submission Helper",
 	userReception: "User Reception",
 	whoSampled: "WhoSampled Link",
@@ -44,11 +51,14 @@ export const pageLabels: Record<PageKey, string> = {
 	userCollection: "Music Collection Enhancements",
 	filmCollection: "Film Collection Enhancements",
 	userPage: "User Page Enhancements",
+	listComments: "List Comment Enhancements",
 	voteHistoryGenres: "Enhancements for Music and Film Genre Vote History",
 	voteHistoryDescriptors: "Enhancements for Descriptor Vote History",
 	streamLinkMissing: 'Filtering in "Media Link You Know" List',
 	searchBar: "Search Bar Shortcuts",
+	searchFocus: "Focus Search",
 	genreChartControls: "Genre Chart Controls",
+	artistSearchHint: "Artist Search Hint",
 	timeline: "Artist Timeline",
 	map: "Artist Location Map",
 	hideVotes: "Hide Votes on Genre/Descriptor Pages",
@@ -62,7 +72,7 @@ export const pageLabels: Record<PageKey, string> = {
 
 export const featureGroups: readonly (readonly [string, readonly PageKey[]])[] =
 	[
-		["Search and navigation", ["searchBar"]],
+		["Search and navigation", ["searchBar", "searchFocus"]],
 		[
 			"Charts",
 			[
@@ -77,6 +87,7 @@ export const featureGroups: readonly (readonly [string, readonly PageKey[]])[] =
 			[
 				"streamLinks",
 				"trackTime",
+				"releaseComments",
 				"releaseSubmission",
 				"imageCropper",
 				"coverArt",
@@ -92,12 +103,16 @@ export const featureGroups: readonly (readonly [string, readonly PageKey[]])[] =
 				"userCollection",
 				"filmCollection",
 				"userPage",
+				"listComments",
 				"streamLinkMissing",
 				"voteHistoryGenres",
 				"voteHistoryDescriptors",
 			],
 		],
-		["Artist profiles", ["timeline", "map"]],
+		[
+			"Artist profiles",
+			["artistSearchHint", "timeline", "map", "artistSubmission"],
+		],
 		[
 			"Content visibility",
 			["hideRatings", "hideReviews", "hideCommentBoxes", "hideVotes"],
@@ -111,8 +126,12 @@ export const pageHints: Record<PageKey, string> = {
 		"Turns each descriptor tag into a clickable link to the RYM top charts filtered by that descriptor.",
 	trackTime:
 		"Reformats the tracklist total length from MM:SS to H:MM:SS when the total exceeds one hour.",
+	releaseComments:
+		"Loads all release comments in batches with a random 750-850 ms pause between requests. Click Stop loading to stop the loop.",
 	releaseSubmission:
 		"Pre-fills the release submission form with data found on the provided page.",
+	artistSubmission:
+		"Adds clear buttons for origin, current, and relevant locations when submitting or editing artist profiles.",
 	coverArt: "Adds download controls to the cover art upload page.",
 	userReception:
 		"Summarizes the release's rating distribution into a user reception meter and ranked categories.",
@@ -126,7 +145,10 @@ export const pageHints: Record<PageKey, string> = {
 		"Adds configurable filters, columns, and page-size controls to music collections.",
 	filmCollection:
 		"Adds configurable filters, columns, and page-size controls to film collections.",
-	userPage: "Adds edit buttons for favorite artists and other comments.",
+	userPage:
+		"Adds profile edit buttons and shows whether other users follow you, with a one-minute cache.",
+	listComments:
+		"Makes list comments wider and taller, improves readability, enlarges the editor, and adds top/bottom scroll controls.",
 	voteHistoryGenres:
 		"Adds history navigation and a searchable genre selector dropdown to music and film genre vote history pages.",
 	voteHistoryDescriptors:
@@ -134,8 +156,11 @@ export const pageHints: Record<PageKey, string> = {
 	streamLinkMissing:
 		'Adds filtering controls to the "Media Link You Know" submission list.',
 	searchBar: "Adds shortcuts to the site-wide search bar.",
+	searchFocus:
+		"Press / to open and focus the site-wide search bar when not typing in another field.",
 	genreChartControls:
 		"Adds chart controls to music genre pages and film genre pages, and links film chart genres to their film genre pages.",
+	artistSearchHint: "Shows the artist's search hint below their name",
 	timeline:
 		"On artist pages, adds an inline timeline visualizing member activity and discography.",
 	map: "On artist pages, adds an interactive map showing concert locations.",
@@ -155,6 +180,7 @@ export const pageHints: Record<PageKey, string> = {
 // Page keys whose features are global and should not affect the toolbar icon
 export const globalPageKeys = new Set<PageKey>([
 	"searchBar",
+	"searchFocus",
 	"hideRatings",
 	"hideReviews",
 ]);

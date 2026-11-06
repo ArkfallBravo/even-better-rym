@@ -11,7 +11,7 @@ import { isComplete } from "~/shared/utils/one-shot";
 
 import type { CapitalizationType } from "../utils/capitalization";
 import { CAPITALIZATION_TYPES } from "../utils/capitalization";
-import { fill } from "../utils/fillers";
+import { importRelease } from "../utils/import-release";
 import type { ReleaseOptions } from "../utils/types";
 
 export default async function injectImportControls() {
@@ -25,25 +25,29 @@ export default async function injectImportControls() {
 function Import() {
 	const { info, setInfo, fetchInfo } = useReleaseInfo();
 	const [formOptions, setFormOptions] = useState(DEFAULT_FORM_OPTIONS);
+	const [importError, setImportError] = useState<string>();
 
 	const fetchInfoOuter = useCallback(
 		async (url: string, service: Service & Resolvable) => {
-			const resolvedInfo = await fetchInfo(url, service);
-			if (isComplete(resolvedInfo)) {
-				fill(resolvedInfo.data, formOptions);
-				setInfo(resolvedInfo);
-
-				// emit import event
-				const importEvent = new CustomEvent<ResolveData>("importEvent", {
-					detail: resolvedInfo.data,
-				});
-				document.dispatchEvent(importEvent);
-
-				if (formOptions.downloadArt && resolvedInfo.data.coverArt) {
-					const filename = getFilename(resolvedInfo.data);
-					await download(
-						resolvedInfo.data.coverArt.map((url) => ({ url, filename })),
+			const info = await fetchInfo(url, service);
+			if (isComplete(info)) {
+				setImportError(undefined);
+				try {
+					await importRelease(info.data, formOptions);
+				} catch (error) {
+					console.error("Could not fill imported release", error);
+					setImportError(
+						error instanceof Error ? error.message : String(error),
 					);
+					return;
+				} finally {
+					// The checkmark waits until the form has been filled.
+					setInfo(info);
+				}
+
+				if (formOptions.downloadArt && info.data.coverArt) {
+					const filename = getFilename(info.data);
+					await download(info.data.coverArt.map((url) => ({ url, filename })));
 				}
 			}
 		},
@@ -64,6 +68,7 @@ function Import() {
 				>
 					<ImportOptionsForm onOptionsUpdate={setFormOptions} />
 				</ServiceLinkForm>
+				{importError && <div role="alert">{importError}</div>}
 			</div>
 		</>
 	);
@@ -133,7 +138,7 @@ function ImportOptionsForm({
 						flexDirection: "column",
 						gap: 4,
 						alignItems: "center",
-						width: 384,
+						width: "100%",
 						marginTop: "0.5em",
 					}}
 				>
@@ -225,6 +230,7 @@ const FIELDS_MAP: Record<FillField, string> = {
 	attributes: "Issue Attributes",
 	tracks: "Tracklist",
 	countries: "Countries Issued",
+	credits: "Credits",
 };
 
 const DEFAULT_FORM_OPTIONS: ImportOptions = {

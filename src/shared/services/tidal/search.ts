@@ -7,16 +7,14 @@ type TidalAlbum = {
 	id: string;
 };
 
-type TidalSearchResult = {
-	relationships?: {
-		albums?: {
-			data?: TidalAlbum[];
-		};
-	};
-};
-
 type TidalSearchResponse = {
-	data?: TidalSearchResult[];
+	data?: {
+		relationships?: {
+			albums?: {
+				data?: TidalAlbum[];
+			};
+		};
+	}[];
 };
 
 export const search: SearchFunction = async ({

@@ -93,11 +93,14 @@ export const forceQuerySelector =
 		return element;
 	};
 
-export const runScript = (script: string): void => {
+// Runs script in the page's own world. It finishes before returning; the
+// promise matches the async signature upstream's callers await.
+export const runScript = (script: string): Promise<void> => {
 	const element = document.createElement("script");
 	element.textContent = script;
 	(document.head ?? document.documentElement).append(element);
 	element.remove();
+	return Promise.resolve();
 };
 
 // Builds a page-world polling script for `runScript` - retries `isReadyExpression`

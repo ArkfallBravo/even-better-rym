@@ -8,105 +8,100 @@
 //
 // ----------------------------------------------------------------------- //
 
-export const TRACK_NUMBER_REGEX = /"trackNumber":(\d+)/g;
-const SUBTITLE_LINKS_KEY = '"subtitleLinks":[';
+type JsonObject = Record<string, unknown>;
 
-type SubtitleLink = { title?: string };
+const isObject = (value: unknown): value is JsonObject =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
 
-// Returns the index of the first bracket closing one opened before
-// startIndex, skipping brackets inside JSON strings, or -1 if there is none.
-const findUnmatchedCloseIndex = (text: string, startIndex: number): number => {
-	let depth = 0;
-	let inString = false;
-	for (let i = startIndex; i < text.length; i++) {
-		const char = text[i];
-		if (inString) {
-			if (char === "\\") {
-				i += 1;
-			} else if (char === '"') {
-				inString = false;
-			}
-			continue;
-		}
-		if (char === '"') {
-			inString = true;
-		} else if (char === "[" || char === "{") {
-			depth += 1;
-		} else if (char === "]" || char === "}") {
-			depth -= 1;
-			if (depth < 0) return i;
-		}
-	}
-	return -1;
-};
-
-// Returns the index of the brace closing the object startIndex is inside, or
-// the text's length if it's never closed.
-const findEnclosingObjectEnd = (text: string, startIndex: number): number => {
-	const closeIndex = findUnmatchedCloseIndex(text, startIndex);
-	return closeIndex === -1 ? text.length : closeIndex;
-};
-
-// Returns the index just past the bracket closing the one at openIndex, or
-// -1 if it's never closed.
-const findMatchingBracketEnd = (text: string, openIndex: number): number => {
-	const closeIndex = findUnmatchedCloseIndex(text, openIndex + 1);
-	return closeIndex === -1 ? -1 : closeIndex + 1;
-};
-
-// Returns every artist name in the text's first subtitleLinks array.
-const parseSubtitleLinkTitles = (trackObjectText: string): string[] => {
-	const keyIndex = trackObjectText.indexOf(SUBTITLE_LINKS_KEY);
-	if (keyIndex === -1) return [];
-
-	const arrayStart = keyIndex + SUBTITLE_LINKS_KEY.length - 1;
-	const arrayEnd = findMatchingBracketEnd(trackObjectText, arrayStart);
-	if (arrayEnd === -1) return [];
-
-	const links = JSON.parse(
-		trackObjectText.slice(arrayStart, arrayEnd),
-	) as SubtitleLink[];
-	return links
-		.map((link) => link.title)
-		.filter((title): title is string => title !== undefined);
-};
-
-// Returns the artist names in the album header, the script's first
-// subtitleLinks array.
-export const getAlbumHeaderArtists = (scriptText: string): string[] =>
-	parseSubtitleLinkTitles(scriptText);
-
-export const extractTrackArtists = (
-	scriptText: string,
-	trackNumberMatch: RegExpMatchArray,
-): string[] => {
-	if (trackNumberMatch.index === undefined) return [];
-
-	const objectStart = trackNumberMatch.index + trackNumberMatch[0].length;
-	const objectEnd = findEnclosingObjectEnd(scriptText, objectStart);
-	const trackObjectText = scriptText.slice(objectStart, objectEnd);
-	return parseSubtitleLinkTitles(trackObjectText);
-};
+function readArtists(value: unknown): string[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((link: unknown) =>
+		isObject(link) && typeof link.title === "string" ? [link.title] : [],
+	);
+}
 
 export const findTrackLockupScriptText = (
 	document_: Document,
-): string | undefined => {
-	for (const script of document_.querySelectorAll("script")) {
-		if (script.text.includes("track-lockup")) return script.text;
+): string | undefined =>
+	[...document_.querySelectorAll("script")].find((script) =>
+		script.text.includes("track-lockup"),
+	)?.text;
+
+// Parses the track-lockup script, or returns undefined if it's missing or
+// isn't valid JSON.
+function parseLockupScript(scriptText: string | undefined): unknown {
+	if (scriptText === undefined) {
+		return undefined;
+	}
+	try {
+		return JSON.parse(scriptText);
+	} catch (error) {
+		if (!(error instanceof SyntaxError)) {
+			throw error;
+		}
+		console.warn(
+			"EvenBetterRYM: could not read Apple Music track artists",
+			error,
+		);
+		return undefined;
+	}
+}
+
+// Returns the elements of an array or the values of an object, in order.
+function getChildValues(value: unknown): unknown[] {
+	if (Array.isArray(value)) {
+		return value;
+	}
+	if (isObject(value)) {
+		return Object.values(value);
+	}
+	return [];
+}
+
+// Returns the artists in the first subtitleLinks array within value, in
+// document order, or undefined if there is none.
+function findFirstSubtitleArtists(value: unknown): string[] | undefined {
+	if (isObject(value) && Array.isArray(value.subtitleLinks)) {
+		return readArtists(value.subtitleLinks);
+	}
+	for (const child of getChildValues(value)) {
+		const names = findFirstSubtitleArtists(child);
+		if (names !== undefined) {
+			return names;
+		}
 	}
 	return undefined;
-};
+}
 
+// Returns the artist names in the album header, the script's first
+// subtitleLinks array. Recommended albums further down carry their own.
+export const getAlbumHeaderArtists = (
+	scriptText: string | undefined,
+): string[] => findFirstSubtitleArtists(parseLockupScript(scriptText)) ?? [];
+
+// Lockups are in album order; trackNumber alone is not unique across discs.
 export const getTrackArtists = (
 	scriptText: string | undefined,
 ): Map<number, string[]> => {
-	const map = new Map<number, string[]>();
-	if (scriptText === undefined) return map;
-	for (const match of scriptText.matchAll(TRACK_NUMBER_REGEX)) {
-		const trackNum = Number.parseInt(match[1], 10);
-		if (map.has(trackNum)) continue;
-		const artists = extractTrackArtists(scriptText, match);
-		if (artists.length > 0) map.set(trackNum, artists);
+	const artists = new Map<number, string[]>();
+	const data = parseLockupScript(scriptText);
+	if (data === undefined) {
+		return artists;
 	}
-	return map;
+	let position = 0;
+	const visit = (value: unknown): void => {
+		if (Array.isArray(value)) {
+			value.forEach(visit);
+		} else if (isObject(value)) {
+			if (typeof value.trackNumber === "number") {
+				position += 1;
+				const names = readArtists(value.subtitleLinks);
+				if (names.length > 0) artists.set(position, names);
+				return;
+			}
+			Object.values(value).forEach(visit);
+		}
+	};
+	visit(data);
+	return artists;
 };

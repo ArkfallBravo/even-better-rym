@@ -20,6 +20,7 @@ import {
 	clearRemovedChoices,
 	getChosenEntries,
 	getPickedChoice,
+	getReleaseArtistCreditName,
 	getReleaseArtistLabels,
 	getRepeatedIndexes,
 	getUnchosenIds,
@@ -35,19 +36,56 @@ import {
 const ENTRY_A = { id: "1", name: "Beyoncé" };
 const ENTRY_B = { id: "2", name: "AC/DC" };
 const ENTRY_C = { id: "3", name: "Tom Schley" };
+const LOCALIZED_ARTIST_NAMES = [
+	["劣", "Lie"],
+	["坂本龍一", "Ryuichi Sakamoto"],
+	["きのこ帝国", "Kinoko Teikoku"],
+	["소녀시대", "Girls' Generation"],
+	["鄧麗君", "Teresa Teng"],
+	["أم كلثوم", "Umm Kulthum"],
+	["עפרה חזה", "Ofra Haza"],
+	["Μίκης Θεοδωράκης", "Mikis Theodorakis"],
+	["लता मंगेशकर", "Lata Mangeshkar"],
+] as const;
 
 describe("parseArtistTokenId", () => {
 	test("reads the id from an artist token", () => {
 		expect(parseArtistTokenId(" [Artist67636] ")).toBe("67636");
+		expect(parseArtistTokenId("[Artist1479561,zavet]")).toBe("1479561");
 	});
 
 	test("ignores anything else", () => {
 		expect(parseArtistTokenId("[Label12]")).toBeUndefined();
-		expect(parseArtistTokenId("[Artist12,Name]")).toBeUndefined();
+		expect(parseArtistTokenId("[Artist12,]")).toBeUndefined();
 	});
 });
 
 describe("normalizeArtistName", () => {
+	test.each(
+		LOCALIZED_ARTIST_NAMES,
+	)("ignores romanized display suffixes for %s", (native, romanized) => {
+		expect(normalizeArtistName(`${native} [${romanized}]`)).toBe(
+			normalizeArtistName(native),
+		);
+		expect(normalizeArtistName(`${romanized} [${native}]`)).toBe(
+			normalizeArtistName(romanized),
+		);
+		expect(normalizeArtistName(`${native} [${romanized}]`)).not.toBe(
+			normalizeArtistName(romanized),
+		);
+	});
+
+	test("preserves same-script bracketed names and qualifiers", () => {
+		for (const [name, suffix] of [
+			["The Artist", "Live"],
+			["劣", "別名"],
+		]) {
+			expect(normalizeArtistName(`${name} [${suffix}]`)).not.toBe(
+				normalizeArtistName(name),
+			);
+		}
+	});
+
 	test("ignores case, accents, punctuation and spacing", () => {
 		expect(normalizeArtistName("Beyoncé")).toBe(normalizeArtistName("beyonce"));
 		expect(normalizeArtistName("AC/DC")).toBe(normalizeArtistName("ac dc"));
@@ -57,12 +95,33 @@ describe("normalizeArtistName", () => {
 		expect(normalizeArtistName("坂本 龍一")).toBe("坂本龍一");
 	});
 
+	test("ignores a cross-script localized name in trailing square brackets", () => {
+		expect(normalizeArtistName("Голландский Штурвал")).toBe(
+			normalizeArtistName("Голландский штурвал [Gollandskiy Shturval]"),
+		);
+		expect(normalizeArtistName("Gollandskiy Shturval")).toBe(
+			normalizeArtistName("Gollandskiy Shturval [Голландский штурвал]"),
+		);
+		expect(normalizeArtistName("The Artist")).not.toBe(
+			normalizeArtistName("The Artist [Live]"),
+		);
+	});
+
 	test("falls back to lowercase for punctuation-only names", () => {
 		expect(normalizeArtistName("!!!")).toBe("!!!");
 	});
 });
 
 describe("pairInheritedArtists", () => {
+	test.each(
+		LOCALIZED_ARTIST_NAMES,
+	)("pairs %s with its romanized RYM display name", (name, romanized) => {
+		const entry = { id: "2068672", name: `${name} [${romanized}]` };
+		expect(pairInheritedArtists([name], [entry])).toEqual(
+			new Map([[name, { kind: "inherited", entry }]]),
+		);
+	});
+
 	test("pairs loosely matching names with parent entries", () => {
 		expect(
 			pairInheritedArtists(["beyonce", "Someone"], [ENTRY_A, ENTRY_B]),
@@ -77,6 +136,20 @@ describe("pairInheritedArtists", () => {
 
 	test("doesn't pair different names", () => {
 		expect(pairInheritedArtists(["Thom Schley"], [ENTRY_C]).size).toBe(0);
+	});
+
+	test("pairs a source artist with a RYM name's cross-script localization", () => {
+		const localizedEntry = {
+			id: "42",
+			name: "Голландский штурвал [Gollandskiy Shturval]",
+		};
+		expect(
+			pairInheritedArtists(["Голландский Штурвал"], [localizedEntry]),
+		).toEqual(
+			new Map([
+				["Голландский Штурвал", { kind: "inherited", entry: localizedEntry }],
+			]),
+		);
 	});
 });
 
@@ -139,6 +212,108 @@ describe("orderFiledUnderIds", () => {
 });
 
 describe("getReleaseArtistLabels", () => {
+	test.each(
+		LOCALIZED_ARTIST_NAMES,
+	)("keeps default crediting for %s with a romanized RYM display name", (name, romanized) => {
+		for (const kind of ["linked", "inherited"] as const) {
+			const choices: ReleaseArtistChoices = new Map([
+				[
+					name,
+					{ kind, entry: { id: "2068672", name: `${name} [${romanized}]` } },
+				],
+			]);
+			expect(getReleaseArtistCreditName([name], choices)).toBeUndefined();
+			expect(getReleaseArtistLabels(choices)).toEqual(
+				new Map([[name, "[Artist2068672]"]]),
+			);
+		}
+	});
+
+	test("keeps differing credited names while leaving matching artist names canonical", () => {
+		expect(
+			getReleaseArtistLabels(
+				new Map([
+					[
+						"zavet",
+						{ kind: "inherited", entry: { id: "1479561", name: "Kai Angel" } },
+					],
+					[
+						"1000 Eyes",
+						{ kind: "linked", entry: { id: "1639184", name: "1000 Eyes" } },
+					],
+				]),
+			),
+		).toEqual(
+			new Map([
+				["zavet", "[Artist1479561,zavet]"],
+				["1000 Eyes", "[Artist1639184]"],
+			]),
+		);
+	});
+
+	describe("getReleaseArtistCreditName", () => {
+		test.each([
+			"linked",
+			"inherited",
+		] as const)("uses the imported alias for a single %s artist", (kind) => {
+			expect(
+				getReleaseArtistCreditName(
+					["zavet"],
+					new Map([
+						["zavet", { kind, entry: { id: "1479561", name: "Kai Angel" } }],
+					]),
+				),
+			).toBe("zavet");
+		});
+
+		test("keeps the default for normalized matches, unpicked names, and skipped artists", () => {
+			expect(
+				getReleaseArtistCreditName(
+					["beyonce"],
+					new Map([["beyonce", { kind: "linked", entry: ENTRY_A }]]),
+				),
+			).toBeUndefined();
+			expect(getReleaseArtistCreditName(["zavet"], new Map())).toBeUndefined();
+			expect(
+				getReleaseArtistCreditName(
+					["zavet"],
+					new Map([["zavet", { kind: "skipped" }]]),
+				),
+			).toBeUndefined();
+		});
+
+		test("does not turn a localized RYM name into a credited alias", () => {
+			const importedName = "Голландский Штурвал";
+			const entry = {
+				id: "42",
+				name: "Голландский штурвал [Gollandskiy Shturval]",
+			};
+			const choices = new Map([
+				[importedName, { kind: "linked" as const, entry }],
+			]);
+			expect(
+				getReleaseArtistCreditName([importedName], choices),
+			).toBeUndefined();
+			expect(getReleaseArtistLabels(choices)).toEqual(
+				new Map([[importedName, "[Artist42]"]]),
+			);
+		});
+
+		test("does not invent a combined custom name for multiple artists", () => {
+			expect(
+				getReleaseArtistCreditName(
+					["zavet", "Other"],
+					new Map([
+						[
+							"zavet",
+							{ kind: "linked", entry: { id: "1479561", name: "Kai Angel" } },
+						],
+					]),
+				),
+			).toBeUndefined();
+		});
+	});
+
 	test("labels linked and inherited artists with tokens, skipped by name", () => {
 		const choices: ReleaseArtistChoices = new Map([
 			["A", { kind: "linked", entry: ENTRY_A }],
@@ -148,8 +323,8 @@ describe("getReleaseArtistLabels", () => {
 
 		expect(getReleaseArtistLabels(choices)).toEqual(
 			new Map([
-				["A", "[Artist1]"],
-				["B", "[Artist2]"],
+				["A", "[Artist1,A]"],
+				["B", "[Artist2,B]"],
 				["C", "C"],
 			]),
 		);
@@ -223,7 +398,7 @@ describe("getPickedChoice", () => {
 describe("applyFiledUnderChange", () => {
 	const ARTISTS = { names: ["A", "B", "C"], parentEntries: [ENTRY_A] };
 
-	test("links a new artist to the active row and moves to the next unpicked row", () => {
+	test("links only the active row without starting another artist selection", () => {
 		const state: ReleasePickerState = {
 			choices: new Map([["A", { kind: "skipped" }]]),
 			activeName: "B",
@@ -240,7 +415,7 @@ describe("applyFiledUnderChange", () => {
 				["A", { kind: "skipped" }],
 				["B", { kind: "linked", entry: ENTRY_B }],
 			]),
-			activeName: "C",
+			activeName: undefined,
 		});
 	});
 
@@ -271,7 +446,7 @@ describe("applyFiledUnderChange", () => {
 				{ added: [ENTRY_B], presentIds: new Set(["2"]) },
 				ARTISTS,
 			).activeName,
-		).toBe("A");
+		).toBeUndefined();
 	});
 
 	test("clears a removed artist's row so it can be picked again", () => {

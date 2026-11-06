@@ -14,8 +14,11 @@ export const fetch = async (data: FetchRequest["data"]): Promise<string> => {
 	try {
 		const url = new URL(data.url);
 		if (data.urlParameters) {
-			for (const [key, value] of Object.entries(data.urlParameters))
-				url.searchParams.append(key, value);
+			for (const [key, value] of Object.entries(data.urlParameters)) {
+				if (value != null) {
+					url.searchParams.append(key, value);
+				}
+			}
 		}
 		const response = await globalThis.fetch(url.toString(), {
 			method: data.method,
@@ -94,11 +97,13 @@ export const fetchInPage = async (
             const req = JSON.parse(decodeURIComponent(escape(atob("${serialized}"))));
             const u = new URL(req.url);
             if (req.urlParameters) {
-              for (const [k,v] of Object.entries(req.urlParameters))
-                u.searchParams.append(k, v);
+              for (const [k,v] of Object.entries(req.urlParameters)) {
+                if (v != null) u.searchParams.append(k, v);
+              }
             }
             const res = await fetch(u.toString(), {
               method: req.method,
+              body: req.body,
               headers: req.headers,
               credentials: req.credentials,
             });

@@ -21,11 +21,14 @@ import {
 	undoEdit,
 } from "../utils/edit-history";
 import type { ReleaseArtistLabels } from "../utils/release-artist-links";
+import { reportSubmissionError } from "../utils/report-error";
 import {
+	isTracklistEditPending,
 	readTracklistText,
 	watchTracklistEdits,
 	writeTracklistText,
 } from "../utils/simple-tracklist";
+import type { TrackArtistChoices } from "../utils/track-artist-choices";
 import { getInitialTrackChoices } from "../utils/track-artist-choices";
 import type { ArtistLabels } from "../utils/track-artist-links";
 import type {
@@ -47,15 +50,18 @@ export type TracklistHistory = {
 	state: TracklistPickerState;
 	canUndo: boolean;
 	canRedo: boolean;
-	editState: (change: StateChange) => void;
-	reapply: () => void;
+	editState: (change: StateChange, allowUnpicked?: boolean) => void;
 	undo: () => void;
 	redo: () => void;
 };
 
 // Returns the history with any tracklist edit made outside the picker
-// recorded as an undo step.
+// recorded as an undo step. While the picker's own edit is under way, the
+// page doesn't show the current snapshot yet, so nothing is recorded.
 function recordOutsideEdits(history: PickerHistory): PickerHistory {
+	if (isTracklistEditPending()) {
+		return history;
+	}
 	const text = readTracklistText();
 	if (text === history.current.text) {
 		return history;
@@ -63,15 +69,14 @@ function recordOutsideEdits(history: PickerHistory): PickerHistory {
 	return recordEdit(history, { ...history.current, text });
 }
 
-// Writes the current snapshot's tracklist to the page, and returns the
-// history with that snapshot holding the text as RYM shows it, since RYM
-// trims each field when it rebuilds the rows.
-function showCurrent(history: PickerHistory): PickerHistory {
-	writeTracklistText(history.current.text);
-	return replaceCurrent(history, {
-		...history.current,
-		text: readTracklistText(),
-	});
+// Returns the history with its current snapshot holding the tracklist as
+// RYM shows it, since RYM trims each field when it rebuilds the rows.
+function withShownText(history: PickerHistory): PickerHistory {
+	const text = readTracklistText();
+	if (text === history.current.text) {
+		return history;
+	}
+	return replaceCurrent(history, { ...history.current, text });
 }
 
 // Returns the tracklist picker's state and the functions for changing it,
@@ -81,6 +86,7 @@ function showCurrent(history: PickerHistory): PickerHistory {
 export function useTracklistHistory(
 	session: PickerSession,
 	release: ReleaseArtistLabels,
+	initialChoices?: TrackArtistChoices,
 ): TracklistHistory {
 	const {
 		state: history,
@@ -90,13 +96,27 @@ export function useTracklistHistory(
 		createEditHistory(
 			createPickerState(
 				readTracklistText(),
-				getInitialTrackChoices(session.names, release.names),
+				initialChoices ?? getInitialTrackChoices(session.names, release.names),
 			),
 		),
 	);
 	// Read by the DOM callbacks and the functions below, which outlive renders.
 	const latestReleaseLabels = useRef<ArtistLabels>(release.labels);
 	latestReleaseLabels.current = release.labels;
+
+	// Commits the history, writes its current snapshot's tracklist to the
+	// page, then commits the text as RYM shows it, unless a later write is
+	// still to come.
+	const showCurrent = useCallback(
+		async (history: PickerHistory) => {
+			commit(history);
+			await writeTracklistText(history.current.text);
+			if (!isTracklistEditPending()) {
+				commit(withShownText(latestHistory.current));
+			}
+		},
+		[commit],
+	);
 
 	useEffect(
 		() =>
@@ -111,20 +131,25 @@ export function useTracklistHistory(
 
 	useEffect(() => {
 		const before = recordOutsideEdits(latestHistory.current);
-		commit(showCurrent(reapplyReleaseLabels(before, session, release.labels)));
-	}, [session, release.labels, commit]);
+		void showCurrent(
+			reapplyReleaseLabels(before, session, release.labels),
+		).catch(reportSubmissionError);
+	}, [session, release.labels, showCurrent]);
 
 	const editState = useCallback(
-		(change: StateChange) => {
+		(change: StateChange, allowUnpicked = false) => {
 			const before = recordOutsideEdits(latestHistory.current);
 			const next = applyChoices(
 				change(before.current),
 				session,
 				latestReleaseLabels.current,
+				allowUnpicked,
 			);
-			commit(showCurrent(recordUserChange(before, next)));
+			void showCurrent(recordUserChange(before, next)).catch(
+				reportSubmissionError,
+			);
 		},
-		[session, commit],
+		[session, showCurrent],
 	);
 
 	// Moves through the history and applies the current release labels to the
@@ -132,13 +157,11 @@ export function useTracklistHistory(
 	const restore = useCallback(
 		(step: (history: PickerHistory) => PickerHistory) => {
 			const restored = step(recordOutsideEdits(latestHistory.current));
-			commit(
-				showCurrent(
-					reapplyReleaseLabels(restored, session, latestReleaseLabels.current),
-				),
-			);
+			void showCurrent(
+				reapplyReleaseLabels(restored, session, latestReleaseLabels.current),
+			).catch(reportSubmissionError);
 		},
-		[session, commit],
+		[session, showCurrent],
 	);
 
 	return {
@@ -146,7 +169,6 @@ export function useTracklistHistory(
 		canUndo: canUndo(history),
 		canRedo: canRedo(history),
 		editState,
-		reapply: useCallback(() => editState((state) => state), [editState]),
 		undo: useCallback(() => restore(undoEdit), [restore]),
 		redo: useCallback(() => restore(redoEdit), [restore]),
 	};

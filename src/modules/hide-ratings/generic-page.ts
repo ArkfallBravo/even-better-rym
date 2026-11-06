@@ -46,11 +46,14 @@ export const insertGlobalRatingButton = (): void => {
 	const update = async () => {
 		const enabled = await getModuleEnabled("hideRatings");
 		const label = enabled ? "Disable Hide Ratings" : "Enable Hide Ratings";
-		button.innerHTML = `<span>${label}</span>`;
+		const text = document.createElement("span");
+		text.textContent = label;
+		button.replaceChildren(text);
 		button.setAttribute("aria-label", label);
 		button.setAttribute("title", label);
 	};
 
+	void update();
 	const toggle = async () => {
 		await setModuleEnabled(
 			"hideRatings",
@@ -58,8 +61,10 @@ export const insertGlobalRatingButton = (): void => {
 		);
 		globalThis.location.reload();
 	};
-
-	void update();
-	button.addEventListener("click", () => void toggle());
+	button.addEventListener("click", () => {
+		void toggle().catch((error: unknown) => {
+			console.error("[hide-ratings] Failed to toggle module", error);
+		});
+	});
 	document.body.appendChild(button);
 };

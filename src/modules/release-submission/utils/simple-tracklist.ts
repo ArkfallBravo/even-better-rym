@@ -9,6 +9,7 @@
 // ----------------------------------------------------------------------- //
 
 import { forceQuerySelector } from "~/shared/utils/dom";
+import { createSerialQueue } from "~/shared/utils/serial-queue";
 
 import { showAdvancedTracklist, showSimpleTracklist } from "./page-functions";
 import type { TrackKey } from "./track-artist-links";
@@ -38,6 +39,31 @@ const RESET_SLOT_STYLE: Partial<CSSStyleDeclaration> = {
 	marginLeft: "4px",
 	whiteSpace: "nowrap",
 };
+
+// Runs the tracklist edits one at a time, since each reads the text the
+// previous one left.
+const enqueueEdit = createSerialQueue();
+let pendingEditCount = 0;
+
+// Runs edit once the earlier tracklist edits have finished.
+const enqueueTracklistEdit = async (
+	edit: () => Promise<void>,
+): Promise<void> => {
+	pendingEditCount += 1;
+	try {
+		await enqueueEdit(edit);
+	} finally {
+		pendingEditCount -= 1;
+	}
+};
+
+// Checks whether a tracklist edit is queued or running, in which case the
+// page may not show the latest text yet.
+export const isTracklistEditPending = (): boolean => pendingEditCount > 0;
+
+// Returns once the tracklist edits queued so far have finished.
+export const waitForTracklistEdits = (): Promise<void> =>
+	enqueueTracklistEdit(() => Promise.resolve());
 
 const getRows = (): HTMLTableRowElement[] => [
 	...document.querySelectorAll<HTMLTableRowElement>(
@@ -96,41 +122,62 @@ const writeRowTitles = (titles: Map<TrackKey, string>): void => {
 	}
 };
 
-// Replaces the tracklist through the advanced editor, leaving the simple
-// editor showing.
-const writeThroughAdvanced = (text: string): void => {
-	showAdvancedTracklist();
-	forceQuerySelector<HTMLTextAreaElement>(document)(
+// Replaces the advanced editor's text with edit's result, leaving the
+// simple editor showing.
+const editThroughAdvanced = async (
+	edit: (text: string) => string,
+): Promise<void> => {
+	await showAdvancedTracklist();
+	const input = forceQuerySelector<HTMLTextAreaElement>(document)(
 		ADVANCED_INPUT_SELECTOR,
-	).value = text;
-	showSimpleTracklist();
+	);
+	input.value = edit(input.value);
+	await showSimpleTracklist();
 };
 
-// Makes the tracklist hold text. When only titles change in the simple
-// editor, they are written into their inputs, so RYM doesn't rebuild the
-// rows.
-export const writeTracklistText = (text: string): void => {
-	const currentText = readTracklistText();
-	if (currentText === text) {
-		return;
-	}
-	const changedTitles = isAdvancedShowing()
-		? undefined
-		: getChangedTitles(currentText, text);
-	if (changedTitles === undefined) {
-		writeThroughAdvanced(text);
-		return;
-	}
-	writeRowTitles(changedTitles);
-};
+// Replaces the advanced tracklist's text with edit's result, after any
+// earlier edits have finished.
+export const editAdvancedTracklist = (
+	edit: (text: string) => string,
+): Promise<void> => enqueueTracklistEdit(() => editThroughAdvanced(edit));
+
+// Makes the tracklist hold text, after any earlier edits have finished.
+// When only titles change in the simple editor, they are written into their
+// inputs, so RYM doesn't rebuild the rows.
+export const writeTracklistText = (text: string): Promise<void> =>
+	editTracklistText(() => text);
+
+export const editTracklistText = (
+	edit: (text: string) => string,
+): Promise<void> =>
+	enqueueTracklistEdit(async () => {
+		const currentText = readTracklistText();
+		const text = edit(currentText);
+		if (currentText === text) {
+			return;
+		}
+		if (isAdvancedShowing()) {
+			forceQuerySelector<HTMLTextAreaElement>(document)(
+				ADVANCED_INPUT_SELECTOR,
+			).value = text;
+			return;
+		}
+		const changedTitles = getChangedTitles(currentText, text);
+		if (changedTitles === undefined) {
+			await editThroughAdvanced(() => text);
+			return;
+		}
+		writeRowTitles(changedTitles);
+	});
 
 // Calls onChange after a row is added or removed, until the returned
 // function is called.
 export const watchTracklistRows = (onChange: () => void): (() => void) => {
-	const rowParent = forceQuerySelector(document)(
+	const rowParent = document.querySelector(
 		ROW_TEMPLATE_SELECTOR,
-	).parentElement;
-	if (rowParent === null) {
+	)?.parentElement;
+	if (!rowParent) {
+		console.warn("EvenBetterRYM: tracklist row template is unavailable");
 		return () => undefined;
 	}
 	// Only rows, not their contents, so adding reset slots doesn't call onChange.
@@ -142,8 +189,9 @@ export const watchTracklistRows = (onChange: () => void): (() => void) => {
 // Calls onEdit after the user changes a field or a row is added or removed,
 // until the returned function is called.
 export const watchTracklistEdits = (onEdit: () => void): (() => void) => {
-	const editors = forceQuerySelector(document)(SIMPLE_SELECTOR).parentElement;
-	if (editors === null) {
+	const editors = document.querySelector(SIMPLE_SELECTOR)?.parentElement;
+	if (!editors) {
+		console.warn("EvenBetterRYM: tracklist editor is unavailable");
 		return () => undefined;
 	}
 	editors.addEventListener("change", onEdit);

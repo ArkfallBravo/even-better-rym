@@ -18,7 +18,7 @@ const parsers: [TokenType, RegExp][] = [
 	["emoticon", EMOTICON_REGEX],
 	[
 		"romanNumeral",
-		/(?!mi)m*(?:c[dm]|d?c*)(?:x[cl]|l?x*)(?:i[vx]|v?i*)\b(?![''\u2018\u2019])/i,
+		/(?<![\p{L}\p{M}\p{N}_])(?!mi)m*(?:c[dm]|d?c*)(?:x[cl]|l?x*)(?:i[vx]|v?i*)(?![\p{L}\p{M}\p{N}_'\u2018\u2019])/iu,
 	],
 	["word", /[^\s"()/[\]{}“”-]+/],
 	["whitespace", /\s+/],

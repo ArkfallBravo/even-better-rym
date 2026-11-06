@@ -10,6 +10,7 @@
 
 import { equals } from "~/shared/utils/array";
 import { forceQuerySelector, runScript } from "~/shared/utils/dom";
+import { createSerialQueue } from "~/shared/utils/serial-queue";
 
 import type {
 	FiledUnderChanges,
@@ -22,6 +23,7 @@ import {
 	parseArtistTokenId,
 	planFiledUnderChanges,
 } from "./release-artist-links";
+import { reportSubmissionError } from "./report-error";
 
 const LIST_SELECTOR = "#filed_under_performerx";
 const ENTRY_SELECTOR = "li.sortable_filed_under_performer";
@@ -33,6 +35,10 @@ const SEARCH_BUTTON_SELECTOR =
 	"#section_filed_under .gosearch input[type=button]";
 const NOT_SAME_AS_PARENT_SELECTOR = "#filed_under_same_as_parent_no";
 const FILED_UNDER_LABEL = "performer";
+
+// Runs the list edits one at a time, since each reads the list the previous
+// one left.
+const enqueueListEdit = createSerialQueue();
 
 // Returns the entry an element of the filed-under list holds, if it is one.
 const parseEntryElement = (element: Element): FiledUnderEntry | undefined => {
@@ -68,38 +74,41 @@ const getEntryNumber = (element: Element | undefined): string | undefined =>
 	ENTRY_NUMBER_PATTERN.exec(element?.id ?? "")?.[1];
 
 // Removes RYM's row with the given number from the filed-under list.
-const deleteEntryRow = (entryNumber: string | undefined): void => {
+const deleteEntryRow = async (
+	entryNumber: string | undefined,
+): Promise<void> => {
 	if (entryNumber === undefined) {
 		return;
 	}
-	runScript(
+	await runScript(
 		`deleteFiledUnder(${entryNumber}, ${JSON.stringify(FILED_UNDER_LABEL)});`,
 	);
 };
 
 // Removes the entry with the given artist id from the filed-under list.
-export const removeFiledUnderEntry = (id: string): void =>
+const removeFiledUnderEntry = (id: string): Promise<void> =>
 	deleteEntryRow(getEntryNumber(findEntryElement(id)));
 
 // Removes every later copy of an artist listed more than once, since RYM
 // adds an artist again when it is picked while already listed.
-export const removeRepeatedFiledUnderEntries = (): void => {
-	const elements = getEntryElements();
-	const ids = elements.map((element) => parseEntryElement(element)?.id);
-	for (const index of getRepeatedIndexes(ids)) {
-		deleteEntryRow(getEntryNumber(elements[index]));
-	}
-};
+export const removeRepeatedFiledUnderEntries = (): Promise<void> =>
+	enqueueListEdit(async () => {
+		const elements = getEntryElements();
+		const ids = elements.map((element) => parseEntryElement(element)?.id);
+		for (const index of getRepeatedIndexes(ids)) {
+			await deleteEntryRow(getEntryNumber(elements[index]));
+		}
+	});
 
 // Adds the artist to the end of the filed-under list.
-export const addFiledUnderEntry = (entry: FiledUnderEntry): void =>
+const addFiledUnderEntry = (entry: FiledUnderEntry): Promise<void> =>
 	runScript(
 		`addFiledUnder(${JSON.stringify(FILED_UNDER_LABEL)}, ${JSON.stringify(entry.id)}, ${JSON.stringify(entry.name)});`,
 	);
 
 // Moves the entries into the given artist id order and has RYM update the
 // credited name to match.
-export const reorderFiledUnderEntries = (ids: string[]): void => {
+const reorderFiledUnderEntries = async (ids: string[]): Promise<void> => {
 	const list = document.querySelector(LIST_SELECTOR);
 	if (list === null) {
 		return;
@@ -110,52 +119,173 @@ export const reorderFiledUnderEntries = (ids: string[]): void => {
 			list.append(element);
 		}
 	}
-	runScript(`updateFiledUnderOrder(${JSON.stringify(FILED_UNDER_LABEL)});`);
+	await runScript(
+		`updateFiledUnderOrder(${JSON.stringify(FILED_UNDER_LABEL)});`,
+	);
 };
 
-// Applies the changes to the filed-under list.
-const applyFiledUnderChanges = (changes: FiledUnderChanges): void => {
+// Applies the changes to the filed-under list, one at a time.
+const applyFiledUnderChanges = async (
+	changes: FiledUnderChanges,
+): Promise<void> => {
 	for (const id of changes.remove) {
-		removeFiledUnderEntry(id);
+		await removeFiledUnderEntry(id);
 	}
 	for (const entry of changes.add) {
-		addFiledUnderEntry(entry);
+		await addFiledUnderEntry(entry);
 	}
 };
 
 // Reorders the filed-under list so the chosen artists come first, in their
 // chosen order, which is the order RYM credits them in.
-const keepChosenOrder = (chosenEntries: FiledUnderEntry[]): void => {
+const keepChosenOrder = async (
+	chosenEntries: FiledUnderEntry[],
+): Promise<void> => {
 	const currentIds = readFiledUnderEntries().map((entry) => entry.id);
 	const orderedIds = orderFiledUnderIds(
 		currentIds,
 		chosenEntries.map((entry) => entry.id),
 	);
 	if (!equals(orderedIds, currentIds)) {
-		reorderFiledUnderEntries(orderedIds);
+		await reorderFiledUnderEntries(orderedIds);
 	}
 };
 
 // Makes the filed-under list hold the chosen entries first, in order,
-// removing only entries whose ids are in managedIds.
+// removing only entries whose ids are in managedIds, after any earlier edits
+// have finished.
 export const syncFiledUnderEntries = (
 	chosenEntries: FiledUnderEntry[],
 	managedIds: Set<string>,
-): void => {
-	applyFiledUnderChanges(
-		planFiledUnderChanges(readFiledUnderEntries(), {
-			entries: chosenEntries,
-			managedIds,
-		}),
-	);
-	keepChosenOrder(chosenEntries);
+): Promise<void> =>
+	enqueueListEdit(async () => {
+		await applyFiledUnderChanges(
+			planFiledUnderChanges(readFiledUnderEntries(), {
+				entries: chosenEntries,
+				managedIds,
+			}),
+		);
+		await keepChosenOrder(chosenEntries);
+	});
+
+type CreditedName = {
+	useDefault: boolean;
+	first: string;
+	last: string;
 };
 
-// Removes every artist from the filed-under list.
-export const clearFiledUnderEntries = (): void => {
-	for (const entry of readFiledUnderEntries()) {
-		removeFiledUnderEntry(entry.id);
+const showAliasWarning = (
+	field: HTMLInputElement,
+	alias: string,
+	fields: HTMLInputElement[],
+): (() => void) => {
+	const warning = document.createElement("div");
+	warning.className = "ebr-automatic-alias-warning";
+	warning.setAttribute("role", "alert");
+	Object.assign(warning.style, {
+		margin: "8px 0",
+		padding: "8px 10px",
+		background: "#fff0f0",
+		color: "#8a1c1c",
+		border: "1px solid #e5a0a0",
+		borderRadius: "3px",
+		overflowWrap: "anywhere",
+	});
+	warning.textContent = `EvenBetterRYM automatically set the credited artist name to "${alias}". Please check that this alias is correct before submitting.`;
+	const controls = field.closest("table");
+	if (controls) controls.before(warning);
+	else field.insertAdjacentElement("afterend", warning);
+	const removeWarning = () => {
+		warning.remove();
+		for (const input of fields) {
+			input.removeEventListener("input", removeWarning);
+			input.removeEventListener("change", removeWarning);
+		}
+	};
+	for (const input of fields) {
+		input.addEventListener("input", removeWarning);
+		input.addEventListener("change", removeWarning);
 	}
+	return removeWarning;
+};
+
+export function createCreditedNameSync(): (alias: string | undefined) => void {
+	let original: CreditedName | undefined;
+	let written: CreditedName | undefined;
+	let manuallyEdited = false;
+	let removeWarning: (() => void) | undefined;
+	return (alias) => {
+		if (alias === undefined) removeWarning?.();
+		if (manuallyEdited || (alias === undefined && written === undefined))
+			return;
+		const query = forceQuerySelector<HTMLInputElement>(document);
+		const defaultRadio = query("#credited_name_default");
+		const specifiedRadio = query("#credited_name_specified");
+		const first = query("#credited_firstname");
+		const last = query("#credited_lastname");
+		const current = {
+			useDefault: defaultRadio.checked,
+			first: first.value,
+			last: last.value,
+		};
+		if (
+			written !== undefined &&
+			(current.useDefault !== written.useDefault ||
+				current.first !== written.first ||
+				current.last !== written.last)
+		) {
+			manuallyEdited = true;
+			removeWarning?.();
+			return;
+		}
+		if (written === undefined && !current.useDefault) return;
+		const next =
+			alias === undefined
+				? original
+				: { useDefault: false, first: "", last: alias };
+		if (next === undefined) return;
+		original ??= current;
+		const radio = next.useDefault ? defaultRadio : specifiedRadio;
+		if (!radio.checked) radio.click();
+		first.disabled = next.useDefault;
+		last.disabled = next.useDefault;
+		for (const [field, value] of [
+			[first, next.first],
+			[last, next.last],
+		] as const) {
+			if (field.value === value) continue;
+			field.value = value;
+			field.dispatchEvent(new Event("input", { bubbles: true }));
+			field.dispatchEvent(new Event("change", { bubbles: true }));
+		}
+		if (alias === undefined) {
+			original = undefined;
+			written = undefined;
+		} else {
+			written = next;
+			removeWarning?.();
+			removeWarning = showAliasWarning(last, alias, [
+				defaultRadio,
+				specifiedRadio,
+				first,
+				last,
+			]);
+		}
+	};
+}
+
+// Removes every artist from the filed-under list, after any earlier edits
+// have finished.
+export const clearFiledUnderEntries = (): Promise<void> =>
+	enqueueListEdit(async () => {
+		for (const entry of readFiledUnderEntries()) {
+			await removeFiledUnderEntry(entry.id);
+		}
+	});
+
+export const clearFiledUnderSearch = (): void => {
+	forceQuerySelector<HTMLInputElement>(document)(SEARCH_INPUT_SELECTOR).value =
+		"";
 };
 
 // Runs RYM's filed-under artist search for name.
@@ -197,7 +327,8 @@ const getListChange = (
 
 // Calls onChange after each change to the filed-under list, until the
 // returned function is called. Entries the change only moved don't count as
-// added.
+// added. A change made by a list edit is reported once the edit finishes, so
+// the list never looks half-edited.
 export const watchFiledUnderChanges = (
 	onChange: (change: FiledUnderListChange) => void,
 ): (() => void) => {
@@ -206,12 +337,28 @@ export const watchFiledUnderChanges = (
 		return () => undefined;
 	}
 	let knownElements = new Set(getEntryElements());
-	const observer = new MutationObserver(() => {
+	let isReportQueued = false;
+	let isWatching = true;
+	const reportChange = (): Promise<void> => {
+		isReportQueued = false;
+		if (!isWatching) {
+			return Promise.resolve();
+		}
 		const elements = getEntryElements();
 		const change = getListChange(elements, knownElements);
 		knownElements = new Set(elements);
 		onChange(change);
+		return Promise.resolve();
+	};
+	const observer = new MutationObserver(() => {
+		if (!isReportQueued) {
+			isReportQueued = true;
+			void enqueueListEdit(reportChange).catch(reportSubmissionError);
+		}
 	});
 	observer.observe(list, { childList: true, subtree: true });
-	return () => observer.disconnect();
+	return () => {
+		isWatching = false;
+		observer.disconnect();
+	};
 };

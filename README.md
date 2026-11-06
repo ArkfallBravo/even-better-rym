@@ -2,7 +2,7 @@
 
 A browser extension that adds quality-of-life improvements to [RateYourMusic](https://rateyourmusic.com). Forked from the original [better-rym](https://github.com/jgchk/better-rym) to keep things maintained and moving forward. Contributions welcome.
 
-Most of the credit goes to [jgchk](https://github.com/jgchk) and all the beautiful people who maintained and improved it over the years.
+Kudos to [jgchk](https://github.com/jgchk) and all the beautiful people who maintained and improved it over the years.
 
 ## Features
 
@@ -20,6 +20,7 @@ Shows links to supported streaming services below the cover art. Existing RYM li
 
 Paste a supported music-service link to fill in a release submission faster. It can bring in release details and cover art, and adds handy buttons for dates, labels, catalogue numbers, track lengths, and credits.
 
+Now suggests credit links!
 ---
 
 ### Cover Art Submission Helper
@@ -70,6 +71,12 @@ Displays album lengths over an hour in a clearer hours-and-minutes format.
 
 ---
 
+### Load All Release Comments
+
+Adds a **Load all comments** button beside the Comments heading on release pages. Loads batches one at a time with a random 750-850 ms pause between requests and stops if loading stalls. Click **Stop loading** to prevent further requests; any in-flight request can finish. This does not guarantee avoiding site rate limits.
+
+---
+
 ### Media Links Submission Helper
 
 Helps turn supported music-service links into the embed codes needed for media-link submissions.
@@ -87,6 +94,14 @@ The three-dot menu lets you choose which filters to show and, for music, select 
 ### User Page Enhancements
 
 Lets you edit your favorite artists and other comments directly from your profile page.
+
+On other users' profiles, shows **follows you** in green or **does not follow you** in muted red as the bottom row of their profile details. Your followers list is cached for one minute.
+
+---
+
+### List Comment Enhancements
+
+Makes list comments larger and easier to read, with resizable panels, a bigger editor, and **Top/Bottom** scroll buttons.
 
 ---
 
@@ -108,15 +123,32 @@ Adds filters and search to the list of releases missing streaming links.
 
 ---
 
+### Artist Search Hint
+
+Shows RYM's short artist search hint as a subtitle directly below the artist name (initial placement).
+
+---
+
 ### Artist Timeline
 
 Adds a timeline to group pages so you can see when members were active and what they played. Artist pages with shows also include a map of concert locations, including solo artists.
 
 ---
 
+### Artist Location Clear Buttons
+
+Adds a **clear location** button beside each location section when submitting or editing an artist profile.
+---
+
 ### Search Bar Shortcuts
 
 Lets you use RYM markup, such as `[Artist67]` or `[Album42]`, to go straight to a page from the search bar.
+
+---
+
+### Focus Search
+
+Press `/` to open and focus RYM's search bar from any page, without adding `/` to the query.
 
 ---
 
@@ -140,6 +172,7 @@ Hides community rating values while preserving page layout. Configure the suppor
 - **Artist pages** (`/artist/*`) — Ratings remain visible only for releases you have rated. Lazy-loaded discography entries follow the current toggle state.
 - **Charts, homepage, and new releases** — Available rating values are hidden because the page does not provide per-release rating status for the current user.
 - **Automatic Recommendations** (`/recommendations/*`)
+- **Labels and individual classifiers** (`/label/*`, `/classifiers/<name>/`) — Scores and rating bars start hidden, with a floating control to reveal them.
 - **Profiles, collections, and collection reviews** — Ratings remain visible for your own pages and are hidden on other users' pages.
 
 ---
@@ -208,7 +241,7 @@ VITE_TIDAL_SECRET=
 VITE_YOUTUBE_KEY=
 ```
 
-Discogs also has an auth block, but it seems to work without any keys
+Discogs release imports work without credentials. Optionally set `VITE_DISCOGS_KEY` and `VITE_DISCOGS_SECRET` to use application credentials; unset values are omitted from API query parameters.
 
 ### Manifest Version
 
@@ -217,6 +250,11 @@ The extension supports both Manifest V2 and V3. Set the `MANIFEST_VERSION` envir
 ```
 MANIFEST_VERSION=2
 ```
+
+For Firefox submissions, build with `MANIFEST_VERSION=2 npm run build`, then run
+`npx web-ext lint --source-dir dist` (or `npx addons-linter dist` to run the
+underlying validator directly). The build removes Chromium-only offscreen
+APIs from the Firefox bundle; Firefox uses its background document instead.
 
 ### Commands
 

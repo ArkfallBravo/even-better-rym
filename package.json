@@ -1,6 +1,6 @@
 {
 	"name": "even-better-rym",
-	"version": "2.8.2",
+	"version": "3.1.0",
 	"displayName": "EvenBetterRYM",
 	"author": "kknq",
 	"description": "Improvements for RateYourMusic",
@@ -24,6 +24,7 @@
 	},
 	"license": "GPL-3.0-or-later",
 	"dependencies": {
+		"dompurify": "^3.4.17",
 		"get-artist-title": "^1.3.1",
 		"nanoid": "^5.1.6",
 		"preact": "^10.19.2",
@@ -48,6 +49,7 @@
 		"concurrently": "^10.0.3",
 		"eslint": "^10.0.3",
 		"husky": "^9.1.7",
+		"jsdom": "^29.1.1",
 		"postcss-nested": "^7.0.2",
 		"postcss-preset-env": "^11.2.0",
 		"selenium-webdriver": "^4.27.0",

@@ -6,8 +6,10 @@ import type { PageKey } from "~/shared/pages";
 import { featureGroups, pageHints, pageLabels } from "~/shared/pages";
 
 import { CollectionView } from "./collection-view";
+import { ReferenceLinksView } from "./reference-links-view";
 import { ShortcutView } from "./shortcut-view";
 import { styles } from "./styles";
+import { UserPageView } from "./user-page-view";
 import { RatingVisibilityView, ReviewVisibilityView } from "./visibility-view";
 import { VoteVisibilityView } from "./vote-visibility-view";
 
@@ -18,7 +20,9 @@ type View =
 	| "hideRatings"
 	| "hideReviews"
 	| "hideVotes"
+	| "referenceLinks"
 	| "userCollection"
+	| "userPage"
 	| "filmCollection";
 
 const viewTitles: Record<View, string> = {
@@ -27,7 +31,9 @@ const viewTitles: Record<View, string> = {
 	hideRatings: "Hide Ratings",
 	hideReviews: "Hide Reviews",
 	hideVotes: "Hide Votes",
+	referenceLinks: "External Reference Links",
 	userCollection: "Music Collection",
+	userPage: "User Page Enhancements",
 	filmCollection: "Film Collection",
 };
 
@@ -37,7 +43,9 @@ const viewSubtitles: Record<View, string> = {
 	hideRatings: "Configure visibility",
 	hideReviews: "Configure visibility",
 	hideVotes: "Configure visibility",
+	referenceLinks: "Customize button colors",
 	userCollection: "Customize filters and columns",
+	userPage: "Configure profile features",
 	filmCollection: "Customize filters and columns",
 };
 
@@ -121,7 +129,54 @@ export function App() {
 				onToggleFeature={toggle}
 				onChangeView={setView}
 			/>
+			<nav aria-label="External links" style={styles.externalLinks}>
+				<a
+					href="https://github.com/kknq/even-better-rym"
+					target="_blank"
+					rel="noreferrer"
+					style={styles.externalLink}
+				>
+					<ExternalLinkIcon kind="github" />
+					GitHub
+				</a>
+				<span aria-hidden="true">|</span>
+				<a
+					href="https://rateyourmusic.com/list/kknq/evenbetterrym-browser-extension/"
+					target="_blank"
+					rel="noreferrer"
+					style={styles.externalLink}
+				>
+					<ExternalLinkIcon kind="rym" />
+					RYM List
+				</a>
+				<span aria-hidden="true">|</span>
+				<a
+					href="https://ko-fi.com/kknqqq"
+					target="_blank"
+					rel="noreferrer"
+					style={styles.externalLink}
+				>
+					<ExternalLinkIcon kind="kofi" />
+					Donate
+				</a>
+			</nav>
 		</div>
+	);
+}
+
+function ExternalLinkIcon({
+	kind,
+}: Readonly<{ kind: "github" | "rym" | "kofi" }>) {
+	return (
+		<img
+			src={browser.runtime.getURL(
+				kind === "rym" ? "icons/sonemic-16.png" : `icons/${kind}.svg`,
+			)}
+			width={14}
+			height={14}
+			alt=""
+			style={styles.externalLinkIcon}
+		/>
 	);
 }
 
@@ -143,6 +198,8 @@ function SettingsContent({
 	onChangeView: (view: View) => void;
 }>) {
 	switch (view) {
+		case "userPage":
+			return <UserPageView onSettingsChange={onSettingsChange} />;
 		case "userCollection":
 		case "filmCollection":
 			return (
@@ -153,6 +210,8 @@ function SettingsContent({
 			);
 		case "chartShortcuts":
 			return <ShortcutView onSettingsChange={onSettingsChange} />;
+		case "referenceLinks":
+			return <ReferenceLinksView onSettingsChange={onSettingsChange} />;
 		case "hideRatings":
 			return <RatingVisibilityView onSettingsChange={onSettingsChange} />;
 		case "hideReviews":
@@ -233,14 +292,25 @@ function FeatureList({
 									{(key === "hideRatings" ||
 										key === "hideReviews" ||
 										key === "hideVotes" ||
+										key === "whoSampled" ||
+										key === "wikipedia" ||
 										key === "userCollection" ||
+										key === "userPage" ||
 										key === "filmCollection") && (
 										<button
 											type="button"
-											onClick={() => onChangeView(key)}
+											onClick={() =>
+												onChangeView(
+													key === "whoSampled" || key === "wikipedia"
+														? "referenceLinks"
+														: key,
+												)
+											}
 											style={styles.customizeButton}
 										>
-											Configure
+											{key === "whoSampled" || key === "wikipedia"
+												? "Button colors"
+												: "Configure"}
 										</button>
 									)}
 									<Toggle
@@ -268,15 +338,18 @@ function LoadingIndicator() {
 export function Toggle({
 	checked,
 	onChange,
+	disabled = false,
 }: Readonly<{
 	checked: boolean;
 	onChange: () => void;
+	disabled?: boolean;
 }>) {
 	return (
 		<button
 			type="button"
 			role="switch"
 			aria-checked={checked}
+			disabled={disabled}
 			onClick={onChange}
 			style={{
 				...styles.toggle,

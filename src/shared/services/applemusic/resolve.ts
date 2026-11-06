@@ -113,7 +113,6 @@ const parseLabelAndType = (
 // Only the album header counts: "Various Artists" also shows up on
 // recommended albums further down the page.
 const getIsVariousArtists = (scriptText: string | undefined): boolean =>
-	scriptText !== undefined &&
 	getAlbumHeaderArtists(scriptText)[0] === VARIOUS_ARTISTS;
 
 const resolveAlbumFields = (
@@ -123,12 +122,12 @@ const resolveAlbumFields = (
 	const trackLockupScriptText = findTrackLockupScriptText(document_);
 	const trackArtists = getTrackArtists(trackLockupScriptText);
 	const tracks = release.tracks.map((t, i) => {
-		const position = String(i + 1);
 		const artists = trackArtists.get(i + 1);
 		return {
-			position,
+			position: String(i + 1),
 			title: t.name,
 			duration: ifDefined(convertAppleMusicDuration)(t.duration),
+			...(t.url ? { creditsUrl: t.url } : {}),
 			...(artists !== undefined ? { artists } : {}),
 		};
 	});
@@ -144,6 +143,10 @@ const resolveAlbumFields = (
 		document_.querySelector('button[aria-label$="iTunes Store"]') !== null;
 	if (isDownloadable) attributes.push("downloadable");
 
+	const artists = getIsVariousArtists(trackLockupScriptText)
+		? [VARIOUS_ARTISTS]
+		: release.byArtist.map((a) => a.name);
+
 	const coverArt = asArray(
 		pipe(
 			document_.querySelector<HTMLMetaElement>('meta[property="og:image"]') ??
@@ -153,10 +156,6 @@ const resolveAlbumFields = (
 			),
 		),
 	);
-
-	const artists = getIsVariousArtists(trackLockupScriptText)
-		? [VARIOUS_ARTISTS]
-		: release.byArtist.map((a) => a.name);
 
 	return {
 		artists,

@@ -1,7 +1,11 @@
 import { nanoid } from "nanoid";
 import browser from "webextension-polyfill";
-
+import type { SearchDiagnostic } from "~/modules/spotify-search/messages";
 import type { PageKey } from "~/shared/pages";
+import type {
+	TidalCreditsInput,
+	TidalCreditsResult,
+} from "~/shared/services/tidal/credits-page";
 
 export type FetchRequest = {
 	id: string;
@@ -9,7 +13,7 @@ export type FetchRequest = {
 	data: {
 		url: string;
 		method?: "GET" | "POST";
-		urlParameters?: Record<string, string>;
+		urlParameters?: Record<string, string | null | undefined>;
 		body?: string;
 		headers?: Record<string, string>;
 		credentials?: RequestCredentials;
@@ -70,7 +74,7 @@ export type SpotifySearchRequest = {
 export type SpotifySearchResponse = {
 	id: string;
 	type: "spotifySearch";
-	data: { url?: string; error?: string };
+	data: { url?: string; error?: string; diagnostics?: SearchDiagnostic[] };
 };
 
 export type WikipediaSearchRequest = {
@@ -86,6 +90,18 @@ export type WikipediaSearchResponse = {
 	id: string;
 	type: "wikipediaSearch";
 	data: { url?: string; error?: string };
+};
+
+export type TidalCreditsRequest = {
+	id: string;
+	type: "tidalCredits";
+	data: TidalCreditsInput;
+};
+
+export type TidalCreditsResponse = {
+	id: string;
+	type: "tidalCredits";
+	data: TidalCreditsResult;
 };
 
 export type StorageSetRequest = {
@@ -188,6 +204,7 @@ export type BackgroundRequest =
 	| JsonSettingGetRequest
 	| JsonSettingSetRequest
 	| SpotifySearchRequest
+	| TidalCreditsRequest
 	| WikipediaSearchRequest;
 export type BackgroundResponse =
 	| FetchResponse
@@ -199,6 +216,7 @@ export type BackgroundResponse =
 	| JsonSettingGetResponse
 	| JsonSettingSetResponse
 	| SpotifySearchResponse
+	| TidalCreditsResponse
 	| WikipediaSearchResponse;
 
 export const isBackgroundRequest = (o: unknown): o is BackgroundRequest =>

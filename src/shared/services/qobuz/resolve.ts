@@ -1,97 +1,83 @@
-import { asArray } from "~/shared/utils/array";
-import { formatDuration, stringToDate } from "~/shared/utils/datetime";
-import { fetch } from "~/shared/utils/fetch";
-import { getReleaseType } from "~/shared/utils/music";
-import { isDefined } from "~/shared/utils/types";
-
-import type { ReleaseAttribute, ResolveFunction } from "../types";
-import type { ReleaseData } from "./codec";
-
-const attributes: ReleaseAttribute[] = ["downloadable", "streaming"];
-
-const getArtists = (document_: Document) => {
-	return [...document_.querySelectorAll("li.album-meta__item")]
-		.filter((li) => li.textContent.includes("Main artists:"))
-		.flatMap((li) => [...li.querySelectorAll("a")])
-		.map((element) => element.getAttribute("title")?.trim())
-		.filter(isDefined);
-};
-
-const getCoverArt = (document_: Document) => {
-	const url =
-		document_.querySelector<HTMLImageElement>("img.album-cover__image")?.src ??
-		undefined;
-
-	if (!url) return undefined;
-
-	return url.replace("_600.jpg", "_max.jpg");
-};
-
-const getLabel = (document_: Document) => {
-	return [...document_.querySelectorAll("li.album-about__item")]
-		.find((li) => li.textContent.includes("Label"))
-		?.querySelector("a")
-		?.textContent?.trim();
-};
-
-const getReleaseData = (document_: Document) => {
-	const releaseScript = document_.querySelectorAll<HTMLScriptElement>(
-		'script[type="application/ld+json"]',
-	)[1];
-	if (releaseScript) {
-		return JSON.parse(releaseScript.text) as ReleaseData;
-	}
-
-	throw new Error(`Could not get release data for URL ${document_.URL}`);
-};
-
-const getTracks = (document_: Document) => {
-	return [...document_.querySelectorAll("#playerTracks div.track__items")].map(
-		(element) => {
-			const position = element
-				.querySelector("div.track__item--number")
-				?.textContent?.trim();
-			const title = element.getAttribute("title")?.trim();
-			const durationText = element
-				.querySelector("span.track__item--duration")
-				?.textContent?.trim();
-			const duration = durationText ? formatDuration(durationText) : undefined;
-			return { position, title, duration };
-		},
-	);
-};
+import { secondsToString, stringToDate } from "~/shared/utils/datetime";
+import { getReleaseType, withVersion } from "~/shared/utils/music";
+import type { ResolveFunction } from "../types";
+import { createAlbumLoader } from "./api";
+import { readAlbum } from "./codec";
+import { readTrackCredits } from "./credits";
+import { QOBUZ_ALBUM_REGEX } from "./regex";
 
 export const resolve: ResolveFunction = async (url) => {
-	const path = url
-		.replace(/^https?:\/\/[^/]+\.qobuz\.com\//, "")
-		.replace(/^[a-z]{2}-[a-z]{2}\//, "");
-	const usUrl = `https://www.qobuz.com/us-en/${path}`;
-	const response = await fetch({ url: usUrl });
-	const document_ = new DOMParser().parseFromString(response, "text/html");
-	const releaseData = getReleaseData(document_);
-
-	const title = releaseData.name;
-	const artists = getArtists(document_);
-	const date = releaseData.datePublished
-		? stringToDate(releaseData.datePublished)
-		: undefined;
-	const tracks = getTracks(document_);
-	const type = getReleaseType(title, tracks.length);
-	const coverArt = asArray(getCoverArt(document_));
-	const labelName = getLabel(document_);
-
-	const label = labelName ? { name: labelName } : undefined;
-
+	const match = QOBUZ_ALBUM_REGEX.exec(url);
+	const id = match?.[1] ?? match?.[2];
+	if (!id) throw new Error("Unsupported Qobuz album URL");
+	const usUrl = match?.[2]
+		? `https://www.qobuz.com/us-en/album/-/${id}`
+		: url
+				.replace(/^http:/, "https:")
+				.replace(/(?<=qobuz\.com\/)[a-z]{2}-[a-z]{2}/i, "us-en")
+				.split(/[?#]/)[0];
+	const load = await createAlbumLoader(id);
+	const album = readAlbum(await load(0), id, 0);
+	const artists = [
+		...new Set([
+			...(album.artist ? [album.artist.name] : []),
+			...album.artists
+				.filter((artist) => artist.roles.includes("main-artist"))
+				.map((artist) => artist.name),
+		]),
+	];
+	if (artists.length === 0)
+		throw new Error("Could not find Qobuz album artists");
+	const tracks = [...album.tracks];
+	const trackIds = new Set(tracks.map((track) => track.id));
+	if (tracks.length === 0 || trackIds.size !== tracks.length) {
+		throw new Error("Qobuz returned an incomplete or invalid tracklist");
+	}
+	while (tracks.length < album.tracksCount) {
+		const offset = tracks.length;
+		const page = readAlbum(await load(offset), id, offset);
+		if (
+			page.tracksCount !== album.tracksCount ||
+			page.mediaCount !== album.mediaCount ||
+			page.tracks.length === 0 ||
+			page.tracks.some((track) => trackIds.has(track.id))
+		) {
+			throw new Error("Qobuz returned an incomplete or repeated track page");
+		}
+		for (const track of page.tracks) trackIds.add(track.id);
+		tracks.push(...page.tracks);
+	}
+	if (
+		tracks.length !== album.tracksCount ||
+		trackIds.size !== tracks.length ||
+		tracks.some((track) => track.media_number > album.mediaCount)
+	) {
+		throw new Error("Qobuz returned an incomplete or invalid tracklist");
+	}
+	if (album.date && Number.isNaN(Date.parse(album.date))) {
+		throw new Error("Could not parse Qobuz release date");
+	}
+	const title = withVersion(album.title, album.version);
 	return {
 		url: usUrl,
 		title,
 		artists,
-		date,
-		type,
+		date: album.date ? stringToDate(album.date) : undefined,
+		type: getReleaseType(title, tracks.length),
 		format: "lossless digital",
-		attributes,
-		tracks,
-		coverArt,
-		label,
+		attributes: ["downloadable", "streaming"],
+		tracks: tracks.map((track) => ({
+			position:
+				album.mediaCount > 1
+					? `${track.media_number}.${track.track_number}`
+					: String(track.track_number),
+			title: withVersion(track.title, track.version),
+			duration: secondsToString(track.duration),
+			...readTrackCredits(track, artists),
+		})),
+		coverArt: album.cover
+			? [album.cover.replace("_600.jpg", "_max.jpg")]
+			: undefined,
+		label: album.label ? { name: album.label } : undefined,
 	};
 };

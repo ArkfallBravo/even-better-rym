@@ -161,7 +161,7 @@ const getStreamingPreferences = async (): Promise<
 		document.addEventListener("StreamingPreferencesEvent", listener);
 	});
 
-	runScript(`
+	await runScript(`
     const streamingPreferences = window.streamingPreferences;
     const __event = new CustomEvent('StreamingPreferencesEvent', { detail: { streamingPreferences } });
     document.dispatchEvent(__event);
@@ -242,7 +242,7 @@ function getLinkData(
 	return null;
 }
 
-function getFullLink(
+export function getFullLink(
 	service: string,
 	linkData: LinkData,
 	streamingPreferences: NormalizedStreamingPreferences,
@@ -255,8 +255,10 @@ function getFullLink(
 
 		case "applemusic": {
 			const data = linkData as AppleMusicLinkData;
-			return `https://music.apple.com/${data.loc}/${
-				data.album ? "album" : "video"
+			const region =
+				streamingPreferences.service_regions.applemusic ?? data.loc;
+			return `https://music.apple.com/${region.toLowerCase()}/${
+				data.album ? "album" : "music-video"
 			}/${data.album ?? data.video}/${data.media_id}`;
 		}
 

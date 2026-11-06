@@ -10,8 +10,14 @@ const hostsArray = [
 	"https://*.bcbits.com/*",
 	"https://www.beatport.com/*",
 	"https://*.beatport.com/*",
+	"https://*.traxsource.com/*",
+	"https://*.nts.live/*",
+	"https://*.ntslive.co.uk/*",
+	"https://*.mixcloud.com/*",
 	"https://deezer.com/*",
+	"https://www.deezer.com/*",
 	"https://api.deezer.com/*",
+	"https://*.dzcdn.net/*",
 	"https://discogs.com/*",
 	"https://*.discogs.com/*",
 	"https://melon.com/*",
@@ -35,11 +41,26 @@ const hostsArray = [
 	"https://en.wikipedia.org/*",
 ];
 
+const spotifyPageErrors = {
+	js: ["src/modules/spotify-search/page-errors.ts"],
+	matches: ["https://open.spotify.com/search/*"],
+	all_frames: true,
+	run_at: "document_start",
+	world: "MAIN",
+} satisfies NonNullable<chrome.runtime.ManifestV3["content_scripts"]>[number];
+
 const sharedManifest = {
 	content_scripts: [
+		spotifyPageErrors,
 		{
 			js: ["src/modules/spotify-search/main.ts"],
 			matches: ["https://open.spotify.com/search/*"],
+			all_frames: true,
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/tidal-credits/main.ts"],
+			matches: ["https://tidal.com/album/*/credits"],
 			all_frames: true,
 			run_at: "document_idle",
 		},
@@ -54,7 +75,17 @@ const sharedManifest = {
 			run_at: "document_start",
 		},
 		{
+			js: ["src/modules/artist-submission/main.ts"],
+			matches: ["*://*.rateyourmusic.com/artist/profile_ac*"],
+			run_at: "document_start",
+		},
+		{
 			js: ["src/modules/search-bar/main.ts"],
+			matches: ["*://*.rateyourmusic.com/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/search-focus/main.ts"],
 			matches: ["*://*.rateyourmusic.com/*"],
 			run_at: "document_start",
 		},
@@ -95,6 +126,18 @@ const sharedManifest = {
 		{
 			js: ["src/modules/track-time/main.ts"],
 			matches: ["*://*.rateyourmusic.com/release/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/release-comments/main.ts"],
+			css: ["src/modules/release-comments/release-comments.css"],
+			matches: ["*://*.rateyourmusic.com/release/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/artist-search-hint/main.ts"],
+			css: ["src/modules/artist-search-hint/artist-search-hint.css"],
+			matches: ["*://*.rateyourmusic.com/artist/*"],
 			run_at: "document_start",
 		},
 		{
@@ -144,6 +187,12 @@ const sharedManifest = {
 		{
 			js: ["src/modules/user-page/main.ts"],
 			matches: ["*://*.rateyourmusic.com/~*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/list-comments/main.ts"],
+			css: ["src/modules/list-comments/list-comments.css"],
+			matches: ["*://*.rateyourmusic.com/list/*"],
 			run_at: "document_start",
 		},
 		{

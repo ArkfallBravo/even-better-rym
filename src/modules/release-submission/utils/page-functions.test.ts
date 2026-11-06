@@ -1,0 +1,286 @@
+// @vitest-environment jsdom
+
+import { runInNewContext } from "node:vm";
+import { afterEach, expect, test, vi } from "vitest";
+import { runScript } from "~/shared/utils/dom";
+import {
+	addArtistCredit,
+	attachCreditRoleSuggestions,
+	updateCreditDetails,
+} from "./page-functions";
+
+vi.mock("~/shared/utils/dom", () => ({ runScript: vi.fn() }));
+
+afterEach(() => {
+	vi.clearAllMocks();
+	document.body.replaceChildren();
+});
+
+test.each([
+	{ id: "1007182", creditedName: undefined, expectedToken: "[Artist1007182]" },
+	{
+		id: "1007182",
+		creditedName: "Different alias",
+		expectedToken: "[Artist1007182,Different alias]",
+	},
+	{
+		id: undefined,
+		creditedName: undefined,
+		expectedToken: "Илья Черепко \\-Самохвалов",
+	},
+])("uses the RYM name for linked previews without changing the credited token ($expectedToken)", async ({
+	id,
+	creditedName,
+	expectedToken,
+}) => {
+	const name = "Илья Черепко \\-Самохвалов";
+	const canonicalName = "Илья Черепко-Самохвалов";
+	const addCredit = vi.fn(
+		(_type: string, artistId: string, displayName: string) => {
+			document.body.innerHTML = `
+			<input id="credits_artist_1">
+			<div id="credits_artist_1_preview"><a></a></div>
+			<input id="credits_roles_1">
+			<input id="credits_tracks_1">
+		`;
+			const field =
+				document.querySelector<HTMLInputElement>("#credits_artist_1");
+			const preview = document.querySelector("#credits_artist_1_preview a");
+			if (!field || !preview) throw new Error("Missing credit DOM");
+			field.value = `[Artist${artistId}]`;
+			preview.textContent = displayName;
+		},
+	);
+	vi.mocked(runScript).mockImplementation((script) =>
+		Promise.resolve().then(() => {
+			runInNewContext(script, {
+				document,
+				credits_num: 1,
+				addCredit,
+				updateArtistPreview: vi.fn(),
+			});
+		}),
+	);
+	await addArtistCredit({
+		id,
+		name,
+		canonicalName,
+		creditedName,
+		role: "composer",
+		tracks: "8",
+	});
+	expect(addCredit).toHaveBeenCalledExactlyOnceWith(
+		"a",
+		id ?? "XXX",
+		id === undefined ? name : canonicalName,
+	);
+	expect(
+		document.querySelector("#credits_artist_1_preview a")?.textContent,
+	).toBe(id === undefined ? name : canonicalName);
+	expect(
+		document.querySelector<HTMLInputElement>("#credits_artist_1")?.value,
+	).toBe(expectedToken);
+});
+
+test("reuses native role suggestions and bridges selections into input/change events only for extension fields", async () => {
+	document.body.innerHTML = `
+		<input id="suggested" data-ebr-credit-role>
+		<input id="native">
+	`;
+	const input = document.querySelector<HTMLInputElement>("#suggested");
+	const native = document.querySelector<HTMLInputElement>("#native");
+	if (!input || !native) throw new Error("Missing role inputs");
+	const onInput = vi.fn();
+	const onChange = vi.fn();
+	input.addEventListener("input", onInput);
+	input.addEventListener("change", onChange);
+	const nativeChanged = vi.fn();
+	native.addEventListener("change", nativeChanged);
+	const choose = vi.fn((value: string) => {
+		if (!page.roleinputEl) throw new Error("No active role input");
+		page.roleinputEl.value = value;
+		return "selected";
+	});
+	const page = {
+		roleinputEl: input,
+		rolechooseSuggestion: choose,
+		roleattachSuggest: vi.fn((id: string) => {
+			const field = document.getElementById(id);
+			if (!(field instanceof HTMLInputElement))
+				throw new Error("Missing role input");
+			page.roleinputEl = field;
+		}),
+	};
+	vi.mocked(runScript).mockImplementation((script) =>
+		Promise.resolve().then(() => {
+			runInNewContext(script, { window: page, Event });
+		}),
+	);
+	await attachCreditRoleSuggestions(input.id);
+	await attachCreditRoleSuggestions(input.id);
+	expect(page.roleattachSuggest).toHaveBeenLastCalledWith(input.id);
+	expect(page.rolechooseSuggestion("producer, mixing")).toBe("selected");
+	expect(input.value).toBe("producer, mixing");
+	expect(onInput).toHaveBeenCalledOnce();
+	expect(onChange).toHaveBeenCalledOnce();
+	expect(choose).toHaveBeenCalledOnce();
+	await attachCreditRoleSuggestions(native.id);
+	page.rolechooseSuggestion("vocals");
+	expect(native.value).toBe("vocals");
+	expect(nativeChanged).not.toHaveBeenCalled();
+	expect(onChange).toHaveBeenCalledOnce();
+});
+
+test.each([
+	{ id: "1479561", creditedName: "zavet", expected: "[Artist1479561,zavet]" },
+	{ id: "1479561", creditedName: undefined, expected: "[Artist1479561]" },
+	{ id: undefined, creditedName: undefined, expected: "zavet" },
+])("writes the exact credited artist token ($expected)", async ({
+	id,
+	creditedName,
+	expected,
+}) => {
+	const preview = vi.fn(() => {
+		expect(
+			document.getElementById("credits_artist_1_preview_formatted"),
+		).not.toBeNull();
+		return document.querySelector<HTMLInputElement>("#credits_artist_1")?.value;
+	});
+	vi.mocked(runScript).mockImplementation((script) =>
+		Promise.resolve().then(() => {
+			runInNewContext(script, {
+				document,
+				credits_num: 1,
+				addCredit: (_type: string, artistId: string) => {
+					document.body.innerHTML = `
+						<div>
+							<input id="credits_artist_1">
+							<div id="credits_artist_1_preview"></div>
+						</div>
+						<input id="credits_roles_1">
+						<input id="credits_tracks_1">
+					`;
+					const field =
+						document.querySelector<HTMLInputElement>("#credits_artist_1");
+					if (field) field.value = `[Artist${artistId}]`;
+				},
+				updateArtistPreview: preview,
+			});
+		}),
+	);
+	await addArtistCredit({
+		id,
+		name: "zavet",
+		creditedName,
+		role: "vocals, producer",
+		tracks: "1, 3",
+	});
+	expect(
+		document.querySelector<HTMLInputElement>("#credits_artist_1")?.value,
+	).toBe(expected);
+	expect(
+		document.querySelector<HTMLInputElement>("#credits_roles_1")?.value,
+	).toBe("vocals, producer");
+	expect(
+		document.querySelector<HTMLInputElement>("#credits_tracks_1")?.value,
+	).toBe("1, 3");
+	if (id !== undefined && creditedName === undefined) {
+		expect(preview).not.toHaveBeenCalled();
+	} else {
+		expect(preview).toHaveBeenCalledExactlyOnceWith(1, "credits");
+		expect(preview).toHaveReturnedWith(expected);
+		expect(
+			document.getElementById("credits_artist_1_preview_formatted")?.style
+				.display,
+		).toBe("none");
+	}
+});
+
+test("reports unavailable native role suggestions", async () => {
+	vi.mocked(runScript).mockImplementation((script) =>
+		Promise.resolve().then(() => {
+			runInNewContext(script, { window: {} });
+		}),
+	);
+	await expect(attachCreditRoleSuggestions("role")).rejects.toThrow(
+		"RYM credit role suggestions are unavailable",
+	);
+});
+
+test("updates existing credit fields without recreating a row or changing native autocomplete focus", async () => {
+	document.body.innerHTML = `
+		<input id="credits_roles_1" value="producer">
+		<input id="credits_tracks_1" value="1">
+		<input id="suggested" data-ebr-credit-role>
+	`;
+	const role = document.querySelector<HTMLInputElement>("#credits_roles_1");
+	const tracks = document.querySelector<HTMLInputElement>("#credits_tracks_1");
+	const focused = document.getElementById("suggested");
+	const page = { roleinputEl: focused };
+	const changed = vi.fn();
+	role?.addEventListener("change", changed);
+	tracks?.addEventListener("change", changed);
+	vi.mocked(runScript).mockImplementation((script) =>
+		Promise.resolve().then(() => {
+			runInNewContext(script, { document, window: page, Event });
+		}),
+	);
+	await updateCreditDetails("1", 'mixing, vocals [as "Example"]', "");
+	expect(role?.value).toBe('mixing, vocals [as "Example"]');
+	expect(tracks?.value).toBe("");
+	expect(changed).toHaveBeenCalledTimes(2);
+	expect(document.getElementById("credits_roles_1")).toBe(role);
+	expect(page.roleinputEl).toBe(focused);
+	await expect(updateCreditDetails("missing", "producer", "")).rejects.toThrow(
+		"Could not find the credit fields",
+	);
+});
+
+test.each([
+	"Matt Redenbo",
+	'[Artist12,Matt "Redenbo"]',
+])("updates the existing credit artist field safely to %j", async (artist) => {
+	document.body.innerHTML = `
+		<div>
+			<input id="credits_artist_1" value="[Artist12]">
+			<div id="credits_artist_1_preview"></div>
+		</div>
+		<input id="credits_roles_1" value="producer">
+		<input id="credits_tracks_1" value="1">
+	`;
+	const field = document.querySelector<HTMLInputElement>("#credits_artist_1");
+	const changed = vi.fn();
+	field?.addEventListener("change", changed);
+	const preview = vi.fn();
+	vi.mocked(runScript).mockImplementation((script) =>
+		Promise.resolve().then(() => {
+			runInNewContext(script, {
+				document,
+				Event,
+				updateArtistPreview: preview,
+			});
+		}),
+	);
+	await updateCreditDetails("1", "recording engineer", "", artist);
+	expect(
+		document.getElementById("credits_artist_1_preview_formatted")?.style
+			.display,
+	).toBe("none");
+	expect(field?.value).toBe(artist);
+	expect(document.getElementById("credits_artist_1")).toBe(field);
+	expect(preview).toHaveBeenCalledExactlyOnceWith("1", "credits");
+	expect(changed).toHaveBeenCalledOnce();
+	expect(
+		document.querySelector<HTMLInputElement>("#credits_roles_1")?.value,
+	).toBe("recording engineer");
+	expect(
+		document.querySelector<HTMLInputElement>("#credits_tracks_1")?.value,
+	).toBe("");
+	field?.remove();
+	await expect(updateCreditDetails("1", "mixing", "2", artist)).rejects.toThrow(
+		"Could not find the credit artist field",
+	);
+	expect(
+		document.querySelector<HTMLInputElement>("#credits_roles_1")?.value,
+	).toBe("recording engineer");
+});

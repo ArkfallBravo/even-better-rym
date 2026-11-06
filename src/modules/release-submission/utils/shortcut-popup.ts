@@ -11,18 +11,47 @@
 
 import { forceQuerySelector } from "~/shared/utils/dom";
 
-import { closeShortcutPopup, openArtistLinkPopup } from "./page-functions";
+import { openArtistLinkPopup } from "./page-functions";
+import { reportSubmissionError } from "./report-error";
 
 const SHORTCUT_FRAME_SELECTOR = "#shortcutsearchframe";
 const ARTIST_SEARCH_URL = "/go/search2?type=shortcutartist&func=";
 const SEARCH_TERM_SELECTOR = "#searchterm";
 const ARTIST_RESULT_SELECTOR = '[onclick*="createShortcut"]';
 const ARTIST_SHORTCUT_CALL_PATTERN = /createShortcut\(\s*'a'\s*,\s*'(\d+)'/;
+const FRAME_LOAD_TIMEOUT_MS = 10_000;
+let searchController: AbortController | undefined;
+
+export function cancelPendingArtistSearch(): void {
+	searchController?.abort();
+}
 
 // Resolves once the frame finishes its next load.
-const waitForFrameLoad = (frame: HTMLIFrameElement): Promise<void> =>
-	new Promise((resolve) => {
-		frame.addEventListener("load", () => resolve(), { once: true });
+const waitForFrameLoad = (
+	frame: HTMLIFrameElement,
+	signal?: AbortSignal,
+): Promise<boolean> =>
+	new Promise((resolve, reject) => {
+		const cleanup = () => {
+			clearTimeout(timeout);
+			frame.removeEventListener("load", loaded);
+			signal?.removeEventListener("abort", aborted);
+		};
+		const loaded = () => {
+			cleanup();
+			resolve(true);
+		};
+		const aborted = () => {
+			cleanup();
+			resolve(false);
+		};
+		const timeout = setTimeout(() => {
+			cleanup();
+			reject(new Error("Artist search timed out"));
+		}, FRAME_LOAD_TIMEOUT_MS);
+		frame.addEventListener("load", loaded, { once: true });
+		signal?.addEventListener("abort", aborted, { once: true });
+		if (signal?.aborted) aborted();
 	});
 
 const getShortcutFrame = (): HTMLIFrameElement =>
@@ -32,67 +61,120 @@ const getShortcutFrame = (): HTMLIFrameElement =>
 export const parseArtistResultId = (onclickText: string): string | undefined =>
 	ARTIST_SHORTCUT_CALL_PATTERN.exec(onclickText)?.[1];
 
+const getArtistResultName = (
+	result: Element,
+	artistId: string,
+): string | undefined => {
+	const container = result.closest("tr, li") ?? result;
+	const name = container
+		.querySelector(`#artistname${artistId}`)
+		?.textContent?.trim()
+		.replace(/\s+/g, " ");
+	if (name) return name;
+	const links = [...container.querySelectorAll("a[href]")];
+	if (container.matches("a[href]")) links.unshift(container);
+	const names = new Set(
+		links
+			.filter((link) => {
+				return /^(?:(?:https?:)?\/\/(?:www\.)?rateyourmusic\.com)?\/artist\//.test(
+					link.getAttribute("href") ?? "",
+				);
+			})
+			.map((link) => link.textContent?.trim().replace(/\s+/g, " "))
+			.filter((name) => name !== undefined && name !== ""),
+	);
+	if (names.size === 1) return [...names][0];
+	return undefined;
+};
+
 // Loads a fresh artist search in the popup and submits it for name.
-export const prefillArtistSearch = async (name: string): Promise<void> => {
+export const prefillArtistSearch = async (
+	name: string,
+	signal?: AbortSignal,
+): Promise<void> => {
 	const frame = getShortcutFrame();
-	const loaded = waitForFrameLoad(frame);
+	const loaded = waitForFrameLoad(frame, signal);
 	frame.src = ARTIST_SEARCH_URL;
-	await loaded;
+	if (!(await loaded)) return;
 
 	const searchInput =
 		frame.contentDocument?.querySelector<HTMLInputElement>(
 			SEARCH_TERM_SELECTOR,
 		);
 	if (searchInput?.form == null) {
-		return;
+		throw new Error("Could not find the artist search form");
 	}
 	searchInput.value = name;
 	searchInput.form.submit();
 };
 
 // Opens the popup beside the anchor element, searching for name.
-export const startArtistSearch = (anchorId: string, name: string): void => {
-	openArtistLinkPopup(anchorId);
-	void prefillArtistSearch(name);
-};
-
-// Searches for the next name, or closes the popup when none are left.
-export const continueArtistSearch = (
+export const startArtistSearch = async (
 	anchorId: string,
-	nextName: string | undefined,
-): void => {
-	if (nextName === undefined) {
-		closeShortcutPopup();
-		return;
+	name: string,
+): Promise<void> => {
+	searchController?.abort();
+	const controller = new AbortController();
+	searchController = controller;
+	const cancel = (event: CustomEvent<{ targetId?: string }>) => {
+		if (event.detail.targetId !== anchorId) controller.abort();
+	};
+	document.addEventListener("EbrShortcutPopupEvent", cancel);
+	try {
+		await openArtistLinkPopup(anchorId);
+		if (!controller.signal.aborted) {
+			await prefillArtistSearch(name, controller.signal);
+		}
+	} finally {
+		document.removeEventListener("EbrShortcutPopupEvent", cancel);
 	}
-	startArtistSearch(anchorId, nextName);
 };
 
 // Calls onPick with the artist id of each result clicked in the popup until
 // the returned function is called. RYM's own inline onclick handlers on the
 // results don't run in Safari, so clicks are read here instead.
 export const watchArtistResultClicks = (
-	onPick: (assocId: string) => void,
+	onPick: (artistId: string, artistName?: string) => void,
+	anchorId: string,
+	onCancel: () => void,
 ): (() => void) => {
 	const frame = getShortcutFrame();
+	let active = true;
+	const handlePopupChange = (event: CustomEvent<{ targetId?: string }>) => {
+		if (event.detail.targetId !== anchorId) {
+			active = false;
+			onCancel();
+		}
+	};
 	const handleClick = (event: MouseEvent) => {
+		if (!active) return;
 		const row = (event.target as Element | null)?.closest(
 			ARTIST_RESULT_SELECTOR,
 		);
 		const assocId = parseArtistResultId(row?.getAttribute("onclick") ?? "");
-		if (assocId === undefined) {
+		if (assocId === undefined || row == null) {
 			return;
 		}
 		event.preventDefault();
 		event.stopPropagation();
-		onPick(assocId);
+		const name = getArtistResultName(row, assocId);
+		if (name === undefined) {
+			reportSubmissionError(
+				new Error("Could not identify the selected RYM artist name"),
+			);
+			return;
+		}
+		active = false;
+		onPick(assocId, name);
 	};
 	const attachToDocument = () =>
 		frame.contentDocument?.addEventListener("click", handleClick, true);
 
 	attachToDocument();
+	document.addEventListener("EbrShortcutPopupEvent", handlePopupChange);
 	frame.addEventListener("load", attachToDocument);
 	return () => {
+		document.removeEventListener("EbrShortcutPopupEvent", handlePopupChange);
 		frame.removeEventListener("load", attachToDocument);
 		frame.contentDocument?.removeEventListener("click", handleClick, true);
 	};

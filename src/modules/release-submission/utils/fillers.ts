@@ -8,7 +8,7 @@ import type {
 	ResolveData,
 	Track,
 } from "~/shared/services/types";
-import { forceQuerySelector, runScript } from "~/shared/utils/dom";
+import { forceQuerySelector } from "~/shared/utils/dom";
 
 import type { FillData } from "../dom";
 import type { CapitalizationType } from "./capitalization";
@@ -17,74 +17,38 @@ import {
 	clearFiledUnderEntries,
 	switchAwayFromSameAsParent,
 } from "./filed-under";
+import { goInfobox } from "./page-functions";
+import { editAdvancedTracklist } from "./simple-tracklist";
 import { formatTracks, getTrackDurations } from "./tracklist";
-import type { ReleaseOptions } from "./types";
 
-export function fill(data: ResolveData, options: ReleaseOptions): void {
-	fillCoreFields(data, options);
-	fillExtraFields(data, options);
-}
+export async function fillArtists(
+	artists: string[],
+	mode: ResolveData["artistMode"] = "search",
+) {
+	if (mode === "text" && artists.length > 0) {
+		forceQuerySelector<HTMLInputElement>(document)(
+			"#filed_under_searchterm",
+		).value = artists.join(", ");
+		dispatchReleaseArtists([]);
+		return;
+	}
 
-function fillCoreFields(data: ResolveData, options: ReleaseOptions): void {
-	// Always runs, so the release-artist picker drops the previous import's
-	// artists even when this import fills none.
-	fillArtists(options.fillFields.artists ? (data.artists ?? []) : []);
-	if (data.type != null && options.fillFields.type) {
-		fillType(data.type);
-	}
-	if (data.date != null && options.fillFields.date) {
-		fillDate(data.date);
-	}
-	if (data.title != null && options.fillFields.title) {
-		fillTitle(data.title, options.capitalization);
-	}
-	if (data.format != null && options.fillFields.format) {
-		fillFormat(data.format);
-	}
-}
-
-function fillExtraFields(data: ResolveData, options: ReleaseOptions): void {
-	if (data.discSize != null && options.fillFields.discSize) {
-		fillDiscSize(data.discSize);
-	}
-	if (data.label != null && options.fillFields.label) {
-		fillLabel(data.label);
-	}
-	if (data.attributes != null && options.fillFields.attributes) {
-		fillAttributes(data.attributes);
-	}
-	if (data.tracks != null && options.fillFields.tracks) {
-		fillTracks(
-			data.tracks,
-			options.capitalization,
-			options.preserveTrackLengths,
-		);
-	}
-	if (data.url !== undefined) {
-		fillSource(data.url);
-	}
-	if (data.countries != null && options.fillFields.countries) {
-		fillCountries(data.countries);
-	}
-}
-
-// Ticks "Various Artists" for a VA release; otherwise hands the artists to
-// the release-artist picker.
-function fillArtists(artists: string[]) {
 	const isVariousArtists = artists[0]?.toLowerCase() === "various artists";
 	if (isVariousArtists) {
 		forceQuerySelector<HTMLInputElement>(document)("#cat_va").click();
 		switchAwayFromSameAsParent();
-		clearFiledUnderEntries();
+		await clearFiledUnderEntries();
 	}
+	dispatchReleaseArtists(isVariousArtists ? [] : artists);
+}
+
+function dispatchReleaseArtists(artists: string[]) {
 	document.dispatchEvent(
-		new CustomEvent<string[]>("releaseArtistsEvent", {
-			detail: isVariousArtists ? [] : artists,
-		}),
+		new CustomEvent<string[]>("releaseArtistsEvent", { detail: artists }),
 	);
 }
 
-function fillType(type: ReleaseType) {
+export function fillType(type: ReleaseType) {
 	const element = forceQuerySelector<HTMLInputElement>(document)(
 		`input#category${TYPE_IDS[type]}`,
 	);
@@ -120,40 +84,44 @@ function fillDay(day: number) {
 		.padStart(2, "0");
 }
 
-function fillTitle(title: string, capitalization: CapitalizationType) {
+export function fillTitle(title: string, capitalization: CapitalizationType) {
 	forceQuerySelector<HTMLInputElement>(document)("#title").value = capitalize(
 		title,
 		capitalization,
 	);
 }
 
-function fillFormat(format: ReleaseFormat) {
+export function fillFormat(format: ReleaseFormat) {
 	forceQuerySelector<HTMLInputElement>(document)(
 		`#format${FORMAT_IDS[format]}`,
 	).checked = true;
 }
 
-function fillDiscSize(discSize: DiscSize) {
+export function fillDiscSize(discSize: DiscSize) {
 	forceQuerySelector<HTMLInputElement>(document)(
 		`#disc_size${DISC_SIZE_IDS[discSize]}`,
 	).checked = true;
 }
 
-function fillLabel(label: ReleaseLabel) {
-	forceQuerySelector<HTMLInputElement>(document)(
-		"#label~table #searchterm",
-	).value = label.name ?? "";
-
-	if (label.name)
+export async function fillLabel(label: ReleaseLabel) {
+	if (label.id !== undefined) {
+		await goInfobox(label.id);
+	} else {
 		forceQuerySelector<HTMLInputElement>(document)(
-			"#label~table .gosearch .btn",
-		).click();
+			"#label~table #searchterm",
+		).value = label.name ?? "";
+
+		if (label.name)
+			forceQuerySelector<HTMLInputElement>(document)(
+				"#label~table .gosearch .btn",
+			).click();
+	}
 
 	forceQuerySelector<HTMLInputElement>(document)("#catalog_no").value =
 		label.catno ?? "";
 }
 
-function fillAttributes(attributes: ReleaseAttribute[]) {
+export function fillAttributes(attributes: ReleaseAttribute[]) {
 	for (const attribute of attributes) fillAttribute(attribute);
 }
 
@@ -163,31 +131,36 @@ function fillAttribute(attribute: ReleaseAttribute) {
 	).checked = true;
 }
 
-function fillTracks(
+export async function fillTracks(
 	tracks: Track[],
 	capitalization: CapitalizationType,
 	preserveTrackLengths: boolean,
 ) {
-	// Use runScript (page world) to click the javascript: href buttons - calling
-	// .click() directly in a content script is blocked by CSP.
-	runScript(`document.querySelector('#goAdvancedBtn').click()`);
-	const trackInput =
-		forceQuerySelector<HTMLTextAreaElement>(document)("#track_advanced");
-	const existingDurations = preserveTrackLengths
-		? getTrackDurations(trackInput.value)
-		: undefined;
-
-	trackInput.value = formatTracks(tracks, capitalization, existingDurations);
-	runScript(`document.querySelector('#goSimpleBtn').click()`);
+	await editAdvancedTracklist((text) => {
+		const existingDurations = preserveTrackLengths
+			? getTrackDurations(text)
+			: undefined;
+		return formatTracks(tracks, capitalization, existingDurations);
+	});
 }
 
-function fillSource(url: string) {
+export function fillSource(url: string) {
 	forceQuerySelector<HTMLTextAreaElement>(document)("#notes").value = url;
 }
 
-function fillCountries(countries: string[]) {
+export function fillCountries(countries: string[]) {
 	forceQuerySelector<HTMLTextAreaElement>(document)("#countries").value =
 		countries.join(", ");
+}
+
+export function fillClassifiers(classifiers: string[]) {
+	const input =
+		forceQuerySelector<HTMLInputElement>(document)("#va_classifiers");
+	for (const classifier of classifiers) {
+		if (!input.value.includes(classifier)) {
+			input.value = [input.value.trim(), classifier].filter(Boolean).join(" ");
+		}
+	}
 }
 
 const TYPE_IDS: Record<ReleaseType, string> = {

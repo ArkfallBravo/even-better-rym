@@ -158,7 +158,7 @@ function applyItem(filterType: FilterType, item: BrowseResult): void {
 	const id = itemId(item);
 	if (!name || id == null) return;
 
-	runScript(`
+	void runScript(`
 		(function () {
 			var chart = window.RYMchart;
 			if (!chart) return;
@@ -179,7 +179,7 @@ function toggleCheckbox(filterType: FilterType, kind: CheckboxKind): void {
 		kind === "sub" ? "onClickBrowserItemSub" : "onClickBrowserItemAll";
 	const id = `page_chart_query_free_section_${filterType}_${suffix}`;
 
-	runScript(`
+	void runScript(`
 		(function () {
 			var checkbox = document.getElementById(${JSON.stringify(id)});
 			if (!checkbox) return;
@@ -193,7 +193,7 @@ function toggleCheckbox(filterType: FilterType, kind: CheckboxKind): void {
 }
 
 function toggleAdvanced(toggle: AdvancedToggle): void {
-	runScript(`
+	void runScript(`
 		(function () {
 			var checkbox = document.getElementById(${JSON.stringify(toggle.id)});
 			if (!checkbox) return;
@@ -225,7 +225,7 @@ function queryNativeBrowser(scope: Scope): Promise<NativeQueryResult> {
 		document.addEventListener(NATIVE_QUERY_EVENT, listener);
 	});
 
-	runScript(`
+	void runScript(`
 		(function () {
 			var browser = window.RYMbrowser;
 			var id = ${JSON.stringify(BROWSER_ID)};
@@ -277,7 +277,7 @@ function findShortcutLabel(input: HTMLInputElement): HTMLElement | null {
 	return section?.querySelector<HTMLElement>(SHORTCUT_LABEL_SELECTOR) ?? null;
 }
 
-function renderHintLines(bindings: ChartShortcutBindings): string {
+function renderHintLines(bindings: ChartShortcutBindings): DocumentFragment {
 	const groups = new Map<ChartShortcutGroup, string[]>();
 
 	for (const action of CHART_SHORTCUT_ACTIONS) {
@@ -290,9 +290,17 @@ function renderHintLines(bindings: ChartShortcutBindings): string {
 		groups.set(action.group, lines);
 	}
 
-	return [...groups.values()]
-		.map((lines) => lines.join("<br>"))
-		.join("<br><br>");
+	const fragment = document.createDocumentFragment();
+	for (const line of [...groups.values()]
+		.map((lines) => lines.join("\n"))
+		.join("\n\n")
+		.split("\n")) {
+		fragment.append(
+			document.createElement("br"),
+			document.createTextNode(line),
+		);
+	}
+	return fragment;
 }
 
 function insertShortcutHint(
@@ -310,7 +318,7 @@ function insertShortcutHint(
 
 	const hintLines = document.createElement("span");
 	hintLines.style.display = "none";
-	hintLines.innerHTML = `<br>${renderHintLines(bindings)}`;
+	hintLines.append(renderHintLines(bindings));
 
 	const toggle = document.createElement("span");
 	toggle.className = "ebr-hint-toggle";
@@ -334,7 +342,7 @@ function resetInput(input: HTMLInputElement): void {
 }
 
 function updateChart(): void {
-	runScript(`
+	void runScript(`
 		if (window.RYMchart && typeof window.RYMchart.onClickCreateChart === "function") {
 			window.RYMchart.onClickCreateChart();
 		}
@@ -376,7 +384,7 @@ function isOtherEditableTarget(
 }
 
 function patchRYMChartRemoval(): void {
-	runScript(
+	void runScript(
 		buildPollForGlobalScript(
 			`window.RYMchart && typeof window.RYMchart.removeBrowserItem === "function"`,
 			`
@@ -409,7 +417,7 @@ function mount(
 	// popup, without requiring a page refresh.
 	subscribeToChartShortcutBindings((bindings) => {
 		comboToAction = buildComboToAction(bindings);
-		if (hintLines) hintLines.innerHTML = `<br>${renderHintLines(bindings)}`;
+		if (hintLines) hintLines.replaceChildren(renderHintLines(bindings));
 	});
 
 	document.addEventListener(

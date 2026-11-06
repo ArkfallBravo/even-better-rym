@@ -13,9 +13,12 @@ import { buildArtistToken } from "./artist-shortcuts";
 import type { ArtistLabels } from "./track-artist-links";
 import { hasSameMembers } from "./track-artist-links";
 
-const ARTIST_TOKEN_ID_PATTERN = /^\[Artist(\d+)]$/;
+const ARTIST_TOKEN_PATTERN = /^\[Artist(\d+)(?:,([^\]\r\n]+))?]$/;
 const DIACRITIC_PATTERN = /\p{M}/gu;
 const NON_ALPHANUMERIC_PATTERN = /[^\p{L}\p{N}]/gu;
+const LATIN_LETTER = /\p{Script=Latin}/u;
+const NON_LATIN_LETTER = /(?!\p{Script=Latin})\p{L}/u;
+const LOCALIZED_NAME_SUFFIX = /^(.+?)\s+\[([^\]]+)\]\s*$/u;
 
 // One artist in RYM's "filed under performer" list.
 export type FiledUnderEntry = {
@@ -37,6 +40,7 @@ export type ReleaseArtistChoices = Map<string, ReleaseArtistChoice>;
 export type ReleaseArtistLabels = {
 	names: string[];
 	labels: ArtistLabels;
+	artistNames?: Map<string, string>;
 };
 
 // The release picker's choices and the row waiting for an artist to be
@@ -65,14 +69,38 @@ export type FiledUnderChanges = {
 	add: FiledUnderEntry[];
 };
 
-// Returns the artist id in an [ArtistNNNN] token, if it is one.
+// Reads an artist token and its optional credited name.
+export const parseArtistToken = (
+	token: string,
+): { id: string; name: string | undefined } | undefined => {
+	const match = ARTIST_TOKEN_PATTERN.exec(token.trim());
+	return match === null ? undefined : { id: match[1], name: match[2] };
+};
+
 export const parseArtistTokenId = (token: string): string | undefined =>
-	ARTIST_TOKEN_ID_PATTERN.exec(token.trim())?.[1];
+	parseArtistToken(token)?.id;
+
+// RYM may add a localized name in brackets after an artist's primary name.
+// Ignore Latin/non-Latin display suffixes without discarding same-script names.
+const getComparableArtistName = (name: string): string => {
+	const match = LOCALIZED_NAME_SUFFIX.exec(name);
+	const primary = match?.[1];
+	const localized = match?.[2];
+	if (
+		primary !== undefined &&
+		localized !== undefined &&
+		((NON_LATIN_LETTER.test(primary) && LATIN_LETTER.test(localized)) ||
+			(LATIN_LETTER.test(primary) && NON_LATIN_LETTER.test(localized)))
+	) {
+		return primary;
+	}
+	return name;
+};
 
 // Returns the name with case, accents, punctuation and spacing removed, or
 // just lowercased if that would leave nothing (e.g. "!!!").
 export const normalizeArtistName = (name: string): string => {
-	const lowercased = name.toLowerCase();
+	const lowercased = getComparableArtistName(name).toLowerCase();
 	const normalized = lowercased
 		.normalize("NFD")
 		.replace(DIACRITIC_PATTERN, "")
@@ -166,10 +194,31 @@ export const getReleaseArtistLabels = (
 	for (const [name, choice] of choices) {
 		labels.set(
 			name,
-			choice.kind === "skipped" ? name : buildArtistToken(choice.entry.id),
+			choice.kind === "skipped"
+				? name
+				: buildArtistToken(
+						choice.entry.id,
+						normalizeArtistName(name) === normalizeArtistName(choice.entry.name)
+							? undefined
+							: name,
+					),
 		);
 	}
 	return labels;
+};
+
+export const getReleaseArtistCreditName = (
+	names: string[],
+	choices: ReleaseArtistChoices,
+): string | undefined => {
+	if (names.length !== 1) return undefined;
+	const name = names[0];
+	const choice = choices.get(name);
+	return choice !== undefined &&
+		choice.kind !== "skipped" &&
+		normalizeArtistName(name) !== normalizeArtistName(choice.entry.name)
+		? name
+		: undefined;
 };
 
 // Returns the choices without the linked or inherited ones whose artist is
@@ -226,8 +275,8 @@ export const getPickedChoice = (
 
 // Returns the picker state after a change to the filed-under list. Rows
 // whose artist was removed are cleared. The first added artist no other row
-// has chosen goes to the active row, and the next unpicked row becomes
-// active; an artist another row has chosen was added by the picker itself.
+// has chosen goes to the active row; an artist another row has chosen was
+// added by the picker itself.
 export const applyFiledUnderChange = (
 	state: ReleasePickerState,
 	change: FiledUnderListChange,
@@ -253,7 +302,7 @@ export const applyFiledUnderChange = (
 	);
 	return {
 		choices: nextChoices,
-		activeName: artists.names.find((name) => !nextChoices.has(name)),
+		activeName: undefined,
 	};
 };
 

@@ -6,29 +6,19 @@ export const backgroundFetch = async ({
 }: FetchRequest): Promise<FetchResponse> => {
 	const urlObject = new URL(url);
 	if (urlParameters) {
-		for (const [key, value] of Object.entries(urlParameters))
-			urlObject.searchParams.append(key, value);
+		for (const [key, value] of Object.entries(urlParameters)) {
+			if (value != null) urlObject.searchParams.append(key, value);
+		}
 	}
 
 	try {
 		const response = await fetch(urlObject.toString(), {
 			method,
+			body,
 			headers,
 			credentials,
-			body,
 		});
 		const responseBody = await response.text();
-		if (!response.ok)
-			return {
-				id,
-				type: "fetch",
-				data: {
-					body: responseBody,
-					status: response.status,
-					statusText: response.statusText,
-					error: `HTTP ${response.status}: ${responseBody}`,
-				},
-			};
 
 		return {
 			id,
@@ -37,6 +27,11 @@ export const backgroundFetch = async ({
 				body: responseBody,
 				status: response.status,
 				statusText: response.statusText,
+				...(response.ok
+					? {}
+					: {
+							error: `HTTP ${response.status}${response.statusText ? `: ${response.statusText}` : ""}`,
+						}),
 			},
 		};
 	} catch (error) {

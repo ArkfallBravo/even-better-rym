@@ -14,6 +14,31 @@ export const styles = {
 		background: "#f2f2f2",
 	} satisfies CSSProperties,
 
+	externalLinks: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 8,
+		padding: "8px 10px 10px",
+		borderTop: "1px solid #e1e1e1",
+		color: "#999",
+		fontSize: 11,
+	} satisfies CSSProperties,
+
+	externalLink: {
+		display: "inline-flex",
+		alignItems: "center",
+		gap: 4,
+		color: "#4286c4",
+		textDecoration: "none",
+	} satisfies CSSProperties,
+
+	externalLinkIcon: {
+		display: "block",
+		flexShrink: 0,
+		objectFit: "contain",
+	} satisfies CSSProperties,
+
 	header: {
 		display: "flex",
 		alignItems: "center",
@@ -132,6 +157,17 @@ export const styles = {
 		background: "#fff",
 		color: "#2a2a2a",
 		fontSize: 12,
+	} satisfies CSSProperties,
+
+	colorInput: {
+		flexShrink: 0,
+		width: 40,
+		height: 28,
+		padding: 2,
+		border: "1px solid #d0d0d0",
+		borderRadius: 4,
+		background: "#fff",
+		cursor: "pointer",
 	} satisfies CSSProperties,
 
 	rowDivider: {
