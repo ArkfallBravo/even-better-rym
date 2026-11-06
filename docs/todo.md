@@ -19,10 +19,10 @@
     kknq's `tracklist-controls.tsx`, which calls `.click()` directly.
     `fillers.ts`' comment says CSP blocks that. Sharing one helper means
     touching kknq's code, so ask first.
-    The upstream picker port (2026-10-07) shares it through
-    `editAdvancedTracklist` (`utils/simple-tracklist.ts`), used by the
-    picker and kknq's `fillTracks`; the fork still has the three copies
-    until that port is merged and synced back.
+    Since the v3.1.0 sync the fork uses upstream's shared
+    `editAdvancedTracklist` (`utils/simple-tracklist.ts`) for the picker and
+    `fillTracks`; kknq's `tracklist-controls.tsx` is the copy left, and it
+    still clicks the switch buttons directly.
   - kknq's `arrayToArtists` (`shared/utils/string.ts`) mutates its input
     with `pop()`, so `buildLinkedTitle` has to copy the list first. Making
     it non-mutating also means touching kknq's code.
@@ -101,16 +101,12 @@
   specific descriptor typed and any browsing done earlier in that page
   session.
 
-- Finish manual Safari testing for the `chart-shortcuts-customization`
-  branch before treating it as done (see `docs/plan.md` for the full
-  design writeup). Confirmed so far via the user's own screenshots/testing:
-  the popup's Customize view, recording a combo, live conflict detection,
-  and rebinding live-updating an already-open chart page (see the bug entry
-  above) all work in the real Safari app. **Not yet confirmed**: native-mirror
-  persistence across a full Safari quit/reopen, survival through Safari's
-  "Clear History" (the entire reason the native mirror exists), and that
-  `Ctrl+Shift+1/2/3` (previously dead on `main`, fixed by this branch's
-  `event.code` switch) actually fire on the real chart page.
+- Two chart-shortcut checks still unconfirmed in Safari (see
+  `docs/archive/chart-shortcuts-customization-2026-08.md`): that
+  `Ctrl+Shift+1/2/3` (dead before the `event.code` switch) fire on a real
+  chart page, and that a changed binding survives a full Safari quit and
+  reopen. Using the shortcuts and surviving "Clear History" were covered by
+  the v3.1.0 sync test (2026-11-06).
 
 - The Mac modifier glyphs (`⌃⌥⇧⌘`) in the shortcut popup still don't fully
   match native macOS menu rendering (2026-08-22): switching the shortcut
@@ -120,21 +116,17 @@
   macOS rendering per the user's own comparison — some rendering-metrics
   gap beyond font-family remains undiagnosed. Currently shipping with a
   space between glyphs (`⌘ ⇧ O`) as a compromise. Revisit only if
-  pixel-exact native fidelity is actually wanted — see `docs/plan.md`'s
-  "Platform-native modifier key labels" entry and `CLAUDE.md`'s note in
+  pixel-exact native fidelity is actually wanted — see the
+  "Platform-native modifier key labels" section of
+  `docs/archive/chart-shortcuts-customization-2026-08.md` and `CLAUDE.md`'s note in
   the chart-shortcuts architecture section.
 
 - Manually verify the platform-native modifier key labels (Option/Control/
   Command off Mac's word form, `⌃⌥⇧⌘` glyphs on Mac) in an actual Safari
   rebuild — not yet confirmed beyond the user's own screenshot comparison
-  of the glyph rendering. See `docs/plan.md`'s "Platform-native modifier
-  key labels" entry for what shipped and why.
-
-- `EvenBetterRYM/project.pbxproj` has an unrelated 5-line uncommitted diff
-  that predates the `chart-shortcuts-customization` session (2026-08-22) —
-  left unstaged both times a commit was made in that repo during that work
-  since it wasn't this feature's concern. Not investigated; decide whether
-  to commit it as-is or check what changed it first.
+  of the glyph rendering. See the "Platform-native modifier key labels"
+  section of `docs/archive/chart-shortcuts-customization-2026-08.md` for
+  what shipped and why.
 
 - Bandcamp and Qobuz showed "NOT FOUND" (not an error) in the same
   search-panel run that surfaced the Tidal bug above, for the same
@@ -182,20 +174,11 @@
   rateyourmusic.com navigation. Confirmed unrelated to the CORS
   investigation above — separate real bug.
 
-- Import a real Various Artists album from Apple Music on `main` and check
-  it still comes in as Various Artists. The VA check was narrowed to the
-  album header on 2026-10-01 (see the picker entry in `docs/plan.md`) and
-  hasn't been tried on a VA page since.
-
-- Extend the tracklist artist-link picker (on `main`, see `docs/plan.md`)
+- Extend the tracklist artist-link picker (see `docs/archive/tracklist-artist-pickers-2026-10.md`)
   beyond Apple Music: make Spotify, Beatport, and
   LiveMixtapes return per-track artists as `Track.artists` data instead of
   baking plain names into `title` (Beatport/LiveMixtapes) or dropping them
   with an `alert()` (Spotify).
-
-- Tracklisting import should strip "feat. <artist>" (and variants) out of
-  track titles and instead add those artists to the track's credits with
-  role "featured", rather than leaving them embedded in the track name.
 
 - Tracklisting should show the search hint/query used for each artist match
   next to the result, so the user can proofread which search term produced
@@ -265,20 +248,13 @@
 
 - Decide whether upstream's `reference-links/settings.ts` and
   `user-page/settings.ts` should go through `stored-settings`, so Safari's
-  "Clear History" doesn't wipe them (see the v3.1.0 sync in `docs/plan.md`).
+  "Clear History" doesn't wipe them (see `docs/archive/upstream-sync-3.1-2026-11.md`).
 
 - Check whether Safari runs upstream's MAIN-world Spotify diagnostics script
   (`spotify-search/page-errors.ts`) from the MV2 manifest.
 
 - Decide whether to use upstream's `stream-links/placement.ts` for
   music-video pages; it's unused on the fork.
-
-- Sync upstream's `71e70da` (PR #144, Apple Music links without a blank
-  tab, merged 2026-10-14) into the fork. Expect a conflict in
-  `stream-links/use-page-data.ts`, which differs from upstream's (no
-  `metadata.ts` or `release-type.ts` split). Until then the fork's
-  `getFullLink` still uses `data.loc` instead of the user's preferred
-  region. See the #144 entry in `docs/plan.md`.
 
 - Check the popup on the built-in display. Its `maxHeight: 600` was set
   from what an external monitor clamped to (2026-07-28), so the built-in
@@ -289,5 +265,11 @@
   on the Safari build: it adds `webRequest`/`webRequestBlocking` to the MV2
   manifest alongside `persistent: false` (synced 2026-10-10).
 
-- Confirm the drafted `app store submission stuff/app-store-description.txt`
-  and `whats-new.txt` (2026-08-14) as final before the next submission.
+- Confirm the v2.0 drafts in `app store submission stuff/v2.0/`
+  (`whats-new-v2-0.txt`, `description-v2-0.txt`) as final before
+  submitting, and drop any line a Safari check doesn't back up.
+
+- Decide whether to archive the local branches `fix/apple-music-geo-links`
+  (PR #144, merged upstream as `71e70da` and synced) and
+  `tracklist-artist-links-upstream` (PR #150, merged upstream). Both are
+  the user's call.
