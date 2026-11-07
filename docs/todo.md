@@ -258,10 +258,6 @@
   on the Safari build: it adds `webRequest`/`webRequestBlocking` to the MV2
   manifest alongside `persistent: false` (synced 2026-10-10).
 
-- Confirm the v2.0 drafts in `app store submission stuff/v2.0/`
-  (`whats-new-v2-0.txt`, `description-v2-0.txt`) as final before
-  submitting, and drop any line a Safari check doesn't back up.
-
 - Decide whether to archive the local branches `fix/apple-music-geo-links`
   (PR #144, merged upstream as `71e70da` and synced) and
   `tracklist-artist-links-upstream` (PR #150, merged upstream). Both are
