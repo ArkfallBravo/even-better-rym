@@ -6,18 +6,27 @@ import type { Searchable, Service } from "~/shared/services/types";
 import { fold } from "~/shared/utils/one-shot";
 
 import { type CheckResults, runChecks } from "./check-runner";
+import { recallInput, rememberInput } from "./remembered-input";
 
 const DEFAULT_ARTIST = "Violent Magic Orchestra";
 const DEFAULT_TITLE = "Death Rave";
+const ARTIST_KEY = "search.artist";
+const TITLE_KEY = "search.title";
 
 type SearchResult = { url: string } | { notFound: true };
 
 export function SearchPanel() {
-	const [artist, setArtist] = useState(DEFAULT_ARTIST);
-	const [title, setTitle] = useState(DEFAULT_TITLE);
+	const [artist, setArtist] = useState(() =>
+		recallInput(ARTIST_KEY, DEFAULT_ARTIST),
+	);
+	const [title, setTitle] = useState(() =>
+		recallInput(TITLE_KEY, DEFAULT_TITLE),
+	);
 	const [results, setResults] = useState<CheckResults<SearchResult>>({});
 
 	const run = async () => {
+		rememberInput(ARTIST_KEY, artist);
+		rememberInput(TITLE_KEY, title);
 		await runChecks(
 			SEARCHABLES,
 			(service) => service.name,

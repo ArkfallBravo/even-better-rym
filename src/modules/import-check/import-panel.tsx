@@ -4,6 +4,7 @@ import { RESOLVABLES } from "~/shared/services";
 import { fold } from "~/shared/utils/one-shot";
 
 import { type CheckResults, runChecks } from "./check-runner";
+import { recallInput, rememberInput } from "./remembered-input";
 
 const DEFAULT_URLS: Record<string, string> = {
 	"Apple Music":
@@ -33,8 +34,12 @@ const DEFAULT_INPUT = JSON.stringify(
 	2,
 );
 
+const INPUT_KEY = "import.urls";
+
 export function ImportPanel() {
-	const [input, setInput] = useState(DEFAULT_INPUT);
+	const [input, setInput] = useState(() =>
+		recallInput(INPUT_KEY, DEFAULT_INPUT),
+	);
 	const [results, setResults] = useState<CheckResults<void>>({});
 
 	const run = async () => {
@@ -45,6 +50,7 @@ export function ImportPanel() {
 			alert("Invalid JSON");
 			return;
 		}
+		rememberInput(INPUT_KEY, input);
 
 		const names = Object.entries(urls)
 			.filter(([, url]) => url.length > 0)
