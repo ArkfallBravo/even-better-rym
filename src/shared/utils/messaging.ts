@@ -1,3 +1,13 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : messaging.ts
+//
+// PURPOSE : Message types and helpers for talking to the background script
+//
+// CREATED : 2/25/2021
+//
+// ----------------------------------------------------------------------- //
+
 import { nanoid } from "nanoid";
 import browser from "webextension-polyfill";
 import type { SearchDiagnostic } from "~/modules/spotify-search/messages";
@@ -27,6 +37,7 @@ export type FetchResponse = {
 		body: string;
 		status: number;
 		statusText: string;
+		retryAfter?: string;
 		error?: string;
 	};
 };

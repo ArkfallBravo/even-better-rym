@@ -1,3 +1,14 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : hidden-search.ts
+//
+// PURPOSE : Spotify search through a hidden open.spotify.com frame
+//
+// CREATED : 10/5/2026
+//
+// ----------------------------------------------------------------------- //
+
+import { searchCategories } from "./categories";
 import {
 	type FrameRequest,
 	isSearchResult,
@@ -93,13 +104,7 @@ export const searchHiddenSpotify = async (
 	data: SearchInput,
 ): Promise<SearchResult> => {
 	const diagnostics: SearchDiagnostic[] = [];
-	const categories: SearchCategory[] =
-		data.releaseType === "music video"
-			? ["tracks"]
-			: data.releaseType === "single"
-				? ["albums", "tracks"]
-				: ["albums"];
-	for (const category of categories) {
+	for (const category of searchCategories(data.releaseType)) {
 		let result = await searchFrame(data, category);
 		diagnostics.push(...(result.diagnostics ?? []));
 		if (

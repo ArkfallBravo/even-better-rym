@@ -1,4 +1,15 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : read-results.ts
+//
+// PURPOSE : Reads the best matching result from Spotify's search page
+//
+// CREATED : 10/5/2026
+//
+// ----------------------------------------------------------------------- //
+
 import type { SearchCategory } from "./messages";
+import { matchTitle, normalizeSearchText } from "./title-match";
 
 export const readSpotifySearchPage = async (
 	artist: string,
@@ -7,16 +18,9 @@ export const readSpotifySearchPage = async (
 	releaseType: "single" | "music video" | null = null,
 ): Promise<string | undefined> => {
 	const RESULTS_TIMEOUT = 7_000;
-	const normalize = (value: string) =>
-		value.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
-	const artistName = normalize(artist);
-	const searchedTitle = normalize(title);
+	const artistName = normalizeSearchText(artist);
 	const entity = category === "albums" ? "album" : "track";
 	const resultSelector = `a[href^="/${entity}/"], a[href^="https://open.spotify.com/${entity}/"]`;
-	const editionSuffix =
-		/^(?:(?:\s*(?:\(|\[)|\s+[-\u2013\u2014]\s+)\s*(?:(?:\d{4}\s+)?remaster(?:ed)?(?:\s+(?:version|\d{4}))?|deluxe(?:\s+(?:edition|version))?)(?:\)|\])?)+$/;
-	const videoSuffix =
-		/^(?:\s*(?:\(|\[|-\s+)\s*(?:official\s+)?(?:music\s+)?video(?:\)|\])?)$/;
 
 	const find = () => {
 		if (
@@ -34,18 +38,12 @@ export const readSpotifySearchPage = async (
 			main?.querySelectorAll<HTMLAnchorElement>(resultSelector) ?? [];
 		let editionUrl: string | undefined;
 		for (const link of links) {
-			const spotifyTitle = normalize(link.textContent ?? "");
-			const exact = spotifyTitle === searchedTitle;
-			if (
-				!exact &&
-				(!spotifyTitle.startsWith(searchedTitle) ||
-					!(
-						editionSuffix.test(spotifyTitle.slice(searchedTitle.length)) ||
-						(releaseType === "music video" &&
-							videoSuffix.test(spotifyTitle.slice(searchedTitle.length)))
-					))
-			)
-				continue;
+			const titleMatch = matchTitle(link.textContent ?? "", {
+				title,
+				releaseType,
+			});
+			if (!titleMatch) continue;
+			const exact = titleMatch === "exact";
 			const match = /^\/(album|track)\/([a-zA-Z0-9]{22})(?:[/?#]|$)/.exec(
 				new URL(link.href).pathname,
 			);
@@ -62,7 +60,7 @@ export const readSpotifySearchPage = async (
 						.filter(Boolean),
 				);
 				if (resultIds.size > 1) break;
-				if (normalize(card.textContent ?? "").includes(artistName)) {
+				if (normalizeSearchText(card.textContent ?? "").includes(artistName)) {
 					const url = `https://open.spotify.com/${entity}/${match[2]}`;
 					if (exact)
 						return {

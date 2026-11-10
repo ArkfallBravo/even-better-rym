@@ -1,3 +1,13 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : spotify-search.ts
+//
+// PURPOSE : Background handler for Spotify search requests
+//
+// CREATED : 10/4/2026
+//
+// ----------------------------------------------------------------------- //
+
 import browser from "webextension-polyfill";
 
 import { searchHiddenSpotify } from "~/modules/spotify-search/hidden-search";
@@ -13,6 +23,7 @@ import type {
 import { createSerialQueue } from "~/shared/utils/serial-queue";
 import * as storage from "~/shared/utils/storage";
 import { readHiddenPage } from "./hidden-page";
+import { searchSpotifyApi } from "./spotify-api-search";
 
 type SearchFailure = {
 	requestId: string;
@@ -62,6 +73,24 @@ const saveFailure = async (
 	}
 };
 
+// Checks whether this is Safari, which refuses the hidden Spotify frame (frame-ancestors).
+const isSafariExtension = (): boolean =>
+	browser.runtime.getURL("").startsWith("safari-web-extension://");
+
+// Searches Spotify through the Web API on Safari, else through the hidden search page.
+const searchSpotify = (
+	data: SpotifySearchRequest["data"],
+): Promise<SearchResult> =>
+	isSafariExtension()
+		? searchSpotifyApi(data)
+		: readHiddenPage({
+				name: "Spotify search",
+				frameUrlPrefix: "https://open.spotify.com/search/",
+				message: { type: "ebr-spotify-offscreen", data },
+				readBackground: () => searchHiddenSpotify(data),
+				isResult: isSearchResult,
+			});
+
 export const spotifySearch = (
 	request: SpotifySearchRequest,
 ): Promise<SpotifySearchResponse> => {
@@ -72,13 +101,7 @@ export const spotifySearch = (
 			manifestVersion: browser.runtime.getManifest().manifest_version,
 		});
 		try {
-			const result = await readHiddenPage({
-				name: "Spotify search",
-				frameUrlPrefix: "https://open.spotify.com/search/",
-				message: { type: "ebr-spotify-offscreen", data: request.data },
-				readBackground: () => searchHiddenSpotify(request.data),
-				isResult: isSearchResult,
-			});
+			const result = await searchSpotify(request.data);
 			const log = result.status === "error" ? console.warn : console.info;
 			log("[EvenBetterRYM Spotify] completed", {
 				requestId: request.id,

@@ -1,14 +1,29 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : spotify-search.test.ts
+//
+// PURPOSE : Tests for the background Spotify search handler
+//
+// CREATED : 11/3/2026
+//
+// ----------------------------------------------------------------------- //
+
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import browser from "webextension-polyfill";
 import type { SearchResult } from "~/modules/spotify-search/messages";
 import type { SpotifySearchRequest } from "~/shared/utils/messaging";
 import { readHiddenPage } from "./hidden-page";
+import { searchSpotifyApi } from "./spotify-api-search";
 import { spotifySearch } from "./spotify-search";
 
 vi.mock("./hidden-page", () => ({ readHiddenPage: vi.fn() }));
+vi.mock("./spotify-api-search", () => ({ searchSpotifyApi: vi.fn() }));
 vi.mock("webextension-polyfill", () => ({
 	default: {
-		runtime: { getManifest: () => ({ manifest_version: 3 }) },
+		runtime: {
+			getManifest: () => ({ manifest_version: 3 }),
+			getURL: vi.fn(),
+		},
 		storage: { local: { get: vi.fn(), set: vi.fn() } },
 	},
 }));
@@ -35,6 +50,7 @@ beforeEach(() => {
 	vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 	vi.clearAllMocks();
 	vi.mocked(readHiddenPage).mockReset().mockResolvedValue(failure);
+	vi.mocked(browser.runtime.getURL).mockReturnValue("chrome-extension://id/");
 	vi.mocked(browser.storage.local.get).mockReset().mockResolvedValue({});
 	vi.mocked(browser.storage.local.set).mockReset().mockResolvedValue();
 	vi.spyOn(console, "info").mockImplementation(() => undefined);
@@ -67,6 +83,30 @@ test("forwards both attempts' diagnostics and persists failure metadata without 
 	expect(
 		JSON.stringify(vi.mocked(browser.storage.local.set).mock.calls),
 	).not.toContain("Private");
+});
+
+test("searches the Web API instead of the hidden page on Safari", async () => {
+	vi.mocked(browser.runtime.getURL).mockReturnValue(
+		"safari-web-extension://4C1E1F43-0000-4000-8000-000000000000/",
+	);
+	vi.mocked(searchSpotifyApi).mockResolvedValue({
+		status: "found",
+		url: "https://open.spotify.com/album/0123456789abcdefghijkl",
+	});
+
+	await expect(spotifySearch(request)).resolves.toEqual({
+		id: request.id,
+		type: request.type,
+		data: { url: "https://open.spotify.com/album/0123456789abcdefghijkl" },
+	});
+	expect(searchSpotifyApi).toHaveBeenCalledExactlyOnceWith(request.data);
+	expect(readHiddenPage).not.toHaveBeenCalled();
+});
+
+test("keeps the hidden-page search outside Safari", async () => {
+	await spotifySearch(request);
+	expect(readHiddenPage).toHaveBeenCalledOnce();
+	expect(searchSpotifyApi).not.toHaveBeenCalled();
 });
 
 test("retains only the latest 20 failures", async () => {

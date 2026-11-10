@@ -1,3 +1,13 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : fetch.ts
+//
+// PURPOSE : Cross-origin fetches run from the background script
+//
+// CREATED : 2/28/2021
+//
+// ----------------------------------------------------------------------- //
+
 import type { FetchRequest, FetchResponse } from "~/shared/utils/messaging";
 
 export const backgroundFetch = async ({
@@ -19,6 +29,7 @@ export const backgroundFetch = async ({
 			credentials,
 		});
 		const responseBody = await response.text();
+		const retryAfter = response.headers.get("retry-after");
 
 		return {
 			id,
@@ -27,6 +38,7 @@ export const backgroundFetch = async ({
 				body: responseBody,
 				status: response.status,
 				statusText: response.statusText,
+				...(retryAfter ? { retryAfter } : {}),
 				...(response.ok
 					? {}
 					: {

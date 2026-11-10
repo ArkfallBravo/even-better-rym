@@ -1,3 +1,13 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : codecs.ts
+//
+// PURPOSE : Spotify Web API response types
+//
+// CREATED : 2/14/2021
+//
+// ----------------------------------------------------------------------- //
+
 export type TokenResponse = {
 	access_token: string;
 	expires_in: number;
@@ -29,6 +39,16 @@ type PagingObject<C> = {
 	offset: number;
 	previous: string | null;
 	total: number;
+};
+
+export type SearchItem = Pick<
+	TrackObject,
+	"name" | "artists" | "external_urls"
+>;
+
+export type SearchResponse = {
+	albums?: PagingObject<SearchItem>;
+	tracks?: PagingObject<SearchItem>;
 };
 
 export type SimplifiedTrackObject = {

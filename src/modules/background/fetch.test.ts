@@ -1,3 +1,13 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : fetch.test.ts
+//
+// PURPOSE : Tests for the background script's fetch
+//
+// CREATED : 9/28/2026
+//
+// ----------------------------------------------------------------------- //
+
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { backgroundFetch } from "./fetch";
@@ -143,6 +153,28 @@ describe("backgroundFetch", () => {
 				error: `HTTP ${status}: Request failed`,
 			},
 		});
+	});
+
+	test("passes on the Retry-After header of a rate-limited response", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockResolvedValue(
+				new Response("", {
+					status: 429,
+					statusText: "Too Many Requests",
+					headers: { "Retry-After": "120" },
+				}),
+			),
+		);
+
+		const response = await backgroundFetch({
+			id: "request-429",
+			type: "fetch",
+			data: { url: "https://api.spotify.com/v1/search" },
+		});
+
+		expect(response.data.retryAfter).toBe("120");
+		expect(response.data.error).toBe("HTTP 429: Too Many Requests");
 	});
 
 	test("reports the status when the server omits the reason phrase", async () => {
