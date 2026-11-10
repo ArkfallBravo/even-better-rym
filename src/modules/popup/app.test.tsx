@@ -1,3 +1,13 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : app.test.tsx
+//
+// PURPOSE : Tests for the toolbar popup's settings menu
+//
+// CREATED : 10/28/2026
+//
+// ----------------------------------------------------------------------- //
+
 // @vitest-environment jsdom
 
 import { render } from "preact";
@@ -8,9 +18,11 @@ import { getAllModulesEnabled, setModuleEnabled } from "~/shared/page-settings";
 import { type PageKey, pageLabels, pages } from "~/shared/pages";
 import { App, Toggle } from "./app";
 
+const { createTab } = vi.hoisted(() => ({ createTab: vi.fn() }));
 vi.mock("webextension-polyfill", () => ({
 	default: {
 		runtime: { getURL: (path: string) => `moz-extension://test/${path}` },
+		tabs: { create: createTab },
 	},
 }));
 vi.mock("~/shared/page-settings", () => ({
@@ -104,6 +116,7 @@ beforeEach(() => {
 afterEach(async () => {
 	await act(() => render(null, container));
 	container.remove();
+	vi.unstubAllEnvs();
 });
 
 function findButton(text: string): HTMLButtonElement {
@@ -155,6 +168,21 @@ describe("App", () => {
 			"moz-extension://test/icons/sonemic-16.png",
 			"moz-extension://test/icons/kofi.svg",
 		]);
+	});
+
+	test("hides the debug panel link in builds without debug tools", async () => {
+		vi.stubEnv("VITE_DEBUG_TOOLS", "");
+		await showApp();
+		expect(container.querySelector("nav[aria-label='Debug tools']")).toBeNull();
+	});
+
+	test("opens the import-check page from the debug panel link in debug builds", async () => {
+		vi.stubEnv("VITE_DEBUG_TOOLS", "true");
+		await showApp();
+		await act(() => findButton("🛠️Debug panel").click());
+		expect(createTab).toHaveBeenCalledWith({
+			url: "moz-extension://test/src/modules/import-check/index.html",
+		});
 	});
 
 	test("shows a loading indicator before feature settings resolve", async () => {

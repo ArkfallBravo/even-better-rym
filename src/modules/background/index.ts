@@ -1,4 +1,15 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : index.ts
+//
+// PURPOSE : Background script that routes messages and owns native settings
+//
+// CREATED : 2/14/2021
+//
+// ----------------------------------------------------------------------- //
+
 import browser from "webextension-polyfill";
+import { hasDebugTools, importCheckPagePath } from "~/shared/debug-tools";
 import { resolvePageEnabled } from "~/shared/page-enabled";
 import type { PageKey } from "~/shared/pages";
 import { globalPageKeys, pages } from "~/shared/pages";
@@ -33,10 +44,10 @@ import { spotifySearch } from "./spotify-search";
 import { tidalCredits } from "./tidal-credits";
 import { wikipediaSearch } from "./wikipedia-search";
 
-if (import.meta.env.VITE_DEBUG_TOOLS === "true") {
+if (hasDebugTools()) {
 	console.log(
 		"[debug tools] import-check page:",
-		browser.runtime.getURL("src/modules/import-check/index.html"),
+		browser.runtime.getURL(importCheckPagePath),
 	);
 }
 

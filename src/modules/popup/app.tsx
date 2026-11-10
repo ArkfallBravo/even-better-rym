@@ -1,6 +1,17 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : app.tsx
+//
+// PURPOSE : The toolbar popup's settings menu
+//
+// CREATED : 3/10/2026
+//
+// ----------------------------------------------------------------------- //
+
 import { useEffect, useState } from "preact/hooks";
 import browser from "webextension-polyfill";
 
+import { hasDebugTools, importCheckPagePath } from "~/shared/debug-tools";
 import { getAllModulesEnabled, setModuleEnabled } from "~/shared/page-settings";
 import type { PageKey } from "~/shared/pages";
 import { featureGroups, pageHints, pageLabels } from "~/shared/pages";
@@ -160,8 +171,31 @@ export function App() {
 					Donate
 				</a>
 			</nav>
+			{hasDebugTools() && <DebugToolsLinks />}
 		</div>
 	);
+}
+
+function DebugToolsLinks() {
+	return (
+		<nav aria-label="Debug tools" style={styles.debugToolsLinks}>
+			<button
+				type="button"
+				onClick={openImportCheckPage}
+				style={styles.debugToolsLink}
+			>
+				<span aria-hidden="true">🛠️</span>
+				Debug panel
+			</button>
+		</nav>
+	);
+}
+
+// Opens the import-check debug page in a new tab.
+function openImportCheckPage() {
+	void browser.tabs.create({
+		url: browser.runtime.getURL(importCheckPagePath),
+	});
 }
 
 function ExternalLinkIcon({

@@ -1,3 +1,13 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : styles.ts
+//
+// PURPOSE : Inline styles for the toolbar popup
+//
+// CREATED : 8/22/2026
+//
+// ----------------------------------------------------------------------- //
+
 import type { CSSProperties } from "preact";
 
 export const styles = {
@@ -31,6 +41,25 @@ export const styles = {
 		gap: 4,
 		color: "#4286c4",
 		textDecoration: "none",
+	} satisfies CSSProperties,
+
+	debugToolsLinks: {
+		display: "flex",
+		justifyContent: "center",
+		padding: "0 10px 10px",
+		fontSize: 12,
+	} satisfies CSSProperties,
+
+	debugToolsLink: {
+		display: "inline-flex",
+		alignItems: "center",
+		gap: 4,
+		padding: 0,
+		border: "none",
+		background: "none",
+		color: "#4286c4",
+		font: "inherit",
+		cursor: "pointer",
 	} satisfies CSSProperties,
 
 	externalLinkIcon: {
