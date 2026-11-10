@@ -1,5 +1,19 @@
 # Todo
 
+- Prototype a Safari end-to-end check of the debug panel's search
+  (autofind) results, decided 2026-11-10 after Spotify autofind turned out
+  to have been broken in Safari since v2.0 with no test catching it. Unit
+  tests can't: vitest has no Safari engine, extension runtime or real
+  network headers. Base it on `e2e/import-check.mjs` (Selenium +
+  `safaridriver`, `npm run test:e2e:safari`), but drive the import-check
+  page instead of RYM's Import form, which Cloudflare blocks under
+  automation. Unchecked: whether a `safaridriver` session can open a
+  `safari-web-extension://` page, and whether the hidden Spotify frame
+  behaves the same under automation. The page URL has the per-install
+  extension UUID, so take it from config (like `e2e/urls.json`). It hits
+  live services, so it's a manual pre-release check, not part of
+  `npm test`. Do it after the Spotify Safari fix (`docs/plan.md`).
+
 - Follow-ups the 2026-10-02 `/simplify` pass (`4e319a7`) skipped. None
   are urgent:
   - The artist-link picker loads RYM's search frame up to three times per

@@ -33,6 +33,8 @@ Husky runs lint on pre-commit (see `prepare` script) — don't bypass it. The ho
 
 The repo lives in iCloud Drive, which sometimes creates untracked duplicates named `<name> 2.<ext>` (39 of them on 2026-10-06, including copies of `src/` files made minutes after they were edited). They are usually byte-identical to the original. They inflate the status line's simplify count, and copies under `src/` can be picked up by tooling. Before deleting one, check it with `cmp` against the original. One that differs can be an older snapshot, such as `docs/plan 2.md`, which was missing later additions; `diff` it before deleting.
 
+Prototypes go in the git-ignored `prototypes/<name>/` folder at the repo root (also in `.git/info/exclude`); record each one's verdict in `docs/plan.md` or `docs/alternatives.md` so the folder can be deleted. `prototypes/safari-spotify-dnr/prototype.patch` is the failed Safari `declarativeNetRequest` framing rule.
+
 `.env` needs `VITE_SPOTIFY_ID`, `VITE_SPOTIFY_SECRET`, `VITE_TIDAL_ID`, `VITE_TIDAL_SECRET`, `VITE_YOUTUBE_KEY` for those services' features to work (Discogs works keyless).
 
 ## Manifest version and the Safari wrapper

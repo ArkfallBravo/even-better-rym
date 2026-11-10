@@ -161,3 +161,52 @@ describes how the code works now.
   Xcode state could land silently. A reminder-only `.husky/post-commit`
   hook was chosen instead. Bring back if forgotten Xcode-repo changes
   become a recurring problem despite the reminder.
+
+## Spotify autofind in Safari
+
+- **Strip Spotify's `frame-ancestors` with a `declarativeNetRequest`
+  session rule on Safari** (rejected after a prototype, 2026-11-10). The
+  MV2 path's blocking `webRequest` header edit has no effect in Safari, so
+  the prototype added a `modifyHeaders` session rule (remove
+  `content-security-policy` and `x-frame-options` for `sub_frame` under
+  `https://open.spotify.com/search/`) around the hidden-frame read, with
+  `declarativeNetRequestWithHostAccess` in the MV2 permissions. Safari
+  accepted the rule every time (`updateSessionRules` resolved and
+  `getSessionRules` listed it), but still refused the frame in all three
+  runs: initiator = uppercase extension UUID host, lowercase host, and no
+  initiator at all. So Safari either doesn't apply header removal to this
+  response or exempts the extension's own background-page frames; the
+  runs don't tell which, and either way the hidden-frame scraper can't
+  work there. Bring back only if a future Safari release changes this
+  (re-run the debug panel's search check to find out).
+
+- **Convert another service's match to Spotify with song.link (Odesli)**
+  (rejected, 2026-11-10). Idea: take the Deezer/Apple Music autofind result
+  and ask `api.song.link/v1-alpha.1/links` for the Spotify URL, so each
+  user's own IP is rate-limited instead of one shared Spotify app. The API
+  now answers `401 {"code":"PUBLIC_API_ACCESS_DEPRECATED"}`. Bring back only
+  if Odesli reopens public access.
+
+- **Fetch `open.spotify.com/search/...` directly, without a frame**
+  (rejected, 2026-11-10). The served HTML (~190 KB) contains no
+  `/album/<id>` links; results are rendered client-side, so reading them
+  would mean reimplementing Spotify's private web-player API, which is
+  fragile. Bring back only if Spotify starts server-rendering search.
+
+- **Read Spotify's search page in an inactive background tab** (rejected,
+  2026-11-10). A top-level tab isn't subject to `frame-ancestors`, and each
+  user's own browser does the work, so there's no shared quota. The user
+  didn't want a tab flashing open and closed on every autofind (upstream
+  also tests "does not fall back to visible UI"). Bring back only if the API
+  fallback's rate limit becomes a real problem.
+
+- **Let users enter their own Spotify app credentials** (deferred,
+  2026-11-10). Removes the shared quota for anyone who sets it up, but few
+  would, and it's a settings screen to maintain. Worth adding if 429s start
+  appearing for App Store users.
+
+- **Make Spotify search on-demand in Safari** (rejected, 2026-11-10). Only
+  search when the user clicks Spotify's icon, to cut API calls on the shared
+  quota. The user: "the whole point of autofind is that it's automatic."
+  Don't bring back; if the quota becomes a problem, look at user-entered
+  credentials instead.
