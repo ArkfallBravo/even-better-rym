@@ -68,7 +68,16 @@ Caveat: `xcodebuild build` on its own bumped `CURRENT_PROJECT_VERSION` in `proje
 
 **Gotcha: Finder's date on `EvenBetterRYM.app` doesn't show whether a rebuild landed.** A bundle folder's modification date only changes when its direct children are added or removed, so after a rebuild `/Applications/EvenBetterRYM.app` can still show an older time while the files inside are new (observed 2026-10-01: folder 14:22, appex contents 14:30). To check what Safari is actually running, open the page's Web Inspector → Sources and compare the extension script's hashed filename (e.g. `release-submission/main-<hash>.js`) with the one in `dist/assets/`. Safari only picks up a new build after the app is relaunched.
 
-**Gotcha: the extension is unchecked every time Safari relaunches** (seen 2026-11-07, the day after archiving v2.0). `pluginkit -mAvvv -i com.EvenBetterRYM.Extension` showed the only registered copy was the archive's temporary build (`DerivedData/.../ArchiveIntermediates/.../InstallationBuildProductsLocation/Applications/EvenBetterRYM.app`), which Xcode deletes after archiving, so it pointed at nothing. The fix was to unregister it (`lsregister -u <path>`, `pluginkit -r <appex>`), then register the installed copy (`pluginkit -a /Applications/EvenBetterRYM.app/Contents/PlugIns/EvenBetterRYM\ Extension.appex`, `lsregister -f -R /Applications/EvenBetterRYM.app`). `lsregister` is at `/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister`. Check this after each archive. Since 2026-11-07 the user runs the App Store copy day to day (installed as `/Applications/EvenBetterRYM 2.app`, because the Xcode build held the plain name at the time; that build is now in the Trash). A local Xcode build for testing becomes a second copy of the app, so see the two-copies gotcha below, and quit the local build when you're done testing.
+**Gotcha: the extension is unchecked every time Safari relaunches** (seen 2026-11-07, the day after archiving v2.0). `pluginkit -mAvvv -i com.EvenBetterRYM.Extension` showed the only registered copy was the archive's temporary build (`DerivedData/.../ArchiveIntermediates/.../InstallationBuildProductsLocation/Applications/EvenBetterRYM.app`), which Xcode deletes after archiving, so it pointed at nothing. The fix was to unregister it (`lsregister -u <path>`, `pluginkit -r <appex>`), then register the installed copy (`pluginkit -a /Applications/EvenBetterRYM.app/Contents/PlugIns/EvenBetterRYM\ Extension.appex`, `lsregister -f -R /Applications/EvenBetterRYM.app`). `lsregister` is at `/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister`. Check this after each archive. Since 2026-11-07 the user runs the App Store copy day to day. As of 2026-11-10 it sits at the plain `/Applications/EvenBetterRYM.app` (root-owned, with `_MASReceipt`); there is no `EvenBetterRYM 2.app` anymore. A local Xcode build for testing becomes a second copy of the app, so see the two-copies gotcha below, and quit the local build when you're done testing.
+
+**Gotcha: the plain `xcodebuild … build` above now fails with `remove failed … you don't have permission`** (seen 2026-11-10). The project has `DEPLOYMENT_LOCATION = YES` with `INSTALL_PATH = /Applications` (via `~/.xcode-dstroot-root`), so it tries to overwrite the root-owned App Store copy. `Build/Products/Debug/EvenBetterRYM.app` is also just a symlink into that install, so it can't be used as an output either. Build into a separate folder instead:
+```sh
+OUT=~/Library/Developer/Xcode/DerivedData/EvenBetterRYM-haaqbweouvaqkpfiputlivormmob/Build/Products/Debug-local
+xcodebuild -project EvenBetterRYM/EvenBetterRYM.xcodeproj -scheme "EvenBetterRYM (macOS)" \
+  -configuration Debug DEPLOYMENT_LOCATION=NO CONFIGURATION_BUILD_DIR="$OUT" build
+open "$OUT/EvenBetterRYM.app"
+```
+Launching it makes `pluginkit` register only that copy's extension. When done testing, quit it and re-register the App Store copy with the `pluginkit -a`/`lsregister -f -R` commands above.
 
 **Gotcha: linker error `Open() failed, errno=2 … EvenBetterRYM.debug.dylib` under `~/.xcode-dstroot-root/Applications/`** (seen 2026-10-01). At that moment `/Applications/EvenBetterRYM.app` was missing entirely. The likely cause, inferred and not reproduced, is that the installed app was deleted while Xcode's incremental build still considered its debug dylib up to date. A CLI `xcodebuild … build` right afterward relinked and succeeded. If it recurs, try Product → Clean Build Folder, then rebuild.
 
@@ -150,14 +159,14 @@ build that includes it. The background script also logs the debug page's
 same `import.meta.env.VITE_DEBUG_TOOLS` check, so you don't have to type the
 `browser.runtime.getURL("src/modules/import-check/index.html")` one-liner by
 hand each time — open the background page's Web Inspector (see above) and
-the URL is already printed. The path has to be the on-disk `dist/` path
+the URL is already printed. Easier still, a debug build's toolbar popup has a "🛠️ Debug panel" row under the GitHub | RYM List | Donate footer that opens the page in a new tab (`browser.tabs.create`). The debug build also names the extension "EvenBetterRYM for Safari DEBUG", so it's distinguishable in Safari's Develop menu. The flag check and page path live in `src/shared/debug-tools.ts` (`hasDebugTools()`, `importCheckPagePath`), shared by the background log, the popup row and `vite.config.ts`. The path has to be the on-disk `dist/` path
 (`src/modules/import-check/index.html`, matching the
 `additionalInputs.html` entry and the resulting `web_accessible_resources`
 entry in the built `manifest.json`) rather than a shorter `import-check/...`
 path — using the shorter form once produced Safari's "Safari Can't Find the
 File" / `NSURLErrorDomain -1100`, since it pointed at a resource that
 doesn't exist in the bundle. Because the check is a compile-time-constant comparison,
-Vite dead-code-eliminates both the console.log call and the import-check
+Vite dead-code-eliminates the console.log call, the popup row and the import-check
 module from a plain `build`/`build:safari` — confirmed by grepping the
 built `dist/assets/` for the log string and for `import-check` files after
 each build variant, not just by reading the source.
