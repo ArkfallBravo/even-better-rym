@@ -24,11 +24,20 @@
      fetch stay out. Upstream's `fetchInPage` already takes `credentials`.
      The branch itself wasn't run in Safari; the same feature code was
      tested in the fork build. Waiting on kknq's review.
-  5. App Store v2.2: version 2.2, build 15, What's New covering the
-     autofind plus kknq's user-visible 3.3.0 changes, archive, tag
-     `app-store-v2.2-submission`. It can't be submitted while v2.1 is still
-     in review; whether 2.1 has cleared is unknown (it was submitted
-     2026-11-14).
+  5. App Store v2.2. **In progress.** v2.1 was still in review on
+     2026-11-14. The user considered pulling it and going straight from 2.0
+     to 2.2, then decided to keep it: 2.2 is submitted after 2.1 is
+     approved. So What's New covers only what's new since 2.1, which was
+     built on upstream 3.1.0: the vote-based autofind plus kknq's
+     user-visible 3.2.0 and 3.3.0 changes (from `public/changelog.html`).
+     Spotify diagnostics and the Firefox-only follow-status fix are left
+     out. Draft: `app store submission stuff/v2.2/whats-new.txt` (staging
+     folder, gitignored). The Xcode project is bumped to 2.2 (build 15),
+     not yet committed. Still to do: the user reviews the draft, then
+     commit, push both repos, archive (afterwards check `pluginkit` for the
+     archive's temporary copy, see `CLAUDE.md`), submit once 2.1 is
+     approved, tag `app-store-v2.2-submission`, and move the notes to the
+     top-level `whats-new.txt`.
 
   State after step 2: `tsc` is clean, vitest passes (150 files, 1950 tests),
   and `eslint src` shows only the two errors in upstream-identical files
