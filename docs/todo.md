@@ -1,5 +1,19 @@
 # Todo
 
+- Unregister the v2.1 archive's leftover extension registration (seen
+  2026-11-14 after submitting): `pluginkit -mAvvv -i
+  com.EvenBetterRYM.Extension` lists `DerivedData/.../ArchiveIntermediates/
+  EvenBetterRYM (macOS)/InstallationBuildProductsLocation/Applications/
+  EvenBetterRYM.app` next to the App Store copy. Offered to run `pluginkit
+  -r`/`lsregister -u` on it; the user hasn't answered yet. See the
+  "unchecked every time Safari relaunches" gotcha in `CLAUDE.md`.
+
+- When App Store v2.1 goes live: record it as live in `CLAUDE.md`
+  ("Shipped versions"), and check in the updated App Store copy that the
+  toolbar icon turns green on RYM release pages and red with all release
+  features off. On 2026-11-14 the App Store copy was still v2.0, which
+  keeps the purple default because of the `setIcon` crash.
+
 - Prototype a Safari end-to-end check of the debug panel's search
   (autofind) results, decided 2026-11-10 after Spotify autofind turned out
   to have been broken in Safari since v2.0 with no test catching it. Unit
