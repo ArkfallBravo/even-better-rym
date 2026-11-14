@@ -9,10 +9,13 @@
   2. `/simplify` pass on the statusline's diff (baseline: the last simplify
      commit `e626c8b` with upstream merged on top, so kknq's commits don't
      count). **Done**: `2080d45`.
-  3. One Safari test of the combined build by the user. **Next.** Worth
-     checking: the vote-based autofind on a release page, the new
-     stream-link icon colors, Discography Section Order on an artist page,
-     and that those settings survive a Safari restart.
+  3. One Safari test of the combined build by the user. **Done**
+     (2026-11-14, local `Debug-local` build of `a1c8112`, App Store copy
+     unregistered): the vote-based autofind, the stream-link icon colors,
+     Discography Section Order and a Safari restart all checked, and the
+     user said "everything works". `main` fast-forwarded to the branch.
+     Safari is still on the local build; re-register the App Store copy
+     when done (see `CLAUDE.md`). Step 4 is next.
   4. Upstream PR for the vote-based autofind only: a branch from
      `upstream/main` with the simplified feature ported onto it, pushed with
      `git push -u origin <branch>` (see `CLAUDE.md`, "Preparing an upstream
@@ -21,7 +24,7 @@
      autofind plus kknq's user-visible 3.3.0 changes, archive, tag
      `app-store-v2.2-submission`. It can't be submitted while v2.1 is still
      in review; whether 2.1 has cleared is unknown (it was submitted
-     2026-11-14). Fast-forward `main` to the branch once tested.
+     2026-11-14).
 
   State after step 2: `tsc` is clean, vitest passes (150 files, 1950 tests),
   and `eslint src` shows only the two errors in upstream-identical files
