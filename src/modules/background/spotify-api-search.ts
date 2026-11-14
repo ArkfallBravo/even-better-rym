@@ -25,6 +25,7 @@ import type {
 	SearchResponse,
 	TokenResponse,
 } from "~/shared/services/spotify/codecs";
+import { parseError } from "~/shared/utils/error";
 import type { FetchRequest } from "~/shared/utils/messaging";
 import * as storage from "~/shared/utils/storage";
 
@@ -64,8 +65,7 @@ export async function searchSpotifyApi(
 			await storage.set(RETRY_AT_KEY, error.retryAt);
 			return rateLimitedResult(error.retryAt, Date.now());
 		}
-		const message = error instanceof Error ? error.message : String(error);
-		return { status: "error", message };
+		return { status: "error", message: parseError(error).message };
 	}
 }
 
@@ -121,9 +121,12 @@ export function pickSpotifyMatch(
 	items: SearchItem[],
 	input: SearchInput,
 ): string | undefined {
+	const searchedArtists = getSearchArtists(input.artist, input.artistAlias).map(
+		normalizeSearchText,
+	);
 	let editionUrl: string | undefined;
 	for (const item of items) {
-		if (!hasArtist(item, input)) {
+		if (!hasArtist(item, searchedArtists)) {
 			continue;
 		}
 		const titleMatch = matchTitle(item.name, input);
@@ -137,11 +140,8 @@ export function pickSpotifyMatch(
 	return editionUrl;
 }
 
-// Checks whether one of the item's artists is the searched artist or its alias.
-function hasArtist(item: SearchItem, input: SearchInput): boolean {
-	const searchedArtists = getSearchArtists(input.artist, input.artistAlias).map(
-		normalizeSearchText,
-	);
+// Checks whether one of the item's artists is among the normalized searched artists.
+function hasArtist(item: SearchItem, searchedArtists: string[]): boolean {
 	return item.artists.some((candidate) =>
 		searchedArtists.includes(normalizeSearchText(candidate.name)),
 	);
@@ -154,9 +154,7 @@ export function retryAtFrom(
 ): number {
 	const seconds = Number(retryAfter);
 	const waitSeconds =
-		retryAfter !== undefined && Number.isFinite(seconds) && seconds > 0
-			? seconds
-			: DEFAULT_RETRY_SECONDS;
+		Number.isFinite(seconds) && seconds > 0 ? seconds : DEFAULT_RETRY_SECONDS;
 	return now + waitSeconds * 1000;
 }
 

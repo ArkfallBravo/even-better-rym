@@ -27,11 +27,15 @@ export async function getStreamLinkState(
 	releaseData: PageData,
 ): Promise<StreamLinkState> {
 	const existingLink = releaseData.links[service.id];
+	const existingState =
+		existingLink === undefined
+			? undefined
+			: complete({ _tag: "exists" as const, url: existingLink });
 	const hasUpvotedLink = !releaseData.servicesWithoutUpvotedLink.includes(
 		service.id,
 	);
-	if (existingLink !== undefined && hasUpvotedLink) {
-		return complete({ _tag: "exists", url: existingLink });
+	if (existingState !== undefined && hasUpvotedLink) {
+		return existingState;
 	}
 
 	try {
@@ -39,12 +43,8 @@ export async function getStreamLinkState(
 		if (foundLink !== undefined) {
 			return complete({ _tag: "found", url: foundLink });
 		}
-		return existingLink === undefined
-			? complete({ _tag: "not-found" })
-			: complete({ _tag: "exists", url: existingLink });
+		return existingState ?? complete({ _tag: "not-found" });
 	} catch (error: unknown) {
-		return existingLink === undefined
-			? failed(parseError(error))
-			: complete({ _tag: "exists", url: existingLink });
+		return existingState ?? failed(parseError(error));
 	}
 }

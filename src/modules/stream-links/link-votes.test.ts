@@ -19,6 +19,7 @@ import type { LinkVotes } from "./link-votes";
 import {
 	getServicesWithoutUpvotedLink,
 	hasNoUpvotedLink,
+	hasRegionalLink,
 	loadLinkVotes,
 	parseCountryScores,
 	parseLinkVotes,
@@ -130,5 +131,19 @@ describe("loadLinkVotes", () => {
 			'<a href="/submit_media_link?object=release&assoc_id=1">Submit</a>';
 		vi.mocked(fetchInPage).mockRejectedValue(new Error("HTTP 403"));
 		expect(await loadLinkVotes()).toEqual([]);
+	});
+});
+
+describe("hasRegionalLink", () => {
+	test("is true when a service has a link and a region", () => {
+		expect(hasRegionalLink({ spotify: spotify }, { spotify: "US" })).toBe(true);
+	});
+
+	test("is false when no linked service has a region", () => {
+		expect(hasRegionalLink({ spotify: spotify }, { tidal: "US" })).toBe(false);
+	});
+
+	test("is false when the page has no links", () => {
+		expect(hasRegionalLink({}, { spotify: "US" })).toBe(false);
 	});
 });

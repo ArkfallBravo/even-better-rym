@@ -16,7 +16,11 @@ import {
 	loading,
 } from "~/shared/utils/one-shot";
 
-import { getServicesWithoutUpvotedLink, loadLinkVotes } from "./link-votes";
+import {
+	getServicesWithoutUpvotedLink,
+	hasRegionalLink,
+	loadLinkVotes,
+} from "./link-votes";
 import { getSearchArtistMetadata } from "./metadata";
 import { getReleaseTypeFromPath } from "./release-type";
 
@@ -56,12 +60,15 @@ export type PageData = {
 	servicesWithoutUpvotedLink: ServiceId[];
 };
 async function getPageData(): Promise<PageData> {
-	const [artist, title, linksData, linkVotes] = await Promise.all([
+	const [artist, title, linksData] = await Promise.all([
 		getArtist(),
 		getTitle(),
 		getLinks(),
-		loadLinkVotes(),
 	]);
+	const serviceRegions = linksData.serviceRegions ?? {};
+	const linkVotes = hasRegionalLink(linksData.links, serviceRegions)
+		? await loadLinkVotes()
+		: [];
 	return {
 		metadata: {
 			...artist,
@@ -72,7 +79,7 @@ async function getPageData(): Promise<PageData> {
 		links: linksData.links,
 		servicesWithoutUpvotedLink: getServicesWithoutUpvotedLink(
 			linkVotes,
-			linksData.serviceRegions ?? {},
+			serviceRegions,
 		),
 	};
 }

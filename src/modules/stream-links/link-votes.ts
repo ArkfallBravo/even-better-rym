@@ -60,6 +60,16 @@ export const getServicesWithoutUpvotedLink = (
 		return serviceLinks.length > 0 && hasNoUpvotedLink(serviceLinks, region);
 	}).map((service) => service.id);
 
+// Checks whether any service has both a RYM link and a region to judge its
+// votes in.
+export const hasRegionalLink = (
+	links: Partial<Record<ServiceId, string>>,
+	serviceRegions: Record<string, string>,
+): boolean =>
+	SEARCHABLES.some(
+		({ id }) => links[id] !== undefined && serviceRegions[id] !== undefined,
+	);
+
 // Fetches the votes on this release page's streaming links, or none if the
 // vote page can't be loaded.
 export const loadLinkVotes = async (): Promise<LinkVotes[]> => {

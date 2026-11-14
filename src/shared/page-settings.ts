@@ -42,8 +42,10 @@ export const getModuleEnabled = async (key: PageKey): Promise<boolean> =>
 export const getAllModulesEnabled = async (): Promise<
 	Record<PageKey, boolean>
 > => {
-	const settings = await getAllSettings();
-	const sectionOrderIsCustom = await hasCustomSectionOrder();
+	const [settings, sectionOrderIsCustom] = await Promise.all([
+		getAllSettings(),
+		hasCustomSectionOrder(),
+	]);
 
 	return Object.fromEntries(
 		(Object.keys(pages) as PageKey[]).map((key) => [

@@ -20,8 +20,8 @@ const EDITION_SUFFIX =
 const VIDEO_SUFFIX =
 	/^(?:\s*(?:\(|\[|-\s+)\s*(?:official\s+)?(?:music\s+)?video(?:\)|\])?)$/;
 
-export type TitleMatch = "exact" | "edition";
-export type TitleQuery = Pick<SearchInput, "title"> & {
+type TitleMatch = "exact" | "edition";
+type TitleQuery = Pick<SearchInput, "title"> & {
 	releaseType?: SearchInput["releaseType"] | null;
 };
 
