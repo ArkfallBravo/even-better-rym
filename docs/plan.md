@@ -16,10 +16,14 @@
      user said "everything works". `main` fast-forwarded to the branch.
      Safari is still on the local build; re-register the App Store copy
      when done (see `CLAUDE.md`). Step 4 is next.
-  4. Upstream PR for the vote-based autofind only: a branch from
-     `upstream/main` with the simplified feature ported onto it, pushed with
-     `git push -u origin <branch>` (see `CLAUDE.md`, "Preparing an upstream
-     PR").
+  4. Upstream PR for the vote-based autofind only. **Done**: kknq's
+     PR #218, from branch `autofind-unvoted-links` (`7be8bdc`, one commit on
+     `upstream/main` `bc24f43`, pushed to `origin`). It ports the eight
+     stream-links files as they are on `main`, minus the fork's file
+     headers; the fork-only `app.tsx` mount logic and `fetch.ts` direct
+     fetch stay out. Upstream's `fetchInPage` already takes `credentials`.
+     The branch itself wasn't run in Safari; the same feature code was
+     tested in the fork build. Waiting on kknq's review.
   5. App Store v2.2: version 2.2, build 15, What's New covering the
      autofind plus kknq's user-visible 3.3.0 changes, archive, tag
      `app-store-v2.2-submission`. It can't be submitted while v2.1 is still
