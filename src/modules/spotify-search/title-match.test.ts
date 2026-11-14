@@ -10,7 +10,9 @@
 
 import { describe, expect, test } from "vitest";
 
-import { matchTitle, normalizeSearchText } from "./title-match";
+import { normalizeSearchText } from "~/shared/services/search-matching";
+
+import { matchTitle } from "./title-match";
 
 describe("normalizeSearchText", () => {
 	test("folds case, repeated whitespace and compatibility characters", () => {
@@ -21,6 +23,12 @@ describe("normalizeSearchText", () => {
 describe("matchTitle", () => {
 	test("matches the same title exactly, ignoring case and spacing", () => {
 		expect(matchTitle("Death  Rave", { title: "death rave" })).toBe("exact");
+	});
+
+	test("matches reissues as editions", () => {
+		expect(matchTitle("Death Rave (Reissue)", { title: "Death Rave" })).toBe(
+			"edition",
+		);
 	});
 
 	test("matches remastered and deluxe editions as editions", () => {

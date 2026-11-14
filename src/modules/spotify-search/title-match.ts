@@ -8,6 +8,11 @@
 //
 // ----------------------------------------------------------------------- //
 
+import {
+	isReissueTitle,
+	normalizeSearchText,
+} from "~/shared/services/search-matching";
+
 import type { SearchInput } from "./messages";
 
 const EDITION_SUFFIX =
@@ -19,11 +24,6 @@ export type TitleMatch = "exact" | "edition";
 export type TitleQuery = Pick<SearchInput, "title"> & {
 	releaseType?: SearchInput["releaseType"] | null;
 };
-
-// Returns text with Unicode, whitespace and case differences folded away.
-export function normalizeSearchText(value: string): string {
-	return value.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
-}
 
 // Returns how spotifyTitle matches the searched title, or undefined if it doesn't.
 export function matchTitle(
@@ -41,5 +41,9 @@ export function matchTitle(
 	const suffix = candidate.slice(searched.length);
 	const isVideoSuffix =
 		query.releaseType === "music video" && VIDEO_SUFFIX.test(suffix);
-	return EDITION_SUFFIX.test(suffix) || isVideoSuffix ? "edition" : undefined;
+	const isEdition =
+		EDITION_SUFFIX.test(suffix) ||
+		isReissueTitle(candidate, searched) ||
+		isVideoSuffix;
+	return isEdition ? "edition" : undefined;
 }

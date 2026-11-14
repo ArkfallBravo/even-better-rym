@@ -60,6 +60,19 @@ vi.mock("./reference-links-view", () => ({
 		</button>
 	),
 }));
+vi.mock("./stream-links-view", () => ({
+	StreamLinksView: ({ onSettingsChange }: { onSettingsChange: () => void }) => (
+		<button type="button" onClick={onSettingsChange}>
+			Streaming link settings
+		</button>
+	),
+}));
+vi.mock("./discography-progress-view", () => ({
+	DiscographyProgressView: () => <div>Discography coverage settings</div>,
+}));
+vi.mock("./discography-order-view", () => ({
+	DiscographyOrderView: () => <div>Discography section order settings</div>,
+}));
 vi.mock("./visibility-view", () => ({
 	RatingVisibilityView: ({
 		onSettingsChange,
@@ -88,13 +101,6 @@ vi.mock("./vote-visibility-view", () => ({
 	}) => (
 		<button type="button" onClick={onSettingsChange}>
 			Vote settings
-		</button>
-	),
-}));
-vi.mock("./user-page-view", () => ({
-	UserPageView: ({ onSettingsChange }: { onSettingsChange: () => void }) => (
-		<button type="button" onClick={onSettingsChange}>
-			User page settings
 		</button>
 	),
 }));
@@ -262,6 +268,12 @@ describe("App", () => {
 	test.each([
 		["Charts", "chartShortcuts", "Chart Shortcuts", "Shortcut settings"],
 		[
+			"Release and submission tools",
+			"streamLinks",
+			"Suggested Streaming Links",
+			"Streaming link settings",
+		],
+		[
 			"External reference links",
 			"whoSampled",
 			"External Reference Links",
@@ -281,12 +293,6 @@ describe("App", () => {
 			"filmCollection",
 			"Film Collection",
 			"Collection film settings",
-		],
-		[
-			"Library and user profiles",
-			"userPage",
-			"User Page Enhancements",
-			"User page settings",
 		],
 	] as const)("opens %s / %s configuration and returns to the expanded feature list", async (group, key, title, child) => {
 		await showApp();
@@ -309,6 +315,42 @@ describe("App", () => {
 			"EvenBetterRYM",
 		);
 		expect(setModuleEnabled).not.toHaveBeenCalled();
+	});
+
+	test("opens section ordering settings without a separate enable switch", async () => {
+		await showApp();
+		await act(() => findButton("Artist profiles").click());
+		expect(
+			featureRow("discographyOrder").querySelector('[role="switch"]'),
+		).toBeNull();
+		await act(() =>
+			featureRow("discographyOrder").querySelector("button")?.click(),
+		);
+		expect(container.textContent).toContain(
+			"Discography section order settings",
+		);
+		expect(setModuleEnabled).not.toHaveBeenCalled();
+	});
+
+	test("opens discography coverage settings from Artist profiles without toggling the feature", async () => {
+		await showApp();
+		await act(() => findButton("Artist profiles").click());
+		await act(() =>
+			featureRow("discographyProgress").querySelector("button")?.click(),
+		);
+		expect(container.querySelector("header")?.textContent).toContain(
+			"Discography Progress",
+		);
+		expect(container.textContent).toContain("Discography coverage settings");
+		expect(setModuleEnabled).not.toHaveBeenCalled();
+		await act(() =>
+			container
+				.querySelector<HTMLButtonElement>('[aria-label="Back"]')
+				?.click(),
+		);
+		expect(findButton("Artist profiles").getAttribute("aria-expanded")).toBe(
+			"true",
+		);
 	});
 });
 

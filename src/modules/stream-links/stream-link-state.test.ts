@@ -13,7 +13,7 @@ const spotify = (search: Searchable["search"]) =>
 	({ id: "spotify", search }) as unknown as Service & Searchable;
 
 const releaseData = (link: string | undefined, upvoted: boolean): PageData => ({
-	metadata: { artist: "Quartz", title: "Interloper" },
+	metadata: { artist: "Quartz", title: "Interloper", serviceRegions: {} },
 	links: { spotify: link } as PageData["links"],
 	servicesWithoutUpvotedLink: upvoted ? [] : ["spotify"],
 });

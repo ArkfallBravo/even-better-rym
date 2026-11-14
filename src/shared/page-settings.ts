@@ -1,3 +1,17 @@
+// ----------------------------------------------------------------------- //
+//
+// MODULE  : page-settings.ts
+//
+// PURPOSE : Reading and setting each feature's enabled state
+//
+// CREATED : 3/14/2026
+//
+// ----------------------------------------------------------------------- //
+
+import {
+	getSectionOrder,
+	isDefaultSectionOrder,
+} from "./discography-order/settings";
 import { resolvePageEnabled } from "./page-enabled";
 import { type PageKey, pages } from "./pages";
 import type {
@@ -16,18 +30,27 @@ const getAllSettings = async (): Promise<Partial<Record<string, boolean>>> => {
 	return response.data;
 };
 
+// Checks whether the user has saved a discography section order other than RYM's.
+const hasCustomSectionOrder = async (): Promise<boolean> =>
+	!isDefaultSectionOrder(await getSectionOrder());
+
 export const getModuleEnabled = async (key: PageKey): Promise<boolean> =>
-	resolvePageEnabled(await getAllSettings(), key);
+	key === "discographyOrder"
+		? hasCustomSectionOrder()
+		: resolvePageEnabled(await getAllSettings(), key);
 
 export const getAllModulesEnabled = async (): Promise<
 	Record<PageKey, boolean>
 > => {
 	const settings = await getAllSettings();
+	const sectionOrderIsCustom = await hasCustomSectionOrder();
 
 	return Object.fromEntries(
 		(Object.keys(pages) as PageKey[]).map((key) => [
 			key,
-			resolvePageEnabled(settings, key),
+			key === "discographyOrder"
+				? sectionOrderIsCustom
+				: resolvePageEnabled(settings, key),
 		]),
 	) as Record<PageKey, boolean>;
 };

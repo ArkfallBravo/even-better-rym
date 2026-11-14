@@ -141,6 +141,22 @@ const sharedManifest = {
 			run_at: "document_start",
 		},
 		{
+			js: ["src/modules/discography-progress/main.ts"],
+			css: ["src/modules/discography-progress/discography-progress.css"],
+			matches: ["*://*.rateyourmusic.com/artist/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/discography-sort/main.ts"],
+			matches: ["*://*.rateyourmusic.com/artist/*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/discography-order/main.ts"],
+			matches: ["*://*.rateyourmusic.com/artist/*"],
+			run_at: "document_start",
+		},
+		{
 			js: ["src/modules/timeline/main.ts"],
 			css: ["src/modules/timeline/timeline.css", "src/modules/map/map.css"],
 			matches: ["*://*.rateyourmusic.com/artist/*"],
@@ -187,6 +203,16 @@ const sharedManifest = {
 		{
 			js: ["src/modules/user-page/main.ts"],
 			matches: ["*://*.rateyourmusic.com/~*"],
+			run_at: "document_start",
+		},
+		{
+			js: ["src/modules/follow-status/main.ts"],
+			css: ["src/modules/follow-status/follow-status.css"],
+			matches: [
+				"*://*.rateyourmusic.com/~*",
+				"*://*.rateyourmusic.com/friends/*",
+				"*://*.rateyourmusic.com/account/friends/*",
+			],
 			run_at: "document_start",
 		},
 		{
@@ -294,6 +320,7 @@ const ManifestV3 = {
 	permissions: [
 		...sharedManifest.permissions,
 		"offscreen",
+		"webRequest",
 		"declarativeNetRequestWithHostAccess",
 	] satisfies chrome.runtime.ManifestPermissions[],
 	minimum_chrome_version: "116",

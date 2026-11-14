@@ -14,10 +14,11 @@ import type {
 	SearchInput,
 	SearchResult,
 } from "~/modules/spotify-search/messages";
+import { matchTitle } from "~/modules/spotify-search/title-match";
 import {
-	matchTitle,
+	getSearchArtists,
 	normalizeSearchText,
-} from "~/modules/spotify-search/title-match";
+} from "~/shared/services/search-matching";
 import { tokenRequest } from "~/shared/services/spotify/auth";
 import type {
 	SearchItem,
@@ -122,7 +123,7 @@ export function pickSpotifyMatch(
 ): string | undefined {
 	let editionUrl: string | undefined;
 	for (const item of items) {
-		if (!hasArtist(item, input.artist)) {
+		if (!hasArtist(item, input)) {
 			continue;
 		}
 		const titleMatch = matchTitle(item.name, input);
@@ -136,11 +137,13 @@ export function pickSpotifyMatch(
 	return editionUrl;
 }
 
-// Checks whether one of the item's artists is the searched artist.
-function hasArtist(item: SearchItem, artist: string): boolean {
-	const searchedArtist = normalizeSearchText(artist);
-	return item.artists.some(
-		(candidate) => normalizeSearchText(candidate.name) === searchedArtist,
+// Checks whether one of the item's artists is the searched artist or its alias.
+function hasArtist(item: SearchItem, input: SearchInput): boolean {
+	const searchedArtists = getSearchArtists(input.artist, input.artistAlias).map(
+		normalizeSearchText,
+	);
+	return item.artists.some((candidate) =>
+		searchedArtists.includes(normalizeSearchText(candidate.name)),
 	);
 }
 

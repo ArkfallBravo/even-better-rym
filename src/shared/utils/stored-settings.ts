@@ -54,14 +54,17 @@ export const getStoredSetting = async <T>(
 export const setStoredSetting = <T>(key: string, value: T): Promise<void> =>
 	settings.write(key, value);
 
-// Calls onChange whenever another context saves this setting.
+// Calls onChange whenever another context saves this setting, and returns a
+// function that stops listening.
 export const subscribeToStoredSetting = <T>(
 	key: string,
 	onChange: (value: T) => void,
-): void => {
-	browser.runtime.onMessage.addListener((message) => {
+): (() => void) => {
+	const listener = (message: unknown) => {
 		if (!isJsonSettingUpdatedMessage(message)) return;
 		if (message.data.key !== key) return;
 		onChange(JSON.parse(message.data.value) as T);
-	});
+	};
+	browser.runtime.onMessage.addListener(listener);
+	return () => browser.runtime.onMessage.removeListener(listener);
 };

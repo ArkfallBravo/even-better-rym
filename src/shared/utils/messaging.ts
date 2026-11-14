@@ -77,6 +77,7 @@ export type SpotifySearchRequest = {
 	type: "spotifySearch";
 	data: {
 		artist: string;
+		artistAlias?: string;
 		title: string;
 		releaseType?: "single" | "music video";
 	};

@@ -1,4 +1,4 @@
-import * as storage from "../utils/storage";
+import { getStoredSetting, setStoredSetting } from "../utils/stored-settings";
 
 export type ReferenceLinkSettings = {
 	buttonColor: string;
@@ -13,7 +13,7 @@ const isHexColor = (value: unknown): value is string =>
 
 export const getReferenceLinkSettings =
 	async (): Promise<ReferenceLinkSettings> => {
-		const settings = await storage.get<Partial<ReferenceLinkSettings>>(
+		const settings = await getStoredSetting<Partial<ReferenceLinkSettings>>(
 			"referenceLinks.settings",
 		);
 		return {
@@ -25,4 +25,4 @@ export const getReferenceLinkSettings =
 
 export const setReferenceLinkSettings = (
 	settings: ReferenceLinkSettings,
-): Promise<void> => storage.set("referenceLinks.settings", settings);
+): Promise<void> => setStoredSetting("referenceLinks.settings", settings);

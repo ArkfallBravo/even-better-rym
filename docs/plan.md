@@ -1,5 +1,45 @@
 # Plan / open work
 
+- Upstream sync to v3.3.0 (2026-11-14, branch `sync-upstream-3.3` off
+  `main`, merge staged but **not committed**, waiting for the user's Safari
+  test). Merges the 23 `upstream/main` commits through `bc24f43` (#215).
+  This is step 1 of the agreed order: sync, then a `/simplify` pass on the
+  statusline's diff, then one Safari test, then the upstream PR for the
+  vote-based autofind (ported onto `upstream/main`), then App Store v2.2.
+  `tsc` is clean, vitest passes (150 files, 1947 tests), and `eslint src`
+  shows only the two errors in upstream-identical files
+  (`hide-ratings/app.test.ts`, `timeline/graph.ts`). The `npm run build:safari`
+  and macOS `xcodebuild` builds succeed.
+  How it was resolved:
+  - `spotify-search/read-results.ts` takes upstream's structure (alias
+    matching through `getSearchArtists`, `findMatchingLinks`) but keeps the
+    fork's `matchTitle`. `title-match.ts` now uses upstream's shared
+    `normalizeSearchText` and treats upstream's `isReissueTitle` as an
+    edition. The Safari API search (`spotify-api-search.ts`) accepts the
+    artist alias too.
+  - `background/spotify-search.ts` keeps the Safari API path. Upstream's
+    network diagnostics only observe the hidden-page path, and the catch
+    branch still adds them as upstream does.
+  - `page-settings.ts` keeps the fork's native toggles (`resolvePageEnabled`,
+    which already had upstream's off-by-default keys). `discographyOrder` is
+    on exactly when the saved section order isn't RYM's, read through
+    `getSectionOrder`. Upstream's new `page-settings.test.ts` was rewritten
+    against the fork's messaging. Its obsolete `brym.userPageSettings` test
+    was dropped, since the fork never read that key.
+  - Upstream's `fetchInPage` now rejects on errors and timeouts, so
+    `loadLinkVotes` catches and returns no links (regression test in
+    `link-votes.test.ts`).
+  - The user chose (2026-11-14) to keep every upstream setting in the native
+    store. The discography section order, discography progress types and
+    zero-coverage flag, stream-link colors, reference-link color and
+    release control layout now go through `getStoredSetting`/
+    `setStoredSetting`. Their watchers use `subscribeToStoredSetting`, which
+    now returns an unsubscribe function. A section-order reset saves the
+    default order, because `stored-settings` has no remove.
+  - Upstream added `dist/changelog.js`, loaded by `changelog.html`. The
+    Xcode project now references it for both targets (in the
+    `EvenBetterRYM/` repo, uncommitted).
+
 - Autofind streaming links when RYM's links aren't upvoted (2026-11-14,
   built but not committed, waiting for the user's Safari test). When every
   RYM link for a service has a net vote score of zero or below in the user's

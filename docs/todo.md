@@ -260,10 +260,6 @@
   reach a Safari content script from a popup write (see `CLAUDE.md`);
   `subscribeToStoredSetting` is the channel that works.
 
-- Decide whether upstream's `reference-links/settings.ts` and
-  `user-page/settings.ts` should go through `stored-settings`, so Safari's
-  "Clear History" doesn't wipe them (see `docs/archive/upstream-sync-3.1-2026-11.md`).
-
 - Check whether Safari runs upstream's MAIN-world Spotify diagnostics script
   (`spotify-search/page-errors.ts`) from the MV2 manifest.
 

@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import * as storage from "../utils/storage";
+import * as storedSettings from "../utils/stored-settings";
 import {
 	defaultReferenceLinkSettings,
 	getReferenceLinkSettings,
 	setReferenceLinkSettings,
 } from "./settings";
 
-vi.mock("../utils/storage", () => ({
-	get: vi.fn(),
-	set: vi.fn(),
+vi.mock("../utils/stored-settings", () => ({
+	getStoredSetting: vi.fn(),
+	setStoredSetting: vi.fn(),
 }));
 
 describe("reference link settings", () => {
@@ -18,7 +18,7 @@ describe("reference link settings", () => {
 	});
 
 	test("returns defaults when no settings are stored", async () => {
-		vi.mocked(storage.get).mockResolvedValue(undefined);
+		vi.mocked(storedSettings.getStoredSetting).mockResolvedValue(undefined);
 
 		await expect(getReferenceLinkSettings()).resolves.toEqual(
 			defaultReferenceLinkSettings,
@@ -26,7 +26,7 @@ describe("reference link settings", () => {
 	});
 
 	test("uses defaults for invalid stored colors and preserves valid colors", async () => {
-		vi.mocked(storage.get).mockResolvedValue({
+		vi.mocked(storedSettings.getStoredSetting).mockResolvedValue({
 			buttonColor: "blue",
 		});
 
@@ -39,10 +39,10 @@ describe("reference link settings", () => {
 		const settings = {
 			buttonColor: "#445566",
 		};
-		vi.mocked(storage.set).mockResolvedValue(undefined);
+		vi.mocked(storedSettings.setStoredSetting).mockResolvedValue(undefined);
 
 		await expect(setReferenceLinkSettings(settings)).resolves.toBeUndefined();
-		expect(storage.set).toHaveBeenCalledWith(
+		expect(storedSettings.setStoredSetting).toHaveBeenCalledWith(
 			"referenceLinks.settings",
 			settings,
 		);

@@ -13,10 +13,13 @@ vi.mock("~/shared/services", () => ({
 vi.mock("~/shared/utils/dom", () => ({ waitForDocumentReady: vi.fn() }));
 vi.mock("~/shared/utils/fetch", () => ({ fetchInPage: vi.fn() }));
 
+import { fetchInPage } from "~/shared/utils/fetch";
+
 import type { LinkVotes } from "./link-votes";
 import {
 	getServicesWithoutUpvotedLink,
 	hasNoUpvotedLink,
+	loadLinkVotes,
 	parseCountryScores,
 	parseLinkVotes,
 } from "./link-votes";
@@ -118,5 +121,14 @@ describe("getServicesWithoutUpvotedLink", () => {
 
 	test("skips services with no links, such as when the fetch failed", () => {
 		expect(getServicesWithoutUpvotedLink([], { youtube: "US" })).toEqual([]);
+	});
+});
+
+describe("loadLinkVotes", () => {
+	test("returns no links when the vote page fails to load", async () => {
+		document.body.innerHTML =
+			'<a href="/submit_media_link?object=release&assoc_id=1">Submit</a>';
+		vi.mocked(fetchInPage).mockRejectedValue(new Error("HTTP 403"));
+		expect(await loadLinkVotes()).toEqual([]);
 	});
 });

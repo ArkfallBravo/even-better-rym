@@ -60,16 +60,21 @@ export const getServicesWithoutUpvotedLink = (
 		return serviceLinks.length > 0 && hasNoUpvotedLink(serviceLinks, region);
 	}).map((service) => service.id);
 
-// Fetches the votes on this release page's streaming links.
+// Fetches the votes on this release page's streaming links, or none if the
+// vote page can't be loaded.
 export const loadLinkVotes = async (): Promise<LinkVotes[]> => {
 	await waitForDocumentReady();
 	const votePageLink = document.querySelector<HTMLAnchorElement>(
 		VOTE_PAGE_LINK_SELECTOR,
 	);
 	if (!votePageLink) return [];
-	const html = await fetchInPage({
-		url: votePageLink.href,
-		credentials: "include",
-	});
-	return parseLinkVotes(html);
+	try {
+		const html = await fetchInPage({
+			url: votePageLink.href,
+			credentials: "include",
+		});
+		return parseLinkVotes(html);
+	} catch {
+		return [];
+	}
 };
