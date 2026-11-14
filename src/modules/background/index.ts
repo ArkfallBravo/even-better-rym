@@ -269,8 +269,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	}
 });
 
+// Returns the toolbar button API, which Manifest V2 builds name browserAction.
+const toolbarAction = () =>
+	browser.runtime.getManifest().manifest_version === 2
+		? browser.browserAction
+		: browser.action;
+
 const setTabIcon = (tabId: number, enabled: boolean) => {
-	void browser.action.setIcon({
+	void toolbarAction().setIcon({
 		tabId,
 		path: enabled
 			? {
@@ -282,7 +288,7 @@ const setTabIcon = (tabId: number, enabled: boolean) => {
 					"38": browser.runtime.getURL("icons/extension-disabled-38.png"),
 				},
 	});
-	void browser.action.setTitle({
+	void toolbarAction().setTitle({
 		tabId,
 		title: `EvenBetterRYM ${enabled ? "enabled" : "disabled"}`,
 	});
@@ -310,6 +316,6 @@ browser.tabs.onUpdated.addListener((id, _changeInfo, tab) => {
 			resolvePageEnabled(settingsCache, key),
 		);
 		setTabIcon(id, enabled);
-		void browser.action.enable(id);
+		void toolbarAction().enable(id);
 	});
 });

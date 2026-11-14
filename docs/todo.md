@@ -1,14 +1,5 @@
 # Todo
 
-- The toolbar icon's per-tab enabled/disabled state never updates in the
-  Safari (MV2) build. `setTabIcon` in `background/index.ts` calls
-  `browser.action.setIcon`/`setTitle`, which only exist in MV3; MV2 has
-  `browserAction`. Seen 2026-11-14 in the App Store v2.0 background console
-  as `Unhandled Promise Rejection: TypeError: undefined is not an object
-  (evaluating 'c.action.setIcon')`, and the current code is the same.
-  Upstream-authored (kknq/Jake Cheek), so get the user's OK before fixing;
-  the fix would pick `browser.action ?? browser.browserAction`.
-
 - Prototype a Safari end-to-end check of the debug panel's search
   (autofind) results, decided 2026-11-10 after Spotify autofind turned out
   to have been broken in Safari since v2.0 with no test catching it. Unit
@@ -182,13 +173,6 @@
   repo) — see `docs/plan.md` for the diagnosis. Not urgent since the file
   is inert (not wired into any build phase), but the underlying settings
   conflict should get resolved.
-
-- Fix `src/modules/background/index.ts`'s `setTabIcon`: uses
-  `browser.action.setIcon`/`.setTitle`, which is `undefined` under the
-  Safari build's Manifest V2 (should be `browser.browserAction` for V2).
-  Causes an unhandled `TypeError` in the background console on every
-  rateyourmusic.com navigation. Confirmed unrelated to the CORS
-  investigation above — separate real bug.
 
 - Extend the tracklist artist-link picker (see `docs/archive/tracklist-artist-pickers-2026-10.md`)
   beyond Apple Music: make Spotify, Beatport, and
