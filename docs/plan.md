@@ -1,5 +1,30 @@
 # Plan / open work
 
+- Autofind streaming links when RYM's links aren't upvoted (2026-11-14,
+  built but not committed, waiting for the user's Safari test). When every
+  RYM link for a service has a net vote score of zero or below in the user's
+  region for that service, the stream-links icon searches and links to the
+  search result with the autofound icon. If the search finds nothing or
+  fails, it keeps RYM's link. This was judged service by service, as the
+  user chose.
+  - The votes aren't in the release page's `data-links` JSON. They come
+    from RYM's `/submit_media_link?object=release&assoc_id=N` page, found
+    through the release page's own link to it and fetched with
+    `fetchInPage` (page world, logged-in cookies; a plain curl got
+    Cloudflare's 403). Each row in `#media_link_list` has the link's `<a>`,
+    followed by a tally div like `CA: +1 / -0, US: +0 / -1`
+    (`link-votes.ts`; the saved page is the untracked
+    `Submit media link - Rate Your Music.html` at the repo root). That page
+    lists only the "Entire album" links.
+  - A country missing from a link's tally counts as zero. Services with no
+    region set are never overridden. A failed fetch parses to no links,
+    which leaves every service as it was.
+  - The choice between RYM's link and a search lives in
+    `stream-link-state.ts` (`getStreamLinkState`), out of the UI component.
+  - Open: this costs one extra RYM page request per release view, without
+    caching. Most links only have votes from the submitter's country, so
+    expect searches on many releases.
+
 - `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"
   (2026-08-14, open — not yet resolved): while wrapping up the autofind-link
   triage session (now in `docs/archive/import-debugging-2026-07-08.md`),
