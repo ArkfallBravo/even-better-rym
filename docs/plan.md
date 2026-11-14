@@ -1,8 +1,9 @@
 # Plan / open work
 
 - Upstream sync to v3.3.0 (2026-11-14, branch `sync-upstream-3.3` off
-  `main`, merge staged but **not committed**, waiting for the user's Safari
-  test). Merges the 23 `upstream/main` commits through `bc24f43` (#215).
+  `main`). Committed as checkpoint merge `63e9e6e` (Xcode repo `4f7836c`),
+  followed by simplify commit `2080d45`. Neither is tested in Safari yet.
+  Next: the user's Safari test of the combined build (step 3). Merges the 23 `upstream/main` commits through `bc24f43` (#215).
   This is step 1 of the agreed order: sync, then a `/simplify` pass on the
   statusline's diff, then one Safari test, then the upstream PR for the
   vote-based autofind (ported onto `upstream/main`), then App Store v2.2.
@@ -61,8 +62,10 @@
     which leaves every service as it was.
   - The choice between RYM's link and a search lives in
     `stream-link-state.ts` (`getStreamLinkState`), out of the UI component.
-  - Open: this costs one extra RYM page request per release view, without
-    caching. Most links only have votes from the submitter's country, so
+  - The vote page is only fetched when some service has both a RYM link
+    and a region set (`hasRegionalLink`), after `getLinks()`.
+  - Open: this costs one extra RYM page request per qualifying release
+    view, without caching. Most links only have votes from the submitter's country, so
     expect searches on many releases.
 
 - `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"

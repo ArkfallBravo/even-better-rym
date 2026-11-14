@@ -279,3 +279,18 @@
   (PR #144, merged upstream as `71e70da` and synced) and
   `tracklist-artist-links-upstream` (PR #150, merged upstream). Both are
   the user's call.
+
+- Add a vitest `setupFiles` entry that stubs `webextension-polyfill` once,
+  then drop the per-file `messaging`/`stored-settings` mocks that only
+  exist to stop the import throwing, and turn the dynamic
+  `import("~/shared/utils/stored-settings")` calls in
+  `visibility/settings.ts` and `collection/settings.ts` back into static
+  ones (found by the 2026-11-14 simplify pass; touches about 40 test files).
+
+- Check whether the Safari Spotify API search works on iOS. It fetches from
+  the background script (`backgroundFetch`), and `shared/utils/fetch.ts`
+  says iOS Safari's background page can't reach external APIs. Unverified.
+
+- Decide whether the toolbar icon should apply the `discographyOrder` rule
+  (on only with a custom section order). The background resolves it with
+  `resolvePageEnabled(settingsCache, key)`, which defaults it to on.
