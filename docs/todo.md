@@ -1,5 +1,14 @@
 # Todo
 
+- The toolbar icon's per-tab enabled/disabled state never updates in the
+  Safari (MV2) build. `setTabIcon` in `background/index.ts` calls
+  `browser.action.setIcon`/`setTitle`, which only exist in MV3; MV2 has
+  `browserAction`. Seen 2026-11-14 in the App Store v2.0 background console
+  as `Unhandled Promise Rejection: TypeError: undefined is not an object
+  (evaluating 'c.action.setIcon')`, and the current code is the same.
+  Upstream-authored (kknq/Jake Cheek), so get the user's OK before fixing;
+  the fix would pick `browser.action ?? browser.browserAction`.
+
 - Prototype a Safari end-to-end check of the debug panel's search
   (autofind) results, decided 2026-11-10 after Spotify autofind turned out
   to have been broken in Safari since v2.0 with no test catching it. Unit

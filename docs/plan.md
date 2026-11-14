@@ -34,8 +34,9 @@
   open.
 
 - **Spotify autofind broken in Safari** (found 2026-11-10; API fallback
-  committed after the user's Safari test passed the same day; not yet in an
-  App Store release). The import-check
+  committed after it passed the debug panel's search check the same day;
+  not yet verified on a real RYM release page; not yet in an App Store
+  release). The import-check
   search panel showed `Spotify: FAIL — Spotify background search did not
   respond` (the 30 s timeout in `spotify-search/hidden-search.ts`). Root
   cause, from the debug build's background console: `Refused to load
@@ -71,7 +72,17 @@
     instead of the hidden page on Safari"), confirmed failing on the old
     routing. They can't prove Safari behaviour; the debug panel's search
     check does.
-  - Next: ship it in the next Safari release, then move this entry to an
+  - Release-page test (2026-11-14) didn't test the fix: the console showed
+    `background-DMVgnBYR.js`, which is the App Store v2.0 copy in
+    `/Applications` (still the hidden-frame search), not the release build
+    (`background-DdShL371.js`, matching `dist/`) built into
+    `Debug-local/EvenBetterRYM.app`. `pluginkit` listed both copies, and
+    Safari ran the App Store one. Next: turn the App Store copy off in Safari
+    → Settings → Extensions (or `pluginkit -r` it), confirm the background
+    script name matches `dist/assets/`, and repeat the release-page check.
+  - Then: ships as App Store v2.1 (build 14; Xcode repo bumped 2026-11-10,
+    `dist/` holds the release `npm run build:safari` output). Once it's
+    submitted, tag `app-store-v2.1-submission` and move this entry to an
     archive doc.
 
 ## Archived initiatives
