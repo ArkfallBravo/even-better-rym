@@ -78,7 +78,8 @@
   `app-store-v2.0-submission` on `d4a91cf`. Writeup:
   `docs/archive/app-store-v2.0-submission-2026-11.md`.
 - Safari Spotify autofind (Web API fallback) and toolbar icon fixes
-  (2026-11-10 to 2026-11-14), submitted as App Store v2.1 and tagged
+  (2026-11-10 to 2026-11-14), shipped as App Store v2.1 (approved
+  2026-11-15) and tagged
   `app-store-v2.1-submission` on `9f3f217`. Writeup:
   `docs/archive/safari-spotify-and-toolbar-v2.1-2026-11.md`.
 - App Store v2.2 and the vote-based autofind (2026-11-14 to 2026-11-15):
