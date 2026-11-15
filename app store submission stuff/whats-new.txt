@@ -1,3 +1,19 @@
-Fixed: Spotify links are found automatically again on release pages.
+New: When none of RYM's links for a streaming service is upvoted in your country, EvenBetterRYM finds a link itself and shows it with the auto-found icon.
 
-Fixed: The toolbar icon now shows whether EvenBetterRYM's features are on for the current page: green when they're on, red when they're all turned off.
+New: Discography listening progress. Artist pages show how much of a discography you've rated or marked as listened, with a progress bar for each release category and overall. Choose which categories count toward the overall progress in the extension popup, and hide it when it's zero.
+
+New: Custom discography section order. Arrange an artist's discography sections in the order you prefer, by dragging them or using the arrows in the extension popup.
+
+New: Your chosen sort is kept when you show all releases in a discography section, and expanded sections stay open when you change the sort.
+
+New: Colored streaming-service icons. Suggested streaming links can use each service's brand color, and you can customize each color in the extension popup.
+
+New: Follow status in your friends list and in friends' recent activity shows which users follow you back.
+
+New: Metal Archives imports suggest credits.
+
+Improved: Importing a release no longer changes the artists in sections 1.3a and 1.4 automatically. A button makes those changes when you want them.
+
+Improved: The rating and review visibility controls on release pages no longer wrap, and can be moved into their own section.
+
+Fixed: Suggested streaming links are more accurate, and discography progress counts releases with several rated editions.

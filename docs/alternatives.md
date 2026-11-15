@@ -210,3 +210,14 @@ describes how the code works now.
   quota. The user: "the whole point of autofind is that it's automatic."
   Don't bring back; if the quota becomes a problem, look at user-entered
   credentials instead.
+
+## Stream-links vote autofind
+
+- **Cache the "Submit media link" vote page** (deferred, 2026-11-14). The
+  vote-based autofind (`link-votes.ts`) fetches that page on every release
+  view where some service has both a RYM link and a region set, uncached,
+  so each such view costs one extra RYM request. Caching it (e.g. with
+  `withCache`, keyed by release id) would cut repeat views. Not done because
+  votes change and one request per view seemed acceptable. Bring back if RYM
+  rate-limits or Cloudflare-challenges users, or if the extra request makes
+  release pages noticeably slower.
