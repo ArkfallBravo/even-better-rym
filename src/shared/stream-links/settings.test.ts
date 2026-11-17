@@ -36,6 +36,7 @@ describe("stream link settings", () => {
 			useServiceColors: true,
 			colors: { ...defaultStreamLinkColors, spotify: "#123ABC" },
 			searchUnvotedLinks: true,
+			hideDownvotedLinks: false,
 		});
 	});
 
@@ -55,6 +56,22 @@ describe("stream link settings", () => {
 		});
 	});
 
+	test("hides downvoted links only when explicitly turned on", async () => {
+		vi.mocked(storedSettings.getStoredSetting).mockResolvedValueOnce({
+			hideDownvotedLinks: true,
+		});
+		await expect(getStreamLinkSettings()).resolves.toMatchObject({
+			hideDownvotedLinks: true,
+		});
+
+		vi.mocked(storedSettings.getStoredSetting).mockResolvedValueOnce({
+			hideDownvotedLinks: "true",
+		});
+		await expect(getStreamLinkSettings()).resolves.toMatchObject({
+			hideDownvotedLinks: false,
+		});
+	});
+
 	test("does not enable colors for an invalid stored flag", async () => {
 		vi.mocked(storedSettings.getStoredSetting).mockResolvedValue({
 			useServiceColors: "true",
@@ -69,6 +86,7 @@ describe("stream link settings", () => {
 			useServiceColors: false,
 			colors: { ...defaultStreamLinkColors, spotify: "#445566" },
 			searchUnvotedLinks: true,
+			hideDownvotedLinks: false,
 		};
 		vi.mocked(storedSettings.setStoredSetting).mockResolvedValue(undefined);
 		await setStreamLinkSettings(settings);

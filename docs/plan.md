@@ -1,32 +1,67 @@
 # Plan / open work
 
 - Upstream PR #218 (kknq's repo) for the vote-based autofind, from branch
-  `autofind-unvoted-links` (`7be8bdc` on `upstream/main` `bc24f43`, pushed to
-  `origin`), opened 2026-11-14. Waiting on kknq's review. The branch itself
-  wasn't run in Safari; the same feature code shipped in App Store v2.2. If
-  kknq asks for changes, make them on that branch (see `CLAUDE.md`,
-  "Preparing an upstream PR"), and port them back to the fork. Full history:
+  `autofind-unvoted-links` (on `upstream/main` `bc24f43`, pushed to
+  `origin`), opened 2026-11-14. Waiting on kknq's review. Commits: `7be8bdc`
+  (the feature) and `af87697` (the off switch, added 2026-11-17; the PR
+  description mentions it). The branch itself wasn't run in Safari; the same
+  code was tested from the fork. If kknq asks for changes, make them on that
+  branch (see `CLAUDE.md`, "Preparing an upstream PR"), and port them back
+  to the fork. On that branch, settings tests mock `../utils/storage`
+  (`storage.get`) rather than the fork's `stored-settings`. Full history:
   `docs/archive/app-store-v2.2-and-vote-autofind-2026-11.md`.
 
-- Off switch for the vote-based autofind (2026-11-17, tested in Safari by
-  the user and committed to `main`; PR pending). `StreamLinkSettings.searchUnvotedLinks` (default
-  on; anything but `false` reads as on) with a "Link checks" checkbox in the
-  popup's stream-links view. When off, `StreamLinks` hands `usePageData`
-  `skipLinkVotes` instead of `loadLinkVotes`, so the vote page isn't fetched
-  and RYM's links are always kept. Read once at mount, like the colors.
-  Open: the user found the rule re-searches almost every service, since
-  RYM's `service_regions` sets a region for all eight services (US for all,
-  per a saved page) and "no votes from your country" counts as unvoted. On
-  the saved "Interloper" page only Apple Music kept RYM's link. Proposed
-  stricter rules (search only below zero; ignore non-regional services like
-  Bandcamp/SoundCloud) are undecided. The user also asked whether a link's
-  availability in their country can be checked directly (Spotify markets,
-  Apple lookup `country=`, Tidal `countryCode`, YouTube region restrictions;
-  none verified yet; Apple's US store has no copy of beansclub's "Nothing
-  Left to Say", whose Apple Music link is voted down in the US). Proposed,
-  awaiting the user's go-ahead: when RYM's link is voted down (score below
-  zero) in the user's country and the search finds nothing, show "not
-  found" instead of falling back to that link (`stream-link-state.ts`).
+- Vote-based autofind follow-ups (2026-11-17).
+  - **Off switch: done** (`main` `4e4c1d5`, tested in Safari by the user).
+    `StreamLinkSettings.searchUnvotedLinks` (default on; anything but
+    `false` reads as on), a "Link checks" checkbox in the popup's
+    stream-links view. When off, `StreamLinks` hands `usePageData`
+    `skipLinkVotes` instead of `loadLinkVotes`, so the vote page isn't
+    fetched and RYM's links are always kept. Read once at mount.
+  - **Hide voted-down links: done** (tested in Safari by the user,
+    committed to `main` 2026-11-17). Setting `hideDownvotedLinks` (default off; only `true` turns
+    it on), a "Link checks" checkbox independent of `searchUnvotedLinks`
+    (the user's call). A service counts as voted down when every RYM link
+    for it scores below zero in the user's country
+    (`getServicesWithOnlyDownvotedLinks` →
+    `PageData.servicesWithOnlyDownvotedLinks`). A service with one
+    downvoted and one unvoted link keeps its link, since RYM may be
+    showing the unvoted one. `getStreamLinkState` takes a `LinkChecks`
+    slice of the settings (`StreamLinks` passes `settings`):
+    - hide only: a voted-down link shows `not-found` without searching;
+    - search and hide: search first; a found link wins, otherwise
+      `not-found`;
+    - a search that throws always falls back to RYM's link.
+    The vote page loads when either checkbox is on.
+    Open: the user believes RYM's own buttons don't drop links voted down
+    in their country, and wonders whether the extension changes RYM's
+    behaviour. The extension hides `#media_link_button_container_top` and
+    picks each link with kknq's `getLinkData` (`for` match first, else the
+    default unless its `not` list has the region); whether RYM's own
+    buttons pick differently is unchecked. Next step: on the beansclub page,
+    compare the extension's Apple Music icon with RYM's own buttons
+    (extension off), and run
+    `JSON.parse(document.querySelector('#media_link_button_container_top').dataset.links).applemusic`.
+    How it got here: the user first asked to hide every link scoring zero
+    or below. A side agent pointed out that "zero" includes links nobody in
+    the user's country has voted on (most of them), so that became an
+    opt-in toggle. The user then judged it "scorched earth", equally likely
+    to kill good links as bad, and chose to hide only links scoring below
+    zero (option 1). Option 2, checking real availability per country, is
+    still open (below).
+    Not yet in PR #218; ask whether to add it there, whose description still says
+    "If the search finds nothing or fails, it keeps RYM's link".
+  - Open: the rule re-searches almost every service, since RYM's
+    `service_regions` sets a region for all eight services (US for all, per
+    a saved page) and "no votes from your country" counts as unvoted. On
+    the saved "Interloper" page only Apple Music kept RYM's link. A stricter
+    rule (ignore non-regional services like Bandcamp/SoundCloud) is
+    undecided.
+  - Open: whether to check a link's availability in the user's country
+    directly (Spotify markets, Apple lookup `country=`, Tidal `countryCode`,
+    YouTube region restrictions; none verified). Example: Apple's US store
+    has no copy of beansclub's "Nothing Left to Say", whose Apple Music link
+    is voted down in the US, and its search correctly finds nothing.
 
 - `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"
   (2026-08-14, open — not yet resolved): while wrapping up the autofind-link
