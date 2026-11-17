@@ -7,8 +7,7 @@
   description mentions it). The branch itself wasn't run in Safari; the same
   code was tested from the fork. If kknq asks for changes, make them on that
   branch (see `CLAUDE.md`, "Preparing an upstream PR"), and port them back
-  to the fork. On that branch, settings tests mock `../utils/storage`
-  (`storage.get`) rather than the fork's `stored-settings`. Full history:
+  to the fork. Full history:
   `docs/archive/app-store-v2.2-and-vote-autofind-2026-11.md`.
 
 - Vote-based autofind follow-ups (2026-11-17).
@@ -19,8 +18,8 @@
     `skipLinkVotes` instead of `loadLinkVotes`, so the vote page isn't
     fetched and RYM's links are always kept. Read once at mount.
   - **Hide voted-down links: done** (tested in Safari by the user,
-    committed to `main` 2026-11-17). Setting `hideDownvotedLinks` (default off; only `true` turns
-    it on), a "Link checks" checkbox independent of `searchUnvotedLinks`
+    committed to `main` 2026-11-17). Setting `hideDownvotedLinks`
+    (default off; only `true` turns it on), a "Link checks" checkbox independent of `searchUnvotedLinks`
     (the user's call). A service counts as voted down when every RYM link
     for it scores below zero in the user's country
     (`getServicesWithOnlyDownvotedLinks` →
@@ -42,26 +41,19 @@
     compare the extension's Apple Music icon with RYM's own buttons
     (extension off), and run
     `JSON.parse(document.querySelector('#media_link_button_container_top').dataset.links).applemusic`.
-    How it got here: the user first asked to hide every link scoring zero
-    or below. A side agent pointed out that "zero" includes links nobody in
-    the user's country has voted on (most of them), so that became an
-    opt-in toggle. The user then judged it "scorched earth", equally likely
-    to kill good links as bad, and chose to hide only links scoring below
-    zero (option 1). Option 2, checking real availability per country, is
-    still open (below).
-    Not yet in PR #218; ask whether to add it there, whose description still says
-    "If the search finds nothing or fails, it keeps RYM's link".
+    Hiding links that score zero or below was tried first and rejected
+    (see `docs/alternatives.md`, "Stream-links vote autofind").
+    Not yet in PR #218; the user hasn't answered whether to add it there.
+    If so, also update the PR description, which still says "If the search
+    finds nothing or fails, it keeps RYM's link".
   - Open: the rule re-searches almost every service, since RYM's
     `service_regions` sets a region for all eight services (US for all, per
     a saved page) and "no votes from your country" counts as unvoted. On
     the saved "Interloper" page only Apple Music kept RYM's link. A stricter
     rule (ignore non-regional services like Bandcamp/SoundCloud) is
     undecided.
-  - Open: whether to check a link's availability in the user's country
-    directly (Spotify markets, Apple lookup `country=`, Tidal `countryCode`,
-    YouTube region restrictions; none verified). Example: Apple's US store
-    has no copy of beansclub's "Nothing Left to Say", whose Apple Music link
-    is voted down in the US, and its search correctly finds nothing.
+  - Checking a link's real availability per country was deferred in
+    favour of the voted-down rule; see `docs/alternatives.md`.
 
 - `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"
   (2026-08-14, open — not yet resolved): while wrapping up the autofind-link
@@ -138,6 +130,6 @@
   `app-store-v2.1-submission` on `9f3f217`. Writeup:
   `docs/archive/safari-spotify-and-toolbar-v2.1-2026-11.md`.
 - App Store v2.2 and the vote-based autofind (2026-11-14 to 2026-11-15):
-  upstream v3.3.0 sync, simplify pass, autofind, submitted as v2.2 and
-  tagged `app-store-v2.2-submission` on `36c6a2f`. Writeup:
+  upstream v3.3.0 sync, simplify pass, autofind, shipped as v2.2 (the
+  installed App Store copy read 2.2 on 2026-11-17) and tagged `app-store-v2.2-submission` on `36c6a2f`. Writeup:
   `docs/archive/app-store-v2.2-and-vote-autofind-2026-11.md`.

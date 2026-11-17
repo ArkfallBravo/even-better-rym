@@ -221,3 +221,22 @@ describes how the code works now.
   votes change and one request per view seemed acceptable. Bring back if RYM
   rate-limits or Cloudflare-challenges users, or if the extra request makes
   release pages noticeably slower.
+- **Hide every RYM link that scores zero or below** (rejected,
+  2026-11-17). The user first asked for the "not found" icon whenever a
+  link wasn't upvoted in their country and no replacement turned up. "Zero"
+  includes links nobody in that country has voted on, which is most links
+  (on "Interloper", Bandcamp/Spotify/Tidal only had votes from other
+  countries), and RYM sets a region for every service, even Bandcamp and
+  SoundCloud. It was first made opt-in, then the user called it "scorched
+  earth", equally likely to kill good links as bad. Replaced by
+  `hideDownvotedLinks`, which only hides links scoring below zero. Bring
+  back only with a signal that separates dead links from unvoted ones.
+- **Check whether RYM's link actually plays in the user's country**
+  (deferred, 2026-11-17). Possible per service: Spotify album markets,
+  Apple's lookup with `country=` (beansclub's "Nothing Left to Say" has no
+  US copy there, matching its US downvote), Tidal's `countryCode`, YouTube
+  region restrictions; Bandcamp/SoundCloud are mostly not region-locked.
+  None of these APIs was verified. Costs one extra request per existing
+  link per release view. Deferred because the voted-down rule costs
+  nothing extra. Bring back if downvotes turn out too rare to catch dead
+  links, or as a replacement for the vote rule as the search trigger.
