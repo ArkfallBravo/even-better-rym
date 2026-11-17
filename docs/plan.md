@@ -3,8 +3,9 @@
 - Upstream PR #218 (kknq's repo) for the vote-based autofind, from branch
   `autofind-unvoted-links` (on `upstream/main` `bc24f43`, pushed to
   `origin`), opened 2026-11-14. Waiting on kknq's review. Commits: `7be8bdc`
-  (the feature) and `af87697` (the off switch, added 2026-11-17; the PR
-  description mentions it). The branch itself wasn't run in Safari; the same
+  (the feature), `af87697` (the off switch) and `8fcc689` (hide voted-down
+  links), the last two added 2026-11-17 with the PR description updated
+  for both. The branch itself wasn't run in Safari; the same
   code was tested from the fork. If kknq asks for changes, make them on that
   branch (see `CLAUDE.md`, "Preparing an upstream PR"), and port them back
   to the fork. Full history:
@@ -43,9 +44,7 @@
     `JSON.parse(document.querySelector('#media_link_button_container_top').dataset.links).applemusic`.
     Hiding links that score zero or below was tried first and rejected
     (see `docs/alternatives.md`, "Stream-links vote autofind").
-    Not yet in PR #218; the user hasn't answered whether to add it there.
-    If so, also update the PR description, which still says "If the search
-    finds nothing or fails, it keeps RYM's link".
+    Added to PR #218 as `8fcc689` on 2026-11-17.
   - Open: the rule re-searches almost every service, since RYM's
     `service_regions` sets a region for all eight services (US for all, per
     a saved page) and "no votes from your country" counts as unvoted. On
