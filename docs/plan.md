@@ -8,6 +8,26 @@
   "Preparing an upstream PR"), and port them back to the fork. Full history:
   `docs/archive/app-store-v2.2-and-vote-autofind-2026-11.md`.
 
+- Off switch for the vote-based autofind (2026-11-17, tested in Safari by
+  the user and committed to `main`; PR pending). `StreamLinkSettings.searchUnvotedLinks` (default
+  on; anything but `false` reads as on) with a "Link checks" checkbox in the
+  popup's stream-links view. When off, `StreamLinks` hands `usePageData`
+  `skipLinkVotes` instead of `loadLinkVotes`, so the vote page isn't fetched
+  and RYM's links are always kept. Read once at mount, like the colors.
+  Open: the user found the rule re-searches almost every service, since
+  RYM's `service_regions` sets a region for all eight services (US for all,
+  per a saved page) and "no votes from your country" counts as unvoted. On
+  the saved "Interloper" page only Apple Music kept RYM's link. Proposed
+  stricter rules (search only below zero; ignore non-regional services like
+  Bandcamp/SoundCloud) are undecided. The user also asked whether a link's
+  availability in their country can be checked directly (Spotify markets,
+  Apple lookup `country=`, Tidal `countryCode`, YouTube region restrictions;
+  none verified yet; Apple's US store has no copy of beansclub's "Nothing
+  Left to Say", whose Apple Music link is voted down in the US). Proposed,
+  awaiting the user's go-ahead: when RYM's link is voted down (score below
+  zero) in the user's country and the search finds nothing, show "not
+  found" instead of falling back to that link (`stream-link-state.ts`).
+
 - `EvenBetterRYM/` checkpoint commit before "Update to recommended settings"
   (2026-08-14, open — not yet resolved): while wrapping up the autofind-link
   triage session (now in `docs/archive/import-debugging-2026-07-08.md`),
